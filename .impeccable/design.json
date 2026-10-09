@@ -275,8 +275,8 @@
     {
       "name": "Detail Segments",
       "kind": "custom",
-      "description": "Explore previews and selected Inspect detail mode.",
-      "html": "<div class=\"ds-segmented\" role=\"group\" aria-label=\"Image detail level\"><button aria-pressed=\"false\">Explore</button><button class=\"ds-selected\" aria-pressed=\"true\">Inspect detail</button></div>",
+      "description": "Context imagery selection; full-detail imagery loads automatically.",
+      "html": "<div class=\"ds-segmented\" role=\"group\" aria-label=\"Context imagery\"><button aria-pressed=\"false\">Street map</button><button class=\"ds-selected\" aria-pressed=\"true\">Satellite</button></div>",
       "css": ".ds-segmented{display:flex;padding:3px;background:#eef3f5;border-radius:7px;gap:3px}.ds-segmented button{flex:1;padding:9px 6px;font:650 11px Manrope,sans-serif;border:0;border-radius:5px;background:none;color:#617780;cursor:pointer}.ds-segmented button.ds-selected{background:#fff;color:var(--ink,#22363d);box-shadow:0 1px 3px #233b4312}.ds-segmented button:focus-visible{outline:3px solid #469ca6;outline-offset:3px}"
     },
     {

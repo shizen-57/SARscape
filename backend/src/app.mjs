@@ -43,6 +43,10 @@ export function createApi({cache,fetchUpstream=fetch,renderTile=()=>{throw new E
   try{return c.json(await science.retry(c.req.param('id'),c.req.param('job')),202)}catch(error){return c.json({error:error.status?error.message:'Could not retry processing'},error.status??500)}
  })
  app.get('/api/imagery/:id',c=>{
+  if(c.req.query('source')==='reference'){
+   if(!config.scenarios.some(s=>s.id===c.req.param('id')))return c.json({error:'Unknown glacier'},404)
+   return c.json({source:'Esri World Imagery reference mosaic',selection:'Highest available reference imagery for this location. Acquisition dates and ground resolution vary and are not verified here. This layer cannot establish yearly change.',frames:[{id:'reference',date:'Undated',datePrecision:'undated',cloudCover:null,resolutionMeters:null,platform:'Esri World Imagery',bbox:[-180,-85,180,85],url:'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer',tileTemplate:'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',metadataUrl:'https://services.arcgisonline.com/arcgis/rest/services/World_Imagery/MapServer',attribution:'Reference imagery © Esri and contributors · acquisition dates vary'}]})
+  }
   if(c.req.query('source')==='swissimage'){
    if(c.req.param('id')!=='aletsch')return c.json({error:'Swiss aerial imagery is available for Aletsch only'},400)
    c.header('Cache-Control','public,max-age=3600')

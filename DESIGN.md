@@ -173,7 +173,7 @@ The sidebar, timeline, capture inspector, and source sheet share white surfaces 
 
 ### Observation Comparison
 
-Explore uses smaller previews; Inspect detail requests finer tiles on demand. Comparison starts with oldest/latest captures at a synchronized camera. A pointer-draggable, arrow-key-operable lens reveals the newer capture; swipe provides an alternate range-controlled divider. Blink alternates actual oldest/latest images, waiting for readiness. These are inspection modes, not generated motion or interpolated measurements.
+Full-detail tiles load automatically for each zoom; no preview quality toggle is exposed. Comparison starts with oldest/latest captures at a synchronized camera. A pointer-draggable, arrow-key-operable lens reveals the newer capture; swipe provides an alternate range-controlled divider. Blink alternates actual oldest/latest images, waiting for readiness. These are inspection modes, not generated motion or interpolated measurements.
 
 ### Science Processing
 
@@ -201,3 +201,7 @@ Not canonized: legacy demo velocity ramps and sample-chart styles remain in the 
 ### Imagery controls and globe
 
 Keep Image source as an ordinary labelled select. Aletsch offers Swiss aerial mosaics and dated Sentinel-2 images. Describe mosaic years separately from acquisition dates; do not invent annual flights or cloud percentages. Image adjustments uses a collapsed disclosure with labelled highlights, contrast and color sliders, live percentages, and reset. Adjustments are display-only and shared by comparison views. Globe overview uses the existing control stack; remove timeline and observation actions during globe exploration and provide an explicit Return to glacier action.
+
+### Sharp-only viewing correction
+
+Remove the Explore/Inspect detail quality toggle. Automatically request the source's best tile detail for each zoom and start at an inspection scale. Keep aerial mosaic years distinct from acquisition dates. Other glaciers display a single undated high-detail reference image, with playback and comparison disabled. Never imply dated high-resolution coverage where no such source has been connected.

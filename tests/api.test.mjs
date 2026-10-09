@@ -21,4 +21,14 @@ test('aerial mosaics retain year precision and cache valid official tiles',async
  assert.equal(first.status,200);assert.equal(second.headers.get('X-Cache'),'HIT');assert.equal(requests,1)
  assert.equal(first.headers.get('Cache-Control'),'public,max-age=86400')
 })
+test('sharp reference coverage never invents capture dates or yearly frames',async()=>{
+ const app=createApi()
+ for(const glacier of ['langtang','columbia']){
+  const sequence=await (await app.request(`/api/imagery/${glacier}?source=reference`)).json()
+  assert.equal(sequence.frames.length,1)
+  assert.equal(sequence.frames[0].datePrecision,'undated')
+  assert.equal(sequence.frames[0].resolutionMeters,null)
+  assert.match(sequence.frames[0].tileTemplate,/World_Imagery/)
+ }
+})
 test('COG proxy requires a registered scene and a small range',async()=>{let calls=0;const app=createApi({fetchUpstream:async(url,options)=>{calls++;assert.match(url,/sentinel-cogs/);assert.equal(options.headers.Range,'bytes=0-3');return new Response(new Uint8Array([73,73,42,0]),{status:206,headers:{'Content-Length':'4','Content-Range':'bytes 0-3/100'}})}});const path='/api/imagery/cog/aletsch/S2B_32TMS_20180927_1_L2A/TCI.tif';assert.equal((await app.request(path)).status,416);assert.equal((await app.request(path,{headers:{Range:'bytes=0-999999999'}})).status,416);assert.equal((await app.request('/api/imagery/cog/aletsch/unknown/TCI.tif',{headers:{Range:'bytes=0-3'}})).status,404);const r=await app.request(path,{headers:{Range:'bytes=0-3'}});assert.equal(r.status,206);assert.equal(r.headers.get('content-range'),'bytes 0-3/100');assert.equal(calls,1)})

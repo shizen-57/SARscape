@@ -1,6 +1,6 @@
 # SARscape
 
-A 3D glacier observation workspace for **Dancing with the SARs**. Explore genuine dated Sentinel-2 images, compare captures with a synchronized camera, and process NISAR GOFF science files through a separate backend. The application does not ship synthetic glacier measurements.
+A 3D glacier observation workspace for **Dancing with the SARs**. Explore full-detail aerial mosaics and reference imagery, compare dated mosaic versions with a synchronized camera, and process NISAR GOFF science files through a separate backend. The application does not ship synthetic glacier measurements.
 
 ## Project layout
 
@@ -38,7 +38,7 @@ Open http://127.0.0.1:8787. Stop the development stack before starting the produ
 
 Choose Aletsch, Langtang, or Columbia. The timeline contains actual August–September Sentinel-2 L2A captures from 2018–2025; availability varies by location. Each capture links to its original scene metadata. Source pixels are 10 metres, with lower-resolution overviews used when zoomed out. Images are reprojected in the backend, cached on disk, then rendered over fixed elevation. The dated capture includes a wider landscape buffer; the undated Esri basemap is context beyond capture coverage.
 
-Compare captures starts with the oldest and newest acquisitions. Change lens reveals the newer image inside a draggable circle over the older image at the same camera; Swipe and Blink change provide other inspection methods. Explore uses 20–160 m image overviews; Inspect detail requests finer tiles for the visible map from the original 10 m source. Native glacier crops are prepared only on demand, reused locally, and composited over the same capture’s broader preview. Native tile rendering is limited to two concurrent tasks. The full satellite scene is never downloaded. This is spatial level of detail, not fabricated motion or extra measurement precision.
+Compare captures starts with the oldest and newest available Swiss aerial mosaic versions. Change lens, Swipe and Blink support comparison at a synchronized camera. Full-detail tile selection is automatic; there is no reduced-resolution quality mode. Undated reference imagery on other glaciers has no yearly playback. The backend retains Sentinel-2 crops as archived optical data, rather than the visible low-resolution overlay.
 
 Comparison commits both images together after their tiles load and render. Draped raster layers are rebuilt to invalidate stale terrain textures. Cancelled timeline requests cannot replace the chosen frame. Playback waits for a loaded capture, and loading messages identify the previously displayed date. Scene cloud cover does not establish that the glacier itself is cloud-free. Seasonal snow, shadows, illumination, and processing differences must be considered before interpreting retreat.
 
@@ -88,8 +88,12 @@ Upcoming captures warm in the background after the current view loads. One low-p
 
 ## High-resolution Aletsch imagery and globe
 
-Aletsch now defaults to swisstopo SWISSIMAGE aerial mosaics, with Sentinel-2 available in Image source. Alps imagery is typically 25 cm at source. The 2018–2025 timeline selects official mosaic versions, not annual flights or exact acquisition dates; adjacent versions can repeat imagery and acquisition dates vary locally. Look closer requests a useful inspection scale; further zoom loads higher-resolution tiles on demand. Official JPEG tiles are proxied, validated, coalesced and persisted in SQLite for one day because swisstopo can revise a mosaic without changing its year.
+Aletsch defaults to swisstopo SWISSIMAGE aerial mosaics, with an undated reference alternative in Image source. Alps imagery is typically 25 cm at source. The 2018–2025 timeline selects official mosaic versions, not annual flights or exact acquisition dates; adjacent versions can repeat imagery and acquisition dates vary locally. Look closer requests a useful inspection scale; further zoom loads higher-resolution tiles on demand. Official JPEG tiles are proxied, validated, coalesced and persisted in SQLite for one day because swisstopo can revise a mosaic without changing its year.
 
 The globe control switches MapLibre to globe projection with undated context imagery; Return to the glacier restores terrain exploration. Image adjustments provides highlights, contrast and color plus reset. These GPU display settings apply equally to both comparison maps, are included in provenance export, and never rewrite source pixels or scientific products.
 
 Official sources: https://www.swisstopo.admin.ch/en/orthoimage-swissimage-10 and https://docs.geo.admin.ch/visualize-data/xyz.html.
+
+### Sharp imagery policy
+
+The visible map no longer exposes a reduced-resolution Explore mode or an Inspect-detail gate. Swiss aerial sources can request through zoom 20 at any camera position. Maps begin at an inspection scale; zoom-dependent tile selection still avoids downloading invisible pixels. Aletsch retains dated aerial mosaic versions. Langtang and Columbia now show World Imagery reference coverage, with variable unverified acquisition dates and resolution; their year playback and comparison are unavailable until dated high-resolution sources are connected. Sentinel-2 imagery remains accessible through the backend as archived data and is not a selectable low-resolution visual overlay.

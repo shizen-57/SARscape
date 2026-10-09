@@ -8,7 +8,7 @@ import type {ImageryFrame} from '../data/imagery'
 import {requestFrames} from './frame-controller.mjs'
 import {prefetchCaptures} from './imagery-prefetch.mjs'
 export type MapControls={zoomIn:()=>void;zoomOut:()=>void;reset:()=>void;globe:()=>void;north:()=>void;camera:()=>{center:[number,number];zoom:number;pitch:number;bearing:number};restore:(camera:{center:[number,number];zoom:number;pitch:number;bearing:number})=>void}
-type Props={onGlobeChange:(active:boolean)=>void;adjustments:{brightness:number;contrast:number;saturation:number};scenario:Scenario;frames:ImageryFrame[];step:number;baseline:number;compare:boolean;compareMode:'lens'|'swipe';lens:{x:number;y:number};split:number;detail:boolean;boundary:boolean;terrain:boolean;satellite:boolean;retryFrame:number;scienceJob?:string;component:'alongTrack'|'slantRange';camera?:ReturnType<MapControls['camera']>|null;onReady:(c:MapControls)=>void;onStatus:(s:string)=>void;onFrameState:(state:'loading'|'ready'|'error')=>void;onDisplayed:(scenarioId:string,a:string,b:string)=>void}
+type Props={onGlobeChange:(active:boolean)=>void;adjustments:{brightness:number;contrast:number;saturation:number};scenario:Scenario;frames:ImageryFrame[];step:number;baseline:number;compare:boolean;compareMode:'lens'|'swipe';lens:{x:number;y:number};split:number;boundary:boolean;terrain:boolean;satellite:boolean;retryFrame:number;scienceJob?:string;component:'alongTrack'|'slantRange';camera?:ReturnType<MapControls['camera']>|null;onReady:(c:MapControls)=>void;onStatus:(s:string)=>void;onFrameState:(state:'loading'|'ready'|'error')=>void;onDisplayed:(scenarioId:string,a:string,b:string)=>void}
 function style(satellite:boolean):StyleSpecification{return {version:8,sources:{context:{type:'raster',tiles:['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],tileSize:256,attribution:'Context imagery © Esri and contributors'},streets:{type:'raster',tiles:['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],tileSize:256,attribution:'© OpenStreetMap contributors'},elevation:{type:'raster-dem',url:'https://tiles.mapterhorn.com/tilejson.json',tileSize:512,encoding:'terrarium',attribution:'Terrain © <a href="https://mapterhorn.com/">Mapterhorn</a>'}},layers:[{id:'background',type:'background',paint:{'background-color':'#e8eef0'}},{id:'context',type:'raster',source:'context',layout:{visibility:satellite?'visible':'none'}},{id:'streets',type:'raster',source:'streets',layout:{visibility:satellite?'none':'visible'}}],terrain:{source:'elevation',exaggeration:1.15}}}
 export default function TerrainMap(p:Props){
  const firstEl=useRef<HTMLDivElement>(null),secondEl=useRef<HTMLDivElement>(null),primary=useRef<maplibregl.Map|null>(null),secondary=useRef<maplibregl.Map|null>(null),latest=useRef(p)
@@ -43,20 +43,20 @@ export default function TerrainMap(p:Props){
  const [ready,setReady]=useState(false),[secondReady,setSecondReady]=useState(false),[failure,setFailure]=useState(''),[retry,setRetry]=useState(0)
  const [globe,setGlobe]=useState(false)
  useEffect(()=>{applyAdjustments();latest.current.onGlobeChange(globe)},[p.adjustments,globe])
- const [displayMaxZoom,setDisplayMaxZoom]=useState(Math.min(14,Math.max(8,Math.floor(p.scenario.zoom))))
- const reset=(map:maplibregl.Map)=>{globeRef.current=false;setGlobe(false);map.setProjection({type:'mercator'});map.flyTo({center:latest.current.scenario.center,zoom:latest.current.scenario.zoom,pitch:latest.current.terrain?latest.current.scenario.pitch:0,bearing:latest.current.scenario.bearing,duration:window.matchMedia('(prefers-reduced-motion: reduce)').matches?0:1000})}
+ const reset=(map:maplibregl.Map)=>{globeRef.current=false;setGlobe(false);map.setProjection({type:'mercator'});map.flyTo({center:latest.current.scenario.center,zoom:Math.max(14.5,latest.current.scenario.zoom),pitch:latest.current.terrain?latest.current.scenario.pitch:0,bearing:latest.current.scenario.bearing,duration:window.matchMedia('(prefers-reduced-motion: reduce)').matches?0:1000})}
  useEffect(()=>{
   if(!firstEl.current)return
   setReady(false);setFailure('')
   let map:maplibregl.Map
-  try{map=new maplibregl.Map({container:firstEl.current,style:style(latest.current.satellite),center:latest.current.scenario.center,zoom:latest.current.scenario.zoom,pitch:latest.current.terrain?latest.current.scenario.pitch:0,bearing:latest.current.scenario.bearing,maxPitch:75,attributionControl:{compact:true},transformRequest:trackTile})}catch{setFailure('The 3D map could not start. Enable hardware acceleration and retry.');return}
+  try{map=new maplibregl.Map({container:firstEl.current,style:style(latest.current.satellite),center:latest.current.scenario.center,zoom:Math.max(14.5,latest.current.scenario.zoom),pitch:latest.current.terrain?latest.current.scenario.pitch:0,bearing:latest.current.scenario.bearing,maxPitch:75,attributionControl:{compact:true},transformRequest:trackTile})}catch{setFailure('The 3D map could not start. Enable hardware acceleration and retry.');return}
   primary.current=map
   map.addControl(new maplibregl.ScaleControl({maxWidth:100,unit:'metric'}),'bottom-left')
   const timeout=setTimeout(()=>setFailure('The landscape is taking too long to load. Check your connection and retry.'),30000)
   map.on('load',()=>{clearTimeout(timeout);setReady(true);latest.current.onStatus('3D map ready');latest.current.onReady({zoomIn:()=>map.zoomIn(),zoomOut:()=>map.zoomOut(),north:()=>map.easeTo({bearing:0}),reset:()=>reset(map),globe:()=>{stopWarm.current?.();globeRef.current=true;setGlobe(true);map.setTerrain(null);map.setProjection({type:'globe'});map.flyTo({center:latest.current.scenario.center,zoom:1.5,pitch:0,bearing:0,duration:window.matchMedia('(prefers-reduced-motion: reduce)').matches?0:1500})},camera:()=>({center:map.getCenter().toArray() as [number,number],zoom:map.getZoom(),pitch:map.getPitch(),bearing:map.getBearing()}),restore:c=>map.jumpTo(c)})})
   map.on('move',()=>secondary.current?.jumpTo({center:map.getCenter(),zoom:map.getZoom(),bearing:map.getBearing(),pitch:map.getPitch()}))
-  map.on('movestart',()=>{stopWarm.current?.();visibleTiles.current.clear()})
-  map.on('moveend',()=>{setDisplayMaxZoom(Math.min(19,Math.max(8,Math.floor(map.getZoom()))));warm()})
+  map.on('movestart',()=>{stopWarm.current?.();visibleTiles.current.clear();if(frameReady.current)latest.current.onFrameState('loading')})
+  map.on('moveend',()=>warm())
+  map.on('idle',()=>{if(frameReady.current){latest.current.onFrameState('ready');warm()}})
   const visibility=()=>{if(document.hidden)stopWarm.current?.();else warm()}
   document.addEventListener('visibilitychange',visibility)
   const observer=new ResizeObserver(()=>{map.resize();secondary.current?.resize()});observer.observe(firstEl.current)
@@ -76,13 +76,13 @@ export default function TerrainMap(p:Props){
   const entries=active.map(map=>{
    const frame=p.frames[map===primary.current&&p.compare?p.baseline:p.step]
    const [w,s,e,n]=p.scenario.imageryExtent??p.scenario.extent,bbox=frame.bbox
-   const maxzoom=frame.tileTemplate?(p.detail?Math.min(19,displayMaxZoom+1):Math.min(15,displayMaxZoom+1)):(p.detail?Math.min(14,displayMaxZoom+1):Math.min(12,displayMaxZoom))
+   const maxzoom=frame.tileTemplate?20:14
    return {map,id:`observation-${p.scenario.id}-${frame.id}-z${maxzoom}-v7`,scenarioId:p.scenario.id,source:{type:'raster' as const,tiles:[frame.tileTemplate??`${window.location.origin}/api/imagery/tiles/${p.scenario.id}/${frame.id}/{z}/{x}/{y}.png?v=7`],tileSize:256,minzoom:8,maxzoom,bounds:[Math.max(w,bbox[0]),Math.max(s,bbox[1]),Math.min(e,bbox[2]),Math.min(n,bbox[3])] as [number,number,number,number],attribution:frame.attribution??'Contains modified Copernicus Sentinel data · Sentinel-2 L2A · Element 84'}}
   })
   stopWarm.current?.();frameReady.current=false
   const cancel=requestFrames(entries,{onState:s=>{frameReady.current=s==='ready';latest.current.onFrameState(s);if(s==='ready')warm()},onCommit:()=>{applyAdjustments();latest.current.onDisplayed(p.scenario.id,p.frames[p.compare?p.baseline:p.step].id,p.frames[p.step].id)}})
   return()=>{stopWarm.current?.();frameReady.current=false;cancel()}
- },[p.frames,p.step,p.baseline,p.compare,p.scenario.id,p.detail,ready,secondReady,retry,p.retryFrame,displayMaxZoom])
+ },[p.frames,p.step,p.baseline,p.compare,p.scenario.id,ready,secondReady,retry,p.retryFrame])
  useEffect(()=>{for(const map of [ready?primary.current:null,secondReady?secondary.current:null])if(map){
   map.setTerrain(p.terrain&&!globe?{source:'elevation',exaggeration:1.15}:null)
   map.setLayoutProperty('context','visibility',p.satellite?'visible':'none');map.setLayoutProperty('streets','visibility',p.satellite?'none':'visible')

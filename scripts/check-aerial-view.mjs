@@ -8,6 +8,7 @@ const settle=async()=>{await page.waitForFunction(()=>document.querySelector('.m
 try{
  await page.goto('http://127.0.0.1:5173/',{waitUntil:'domcontentloaded',timeout:60000});await settle()
  await expect(page.getByLabel('Image source')).toHaveValue('swissimage')
+ await expect(page.getByRole('button',{name:'Inspect detail',exact:true})).toHaveCount(0)
  await page.getByRole('button',{name:'Look closer',exact:true}).click();await settle()
  await page.locator('.image-adjustments summary').click()
  await page.getByLabel('Highlights',{exact:true}).fill('0.78')
@@ -21,6 +22,13 @@ try{
  await expect(page.getByRole('button',{name:'Return to Aletsch Glacier',exact:true})).toBeVisible()
  await page.screenshot({path:'.impeccable/review/globe-desktop.png',fullPage:true})
  await page.getByRole('button',{name:'Return to Aletsch Glacier',exact:true}).click();await settle()
+ for(const name of ['Langtang Glacier','Columbia Glacier']){
+  await page.getByRole('button',{name:new RegExp(name)}).first().click();await settle()
+  await expect(page.getByRole('button',{name:'Play timeline',exact:true})).toBeDisabled()
+  await expect(page.locator('.map-top-actions')).toContainText('Reference · undated')
+  await page.getByRole('button',{name:'Look closer',exact:true}).click();await settle()
+ }
+ await page.getByRole('button',{name:/Aletsch Glacier/}).first().click();await settle()
  await page.setViewportSize({width:390,height:844});await settle()
  await page.screenshot({path:'.impeccable/review/aerial-mobile.png',fullPage:true})
  if(errors.length||failed.length)throw new Error(JSON.stringify({errors,failed}))
