@@ -1,0 +1,6 @@
+import {Worker} from 'node:worker_threads'
+export function createProcessor() {
+ let worker=null,counter=0;const jobs=new Map()
+ function ensureWorker(){if(worker)return worker;worker=new Worker(new URL('./processing-worker.mjs',import.meta.url));worker.on('message',m=>{const job=jobs.get(m.id);if(!job)return;clearTimeout(job.timeout);jobs.delete(m.id);m.error?job.reject(new Error(m.error)):job.resolve(m.value)});worker.on('error',error=>{for(const job of jobs.values()){clearTimeout(job.timeout);job.reject(error)}jobs.clear();worker=null});worker.on('exit',code=>{worker=null;if(code!==0){for(const job of jobs.values()){clearTimeout(job.timeout);job.reject(new Error('Processing worker stopped'))}jobs.clear()}});return worker}
+ return {process:(scenario,dates,quality)=>new Promise((resolve,reject)=>{if(jobs.size>=12)return reject(new Error('Processing queue is full'));const id=++counter,timeout=setTimeout(()=>{jobs.delete(id);reject(new Error('Processing timed out'))},30000);jobs.set(id,{resolve,reject,timeout});ensureWorker().postMessage({id,scenario,dates,quality})}),close:async()=>{for(const job of jobs.values()){clearTimeout(job.timeout);job.reject(new Error('Server is shutting down'))}jobs.clear();await worker?.terminate()}}
+}

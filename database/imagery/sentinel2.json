@@ -1,0 +1,350 @@
+{
+  "source": "Copernicus Sentinel-2 L2A / Element 84 Earth Search",
+  "retrievedAt": "2026-10-08T19:51:11.897Z",
+  "resolutionMeters": 10,
+  "selection": "One lowest scene-cloud-cover August–September capture per year; scene cloud percentage is not a local glacier cloud mask.",
+  "scenarios": {
+    "aletsch": [
+      {
+        "id": "S2B_32TMS_20180927_1_L2A",
+        "date": "2018-09-27T10:37:53.731000Z",
+        "cloudCover": 0.000205,
+        "url": "https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/32/T/MS/2018/9/S2B_32TMS_20180927_1_L2A/TCI.tif",
+        "metadataUrl": "https://earth-search.aws.element84.com/v1/collections/sentinel-2-l2a/items/S2B_32TMS_20180927_1_L2A",
+        "collection": "sentinel-2-l2a",
+        "platform": "sentinel-2b",
+        "bbox": [
+          7.685452604182684,
+          45.959167646508305,
+          9.1282537815538,
+          46.95362834968302
+        ],
+        "resolutionMeters": 10
+      },
+      {
+        "id": "S2B_32TMS_20190912_3_L2A",
+        "date": "2019-09-12T10:38:00.435000Z",
+        "cloudCover": 0.304419,
+        "url": "https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/32/T/MS/2019/9/S2B_32TMS_20190912_3_L2A/TCI.tif",
+        "metadataUrl": "https://earth-search.aws.element84.com/v1/collections/sentinel-2-l2a/items/S2B_32TMS_20190912_3_L2A",
+        "collection": "sentinel-2-l2a",
+        "platform": "sentinel-2b",
+        "bbox": [
+          7.685452604182684,
+          45.959167650727686,
+          9.126939563937157,
+          46.953629814238084
+        ],
+        "resolutionMeters": 10
+      },
+      {
+        "id": "S2B_32TMS_20200807_1_L2A",
+        "date": "2020-08-07T10:38:03.019000Z",
+        "cloudCover": 0.5671,
+        "url": "https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/32/T/MS/2020/8/S2B_32TMS_20200807_1_L2A/TCI.tif",
+        "metadataUrl": "https://earth-search.aws.element84.com/v1/collections/sentinel-2-l2a/items/S2B_32TMS_20200807_1_L2A",
+        "collection": "sentinel-2-l2a",
+        "platform": "sentinel-2b",
+        "bbox": [
+          7.685452604182684,
+          45.95916765071902,
+          9.1282537815538,
+          46.95362834968302
+        ],
+        "resolutionMeters": 10
+      },
+      {
+        "id": "S2A_32TMS_20210814_1_L2A",
+        "date": "2021-08-14T10:28:05.997000Z",
+        "cloudCover": 2.089904,
+        "url": "https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/32/T/MS/2021/8/S2A_32TMS_20210814_1_L2A/TCI.tif",
+        "metadataUrl": "https://earth-search.aws.element84.com/v1/collections/sentinel-2-l2a/items/S2A_32TMS_20210814_1_L2A",
+        "collection": "sentinel-2-l2a",
+        "platform": "sentinel-2a",
+        "bbox": [
+          7.691924,
+          45.958268,
+          9.128254,
+          46.953628
+        ],
+        "resolutionMeters": 10
+      },
+      {
+        "id": "S2A_32TMS_20220918_0_L2A",
+        "date": "2022-09-18T10:28:11.956000Z",
+        "cloudCover": 2.886708,
+        "url": "https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/32/T/MS/2022/9/S2A_32TMS_20220918_0_L2A/TCI.tif",
+        "metadataUrl": "https://earth-search.aws.element84.com/v1/collections/sentinel-2-l2a/items/S2A_32TMS_20220918_0_L2A",
+        "collection": "sentinel-2-l2a",
+        "platform": "sentinel-2a",
+        "bbox": [
+          7.6910275057300765,
+          45.95826783231756,
+          9.1282537815538,
+          46.95362834968302
+        ],
+        "resolutionMeters": 10
+      },
+      {
+        "id": "S2A_32TMS_20230926_0_L2A",
+        "date": "2023-09-26T10:38:01.995000Z",
+        "cloudCover": 0.016484,
+        "url": "https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/32/T/MS/2023/9/S2A_32TMS_20230926_0_L2A/TCI.tif",
+        "metadataUrl": "https://earth-search.aws.element84.com/v1/collections/sentinel-2-l2a/items/S2A_32TMS_20230926_0_L2A",
+        "collection": "sentinel-2-l2a",
+        "platform": "sentinel-2a",
+        "bbox": [
+          7.685452604182684,
+          45.95916765076701,
+          9.126939534465274,
+          46.95362981427077
+        ],
+        "resolutionMeters": 10
+      },
+      {
+        "id": "S2B_32TMS_20240915_0_L2A",
+        "date": "2024-09-15T10:37:58.598000Z",
+        "cloudCover": 9.350917,
+        "url": "https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/32/T/MS/2024/9/S2B_32TMS_20240915_0_L2A/TCI.tif",
+        "metadataUrl": "https://earth-search.aws.element84.com/v1/collections/sentinel-2-l2a/items/S2B_32TMS_20240915_0_L2A",
+        "collection": "sentinel-2-l2a",
+        "platform": "sentinel-2b",
+        "bbox": [
+          7.685452604182684,
+          45.95916765077578,
+          9.1282537815538,
+          46.95362834968302
+        ],
+        "resolutionMeters": 10
+      },
+      {
+        "id": "S2A_32TMS_20250808_1_L2A",
+        "date": "2025-08-08T10:38:14.660000Z",
+        "cloudCover": 0.156713,
+        "url": "https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/32/T/MS/2025/8/S2A_32TMS_20250808_1_L2A/TCI.tif",
+        "metadataUrl": "https://earth-search.aws.element84.com/v1/collections/sentinel-2-l2a/items/S2A_32TMS_20250808_1_L2A",
+        "collection": "sentinel-2-l2a",
+        "platform": "sentinel-2a",
+        "bbox": [
+          7.685453,
+          45.959168,
+          9.128254,
+          46.953628
+        ],
+        "resolutionMeters": 10
+      }
+    ],
+    "langtang": [
+      {
+        "id": "S2B_45RUM_20180925_1_L2A",
+        "date": "2018-09-25T05:00:46.698000Z",
+        "cloudCover": 17.452368,
+        "url": "https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/45/R/UM/2018/9/S2B_45RUM_20180925_1_L2A/TCI.tif",
+        "metadataUrl": "https://earth-search.aws.element84.com/v1/collections/sentinel-2-l2a/items/S2B_45RUM_20180925_1_L2A",
+        "collection": "sentinel-2-l2a",
+        "platform": "sentinel-2b",
+        "bbox": [
+          85.31910349195131,
+          27.926898029793303,
+          86.08318007625961,
+          28.925093490386516
+        ],
+        "resolutionMeters": 10
+      },
+      {
+        "id": "S2A_45RUM_20200929_0_L2A",
+        "date": "2020-09-29T05:00:58.770000Z",
+        "cloudCover": 10.98185,
+        "url": "https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/45/R/UM/2020/9/S2A_45RUM_20200929_0_L2A/TCI.tif",
+        "metadataUrl": "https://earth-search.aws.element84.com/v1/collections/sentinel-2-l2a/items/S2A_45RUM_20200929_0_L2A",
+        "collection": "sentinel-2-l2a",
+        "platform": "sentinel-2a",
+        "bbox": [
+          85.30487695800684,
+          27.926723627834612,
+          86.08318007625961,
+          28.925093490386516
+        ],
+        "resolutionMeters": 10
+      },
+      {
+        "id": "S2B_45RUM_20210919_1_L2A",
+        "date": "2021-09-19T05:00:49.882000Z",
+        "cloudCover": 14.683692,
+        "url": "https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/45/R/UM/2021/9/S2B_45RUM_20210919_1_L2A/TCI.tif",
+        "metadataUrl": "https://earth-search.aws.element84.com/v1/collections/sentinel-2-l2a/items/S2B_45RUM_20210919_1_L2A",
+        "collection": "sentinel-2-l2a",
+        "platform": "sentinel-2b",
+        "bbox": [
+          85.3184934486781,
+          27.92689058148674,
+          86.08318007625961,
+          28.925093490386516
+        ],
+        "resolutionMeters": 10
+      },
+      {
+        "id": "S2A_45RUM_20220929_0_L2A",
+        "date": "2022-09-29T05:01:00.492000Z",
+        "cloudCover": 16.158579,
+        "url": "https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/45/R/UM/2022/9/S2A_45RUM_20220929_0_L2A/TCI.tif",
+        "metadataUrl": "https://earth-search.aws.element84.com/v1/collections/sentinel-2-l2a/items/S2A_45RUM_20220929_0_L2A",
+        "collection": "sentinel-2-l2a",
+        "platform": "sentinel-2a",
+        "bbox": [
+          85.30569671930851,
+          27.926733717135658,
+          86.08318007625961,
+          28.925093490386516
+        ],
+        "resolutionMeters": 10
+      },
+      {
+        "id": "S2B_45RUM_20230830_0_L2A",
+        "date": "2023-08-30T05:00:57.881000Z",
+        "cloudCover": 15.596171,
+        "url": "https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/45/R/UM/2023/8/S2B_45RUM_20230830_0_L2A/TCI.tif",
+        "metadataUrl": "https://earth-search.aws.element84.com/v1/collections/sentinel-2-l2a/items/S2B_45RUM_20230830_0_L2A",
+        "collection": "sentinel-2-l2a",
+        "platform": "sentinel-2b",
+        "bbox": [
+          85.30437666582323,
+          27.92671746803604,
+          86.08318007625961,
+          28.925093490386516
+        ],
+        "resolutionMeters": 10
+      },
+      {
+        "id": "S2A_45RUM_20240918_0_L2A",
+        "date": "2024-09-18T05:00:53.630000Z",
+        "cloudCover": 10.384691,
+        "url": "https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/45/R/UM/2024/9/S2A_45RUM_20240918_0_L2A/TCI.tif",
+        "metadataUrl": "https://earth-search.aws.element84.com/v1/collections/sentinel-2-l2a/items/S2A_45RUM_20240918_0_L2A",
+        "collection": "sentinel-2-l2a",
+        "platform": "sentinel-2a",
+        "bbox": [
+          85.30630826574001,
+          27.9267412406309,
+          86.08318007625961,
+          28.925093490386516
+        ],
+        "resolutionMeters": 10
+      }
+    ],
+    "columbia": [
+      {
+        "id": "S2B_6VVN_20180909_0_L2A",
+        "date": "2018-09-09T21:15:04.463000Z",
+        "cloudCover": 0.429113,
+        "url": "https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/6/V/VN/2018/9/S2B_6VVN_20180909_0_L2A/TCI.tif",
+        "metadataUrl": "https://earth-search.aws.element84.com/v1/collections/sentinel-2-l2a/items/S2B_6VVN_20180909_0_L2A",
+        "collection": "sentinel-2-l2a",
+        "platform": "sentinel-2b",
+        "bbox": [
+          -148.8687325627272,
+          60.336309537374504,
+          -146.81764479449598,
+          61.33431117437037
+        ],
+        "resolutionMeters": 10
+      },
+      {
+        "id": "S2B_6VVN_20190818_0_L2A",
+        "date": "2019-08-18T21:28:29.903000Z",
+        "cloudCover": 4.465251,
+        "url": "https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/6/V/VN/2019/8/S2B_6VVN_20190818_0_L2A/TCI.tif",
+        "metadataUrl": "https://earth-search.aws.element84.com/v1/collections/sentinel-2-l2a/items/S2B_6VVN_20190818_0_L2A",
+        "collection": "sentinel-2-l2a",
+        "platform": "sentinel-2b",
+        "bbox": [
+          -148.8687325627272,
+          60.336309537374504,
+          -146.81764479449598,
+          61.33431117437037
+        ],
+        "resolutionMeters": 10
+      },
+      {
+        "id": "S2B_6VVN_20200911_1_L2A",
+        "date": "2020-09-11T21:28:26.322000Z",
+        "cloudCover": 0.170716,
+        "url": "https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/6/V/VN/2020/9/S2B_6VVN_20200911_1_L2A/TCI.tif",
+        "metadataUrl": "https://earth-search.aws.element84.com/v1/collections/sentinel-2-l2a/items/S2B_6VVN_20200911_1_L2A",
+        "collection": "sentinel-2-l2a",
+        "platform": "sentinel-2b",
+        "bbox": [
+          -148.8687325627272,
+          60.336309537374504,
+          -146.81764479449598,
+          61.33431117437037
+        ],
+        "resolutionMeters": 10
+      },
+      {
+        "id": "S2A_6VVN_20210829_0_L2A",
+        "date": "2021-08-29T21:18:28.199000Z",
+        "cloudCover": 0.70527,
+        "url": "https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/6/V/VN/2021/8/S2A_6VVN_20210829_0_L2A/TCI.tif",
+        "metadataUrl": "https://earth-search.aws.element84.com/v1/collections/sentinel-2-l2a/items/S2A_6VVN_20210829_0_L2A",
+        "collection": "sentinel-2-l2a",
+        "platform": "sentinel-2a",
+        "bbox": [
+          -148.8687325627272,
+          60.336309537374504,
+          -146.81764479449598,
+          61.33431117437037
+        ],
+        "resolutionMeters": 10
+      },
+      {
+        "id": "S2B_6VVN_20230817_1_L2A",
+        "date": "2023-08-17T21:28:29.459000Z",
+        "cloudCover": 0.759822,
+        "url": "https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/6/V/VN/2023/8/S2B_6VVN_20230817_1_L2A/TCI.tif",
+        "metadataUrl": "https://earth-search.aws.element84.com/v1/collections/sentinel-2-l2a/items/S2B_6VVN_20230817_1_L2A",
+        "collection": "sentinel-2-l2a",
+        "platform": "sentinel-2b",
+        "bbox": [
+          -148.868733,
+          60.33631,
+          -146.817645,
+          61.334311
+        ],
+        "resolutionMeters": 10
+      },
+      {
+        "id": "S2B_6VVN_20240927_0_L2A",
+        "date": "2024-09-27T21:18:26.763000Z",
+        "cloudCover": 4.948666,
+        "url": "https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/6/V/VN/2024/9/S2B_6VVN_20240927_0_L2A/TCI.tif",
+        "metadataUrl": "https://earth-search.aws.element84.com/v1/collections/sentinel-2-l2a/items/S2B_6VVN_20240927_0_L2A",
+        "collection": "sentinel-2-l2a",
+        "platform": "sentinel-2b",
+        "bbox": [
+          -148.8687325627272,
+          60.336309537374504,
+          -146.81764479449598,
+          61.33431117437037
+        ],
+        "resolutionMeters": 10
+      },
+      {
+        "id": "S2C_6VVN_20250917_0_L2A",
+        "date": "2025-09-17T21:18:39.400000Z",
+        "cloudCover": 0.25188,
+        "url": "https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/6/V/VN/2025/9/S2C_6VVN_20250917_0_L2A/TCI.tif",
+        "metadataUrl": "https://earth-search.aws.element84.com/v1/collections/sentinel-2-l2a/items/S2C_6VVN_20250917_0_L2A",
+        "collection": "sentinel-2-l2a",
+        "platform": "sentinel-2c",
+        "bbox": [
+          -148.868733,
+          60.33631,
+          -146.817645,
+          61.334311
+        ],
+        "resolutionMeters": 10
+      }
+    ]
+  }
+}

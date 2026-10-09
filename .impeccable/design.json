@@ -1,0 +1,330 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-09T14:49:23.363404+00:00",
+  "title": "Design System: SARscape",
+  "extensions": {
+    "colorMeta": {
+      "teal": {
+        "role": "primary",
+        "displayName": "Deep Teal",
+        "tonalRamp": [
+          "oklch(15% 0.08 195)",
+          "oklch(26% 0.08 195)",
+          "oklch(38% 0.08 195)",
+          "oklch(49% 0.08 195)",
+          "oklch(61% 0.08 195)",
+          "oklch(72% 0.08 195)",
+          "oklch(84% 0.08 195)",
+          "oklch(95% 0.08 195)"
+        ]
+      },
+      "teal-hover": {
+        "role": "primary",
+        "displayName": "Deep Teal Hover",
+        "tonalRamp": [
+          "oklch(15% 0.07 195)",
+          "oklch(26% 0.07 195)",
+          "oklch(38% 0.07 195)",
+          "oklch(49% 0.07 195)",
+          "oklch(61% 0.07 195)",
+          "oklch(72% 0.07 195)",
+          "oklch(84% 0.07 195)",
+          "oklch(95% 0.07 195)"
+        ]
+      },
+      "focus": {
+        "role": "primary",
+        "displayName": "Clear Teal Focus",
+        "tonalRamp": [
+          "oklch(15% 0.08 195)",
+          "oklch(26% 0.08 195)",
+          "oklch(38% 0.08 195)",
+          "oklch(49% 0.08 195)",
+          "oklch(61% 0.08 195)",
+          "oklch(72% 0.08 195)",
+          "oklch(84% 0.08 195)",
+          "oklch(95% 0.08 195)"
+        ]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Ink",
+        "tonalRamp": [
+          "oklch(15% 0.025 220)",
+          "oklch(26% 0.025 220)",
+          "oklch(38% 0.025 220)",
+          "oklch(49% 0.025 220)",
+          "oklch(61% 0.025 220)",
+          "oklch(72% 0.025 220)",
+          "oklch(84% 0.025 220)",
+          "oklch(95% 0.025 220)"
+        ]
+      },
+      "muted": {
+        "role": "neutral",
+        "displayName": "Slate",
+        "tonalRamp": [
+          "oklch(15% 0.025 220)",
+          "oklch(26% 0.025 220)",
+          "oklch(38% 0.025 220)",
+          "oklch(49% 0.025 220)",
+          "oklch(61% 0.025 220)",
+          "oklch(72% 0.025 220)",
+          "oklch(84% 0.025 220)",
+          "oklch(95% 0.025 220)"
+        ]
+      },
+      "line": {
+        "role": "neutral",
+        "displayName": "Frost Line",
+        "tonalRamp": [
+          "oklch(15% 0.012 220)",
+          "oklch(26% 0.012 220)",
+          "oklch(38% 0.012 220)",
+          "oklch(49% 0.012 220)",
+          "oklch(61% 0.012 220)",
+          "oklch(72% 0.012 220)",
+          "oklch(84% 0.012 220)",
+          "oklch(95% 0.012 220)"
+        ]
+      },
+      "paper": {
+        "role": "neutral",
+        "displayName": "White Paper",
+        "tonalRamp": [
+          "oklch(15% 0 0)",
+          "oklch(26% 0 0)",
+          "oklch(38% 0 0)",
+          "oklch(49% 0 0)",
+          "oklch(61% 0 0)",
+          "oklch(72% 0 0)",
+          "oklch(84% 0 0)",
+          "oklch(95% 0 0)"
+        ]
+      },
+      "soft": {
+        "role": "neutral",
+        "displayName": "Cool Soft",
+        "tonalRamp": [
+          "oklch(15% 0.008 220)",
+          "oklch(26% 0.008 220)",
+          "oklch(38% 0.008 220)",
+          "oklch(49% 0.008 220)",
+          "oklch(61% 0.008 220)",
+          "oklch(72% 0.008 220)",
+          "oklch(84% 0.008 220)",
+          "oklch(95% 0.008 220)"
+        ]
+      },
+      "canvas": {
+        "role": "neutral",
+        "displayName": "Frost Canvas",
+        "tonalRamp": [
+          "oklch(15% 0.005 220)",
+          "oklch(26% 0.005 220)",
+          "oklch(38% 0.005 220)",
+          "oklch(49% 0.005 220)",
+          "oklch(61% 0.005 220)",
+          "oklch(72% 0.005 220)",
+          "oklch(84% 0.005 220)",
+          "oklch(95% 0.005 220)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "headline": {
+        "displayName": "Map Heading",
+        "purpose": "Current landscape title; responsive at 1500px, 1200px, and 760px."
+      },
+      "reading": {
+        "displayName": "Reading Copy",
+        "purpose": "Source explanations and scientific caveats in sheets."
+      }
+    },
+    "shadows": [
+      {
+        "name": "floating-instrument",
+        "value": "0 6px 24px #20303a20",
+        "purpose": "Timeline and inspector above imagery."
+      },
+      {
+        "name": "map-tool",
+        "value": "0 3px 15px #12273320",
+        "purpose": "Stacked map controls."
+      },
+      {
+        "name": "selected-segment",
+        "value": "0 1px 3px #233b4312",
+        "purpose": "Selected white segment."
+      },
+      {
+        "name": "comparison-lens",
+        "value": "0 5px 22px #132f3540",
+        "purpose": "Lens rim over imagery."
+      }
+    ],
+    "motion": [
+      {
+        "name": "button-feedback",
+        "value": "background .15s ease",
+        "purpose": "Quiet control hover feedback."
+      },
+      {
+        "name": "switch-thumb",
+        "value": "transform .16s",
+        "purpose": "Switch state feedback."
+      },
+      {
+        "name": "sheet-enter",
+        "value": ".24s cubic-bezier(.16,1,.3,1)",
+        "purpose": "Source sheet entering from the right."
+      },
+      {
+        "name": "capture-playback",
+        "value": "1800ms after readiness",
+        "purpose": "Actual dated frames advance after loading."
+      },
+      {
+        "name": "capture-blink",
+        "value": "1000ms after readiness",
+        "purpose": "Alternates actual oldest/latest captures; never interpolates motion."
+      },
+      {
+        "name": "reduced-motion",
+        "value": "animation-duration: .01ms; transition-duration: .01ms",
+        "purpose": "Respect reduced motion; camera reset also has zero duration."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "mobile",
+        "value": "760px"
+      },
+      {
+        "name": "compact-desktop",
+        "value": "1200px"
+      },
+      {
+        "name": "wide-desktop",
+        "value": "1500px"
+      },
+      {
+        "name": "short-desktop",
+        "value": "850px height with width >= 761px"
+      },
+      {
+        "name": "short-mobile",
+        "value": "700px height with width <= 760px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Compact action with inherited workstation typography.",
+      "html": "<button class=\"ds-button-primary\">Compare captures</button>",
+      "css": ".ds-button-primary{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:36px;padding:8px 13px;border-radius:7px;font:650 13px Manrope,sans-serif;cursor:pointer;transition:background .15s ease;background:var(--teal,#176e75);color:#fff;border:0}.ds-button-primary:hover{background:#10565d}.ds-button-primary:focus-visible{outline:3px solid #469ca6;outline-offset:3px}.ds-button-primary:disabled{opacity:.4;cursor:not-allowed}"
+    },
+    {
+      "name": "Outline Button",
+      "kind": "button",
+      "refersTo": "button-outline",
+      "description": "Compact action with inherited workstation typography.",
+      "html": "<button class=\"ds-button-outline\">Compare captures</button>",
+      "css": ".ds-button-outline{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:36px;padding:8px 13px;border-radius:7px;font:650 13px Manrope,sans-serif;cursor:pointer;transition:background .15s ease;background:#fff;color:var(--ink,#22363d);border:1px solid #d4dfe3}.ds-button-outline:hover{background:#f2f7f8}.ds-button-outline:focus-visible{outline:3px solid #469ca6;outline-offset:3px}.ds-button-outline:disabled{opacity:.4;cursor:not-allowed}"
+    },
+    {
+      "name": "Ghost Button",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "Compact action with inherited workstation typography.",
+      "html": "<button class=\"ds-button-ghost\">Compare captures</button>",
+      "css": ".ds-button-ghost{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:36px;padding:8px 13px;border-radius:7px;font:650 13px Manrope,sans-serif;cursor:pointer;transition:background .15s ease;background:transparent;color:var(--ink,#22363d);border:0}.ds-button-ghost:hover{background:#eaf1f3}.ds-button-ghost:focus-visible{outline:3px solid #469ca6;outline-offset:3px}.ds-button-ghost:disabled{opacity:.4;cursor:not-allowed}"
+    },
+    {
+      "name": "Search Field",
+      "kind": "input",
+      "description": "Compact search on a pale inset surface.",
+      "html": "<label class=\"ds-search\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><circle cx=\"11\" cy=\"11\" r=\"8\"/><path d=\"m21 21-4.3-4.3\"/></svg><input aria-label=\"Find a glacier\" placeholder=\"Find a glacier\"/></label>",
+      "css": ".ds-search{display:flex;align-items:center;gap:8px;border:1px solid #dce5e8;background:#f8fafb;padding:10px;border-radius:7px;color:#6b8089;font-family:Manrope,sans-serif}.ds-search input{width:100%;min-width:0;border:0;background:transparent;font:11px Manrope,sans-serif;color:var(--ink,#22363d);caret-color:var(--teal,#176e75)}.ds-search input::placeholder{color:#5d727b}.ds-search input:focus-visible{outline:3px solid #469ca6;outline-offset:3px}"
+    },
+    {
+      "name": "Navigation",
+      "kind": "nav",
+      "description": "Persistent destinations with a teal active underline.",
+      "html": "<nav class=\"ds-nav\" aria-label=\"Main navigation\"><button class=\"ds-nav-item ds-active\">Explore</button><button class=\"ds-nav-item\">Saved views</button></nav>",
+      "css": ".ds-nav{display:flex;gap:22px;height:72px;align-items:center}.ds-nav-item{height:100%;position:relative;border:0;background:none;color:var(--muted,#637780);font:650 12px Manrope,sans-serif;padding:0 2px;cursor:pointer}.ds-nav-item.ds-active{color:var(--teal,#176e75)}.ds-active:after{content:\"\";position:absolute;bottom:0;height:2px;background:var(--teal,#176e75);left:0;right:0}.ds-nav-item:focus-visible{outline:3px solid #469ca6;outline-offset:3px}"
+    },
+    {
+      "name": "Real Imagery Badge",
+      "kind": "chip",
+      "description": "Concise source identity for actual optical captures.",
+      "html": "<span class=\"ds-real-badge\"><span></span>Sentinel-2 · real imagery</span>",
+      "css": ".ds-real-badge{display:inline-flex;gap:6px;align-items:center;font:650 9px Manrope,sans-serif;background:#edf7f4;color:#175d53;border-radius:5px;padding:8px 9px;white-space:nowrap}.ds-real-badge>span{width:5px;height:5px;background:#247a65;border-radius:50%}"
+    },
+    {
+      "name": "Capture Inspector",
+      "kind": "card",
+      "refersTo": "floating-panel",
+      "description": "A white instrument surface above imagery, with source metadata.",
+      "html": "<article class=\"ds-inspector\"><strong>Capture details</strong><p>Sentinel-2 · 10 metres / pixel</p><p>Terrain is fixed. Captures do not measure elevation or velocity.</p></article>",
+      "css": ".ds-inspector{width:268px;background:var(--paper,#fff);border-radius:12px;padding:16px 17px;box-shadow:0 6px 24px #20303a20;color:var(--ink,#22363d);font:11px Manrope,sans-serif}.ds-inspector strong{font-weight:750}.ds-inspector p{color:var(--muted,#637780);line-height:1.7;margin:11px 0}"
+    },
+    {
+      "name": "Detail Segments",
+      "kind": "custom",
+      "description": "Explore previews and selected Inspect detail mode.",
+      "html": "<div class=\"ds-segmented\" role=\"group\" aria-label=\"Image detail level\"><button aria-pressed=\"false\">Explore</button><button class=\"ds-selected\" aria-pressed=\"true\">Inspect detail</button></div>",
+      "css": ".ds-segmented{display:flex;padding:3px;background:#eef3f5;border-radius:7px;gap:3px}.ds-segmented button{flex:1;padding:9px 6px;font:650 11px Manrope,sans-serif;border:0;border-radius:5px;background:none;color:#617780;cursor:pointer}.ds-segmented button.ds-selected{background:#fff;color:var(--ink,#22363d);box-shadow:0 1px 3px #233b4312}.ds-segmented button:focus-visible{outline:3px solid #469ca6;outline-offset:3px}"
+    },
+    {
+      "name": "Change Lens",
+      "kind": "custom",
+      "description": "Circular comparison handle; application supplies drag, arrow-key behavior, and real imagery beneath.",
+      "html": "<div class=\"ds-lens-stage\"><button class=\"ds-lens\" aria-label=\"Move change lens\"><span>Newer capture · drag to inspect</span></button></div>",
+      "css": ".ds-lens-stage{height:245px;background:#d5e1e5;display:flex;justify-content:center;padding-top:10px}.ds-lens{position:relative;width:180px;height:180px;border:3px solid #fff;border-radius:50%;background:transparent;cursor:move;touch-action:none;box-shadow:0 5px 22px #132f3540}.ds-lens>span{position:absolute;bottom:-32px;left:50%;transform:translateX(-50%);background:#fff;padding:6px 9px;border-radius:5px;font:11px Manrope,sans-serif;white-space:nowrap;color:var(--ink,#22363d)}.ds-lens:focus-visible{outline:3px solid #469ca6;outline-offset:3px}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Geospatial Workstation",
+    "overview": "SARscape places the landscape at the center of the interface. Frost-white instruments, restrained deep teal actions, and compact ink labels frame genuine natural-color imagery. Familiar geospatial and shadcn-like controls keep choosing, comparing, and tracing captures understandable.\n\nThis is a code-led system recorded from the implemented frontend, without a separate visual comp. The visual finish review covered the desktop detail view and desktop/mobile change lens and returned a ship disposition. That review establishes interface finish only. No authentic GOFF granule has yet been processed in this project, and independent science validation remains outstanding.",
+    "keyCharacteristics": [
+      "A full-height map with a compact instrument sidebar and floating tools.",
+      "Genuine dated imagery, fixed terrain, and visible provenance.",
+      "Quiet neutral surfaces with teal reserved for actions and selected states.",
+      "Comparison through a movable lens, swipe, or actual capture blink."
+    ],
+    "rules": [
+      {
+        "name": "The Instrument Accent Rule",
+        "body": "Use teal to identify an action or state; genuine imagery supplies the map's visual richness.",
+        "section": "colors"
+      },
+      {
+        "name": "The Numeric Alignment Rule",
+        "body": "Keep dates, coordinates, and measured values in tabular numerals where implemented, so changes remain easy to compare.",
+        "section": "typography"
+      },
+      {
+        "name": "The Data Depth Rule",
+        "body": "UI shadows express tool layering; terrain relief never implies a measured elevation change.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "**Do** give the map the largest continuous region and keep its controls familiar.",
+      "**Do** keep source dates, real-image identity, loading state, and provenance visible.",
+      "**Do** maintain keyboard focus and keyboard operation for comparison controls.",
+      "**Do** preserve original scientific measurements and label display previews as derived products.",
+      "**Do** state that terrain is fixed and independent science validation is outstanding."
+    ],
+    "donts": [
+      "**Don't** add synthetic motion cells, generated in-between captures, or animated terrain change.",
+      "**Don't** present optical appearance comparisons as measured velocity or elevation change.",
+      "**Don't** treat successful interface review or fixture tests as validation of glacier science.",
+      "**Don't** replace the established workstation controls with ornamental or unfamiliar interaction patterns."
+    ]
+  }
+}

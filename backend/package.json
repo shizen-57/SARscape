@@ -1,0 +1,5 @@
+{
+ "name":"@sarscape/backend","private":true,"type":"module",
+ "scripts":{"dev":"node --watch src/server.mjs","start":"node src/server.mjs"},
+ "dependencies":{"hono":"^4.10.0","@hono/node-server":"^1.19.0"}
+}

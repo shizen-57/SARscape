@@ -1,0 +1,191 @@
+{
+  "dates": [
+    "2026-06-17",
+    "2026-06-29",
+    "2026-07-11",
+    "2026-07-23",
+    "2026-08-04",
+    "2026-08-16",
+    "2026-08-28",
+    "2026-09-09",
+    "2026-09-21",
+    "2026-10-03"
+  ],
+  "scenarios": [
+    {
+      "id": "aletsch",
+      "name": "Aletsch Glacier",
+      "country": "Switzerland",
+      "center": [
+        8.068,
+        46.448
+      ],
+      "zoom": 12.3,
+      "bearing": -26,
+      "pitch": 62,
+      "kind": "glacier",
+      "title": "A landscape in motion",
+      "subtitle": "Follow the flow of ice through the Swiss Alps.",
+      "unit": "m/day",
+      "metric": "Illustrative ice speed",
+      "product": "GOFF",
+      "explanation": "Pixel offsets from paired radar observations can help estimate glacier motion. This demonstration illustrates speed; it is not measured NISAR velocity.",
+      "extent": [
+        8.02,
+        46.39,
+        8.1,
+        46.51
+      ],
+      "path": [
+        [
+          8.046,
+          46.492
+        ],
+        [
+          8.061,
+          46.477
+        ],
+        [
+          8.074,
+          46.46
+        ],
+        [
+          8.077,
+          46.445
+        ],
+        [
+          8.065,
+          46.431
+        ],
+        [
+          8.057,
+          46.417
+        ],
+        [
+          8.038,
+          46.405
+        ]
+      ],
+      "imageryExtent": [
+        7.948,
+        46.306,
+        8.172,
+        46.594
+      ]
+    },
+    {
+      "id": "langtang",
+      "name": "Langtang Glacier",
+      "country": "Nepal",
+      "center": [
+        85.69,
+        28.29
+      ],
+      "zoom": 11.8,
+      "bearing": 16,
+      "pitch": 62,
+      "kind": "glacier",
+      "title": "Ice in the Himalayas",
+      "subtitle": "Explore a glacier in its mountain setting.",
+      "unit": "m/day",
+      "metric": "Illustrative ice speed",
+      "product": "GOFF",
+      "explanation": "This is an illustrative glacier-motion layer, not a mapped glacier inventory or NISAR measurement. Real offsets need quality checks and acquisition-pair metadata.",
+      "extent": [
+        85.57,
+        28.17,
+        85.81,
+        28.41
+      ],
+      "path": [
+        [
+          85.71,
+          28.37
+        ],
+        [
+          85.73,
+          28.35
+        ],
+        [
+          85.71,
+          28.33
+        ],
+        [
+          85.69,
+          28.31
+        ],
+        [
+          85.67,
+          28.29
+        ],
+        [
+          85.65,
+          28.26
+        ]
+      ],
+      "imageryExtent": [
+        85.354,
+        28.002,
+        86.026,
+        28.578
+      ]
+    },
+    {
+      "id": "columbia",
+      "name": "Columbia Glacier",
+      "country": "Alaska, USA",
+      "center": [
+        -147.035,
+        61.12
+      ],
+      "zoom": 10.9,
+      "bearing": -15,
+      "pitch": 60,
+      "kind": "glacier",
+      "title": "Ice on the coast",
+      "subtitle": "Explore a tidewater glacier surrounded by Alaska\u00e2\u20ac\u2122s mountains.",
+      "unit": "m/day",
+      "metric": "Illustrative ice speed",
+      "product": "GOFF",
+      "explanation": "All displayed speeds are synthetic. Real tidewater glacier analysis needs matched radar observations, reliable offset estimates, and independent validation.",
+      "extent": [
+        -147.35,
+        60.94,
+        -146.72,
+        61.3
+      ],
+      "path": [
+        [
+          -147.06,
+          61.23
+        ],
+        [
+          -147.02,
+          61.2
+        ],
+        [
+          -147.01,
+          61.17
+        ],
+        [
+          -147.03,
+          61.14
+        ],
+        [
+          -147.07,
+          61.11
+        ],
+        [
+          -147.1,
+          61.08
+        ]
+      ],
+      "imageryExtent": [
+        -147.917,
+        60.688,
+        -146.153,
+        61.552
+      ]
+    }
+  ]
+}

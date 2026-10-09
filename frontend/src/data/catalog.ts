@@ -1,0 +1,3 @@
+import type {Scenario} from './scenarios'
+export type CatalogRecord={id:string;date:string;stopDate:string;product:string;polarization:string;maturity:string;url:string;bytes:number|null}
+export async function fetchCatalog(scenario:Scenario,signal:AbortSignal):Promise<CatalogRecord[]>{const response=await fetch(`/api/catalog/${scenario.id}`,{signal});if(!response.ok)throw new Error('The backend could not retrieve the ASF catalog. Try again or open Vertex.');const data=await response.json();if(!Array.isArray(data.records))throw new Error('The catalog response was unexpected.');return data.records}

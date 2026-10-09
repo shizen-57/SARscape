@@ -1,0 +1,9 @@
+{
+  "id": "sarscape-illustrative-motion-v1",
+  "synthetic": true,
+  "description": "Deterministic demonstration values; not derived from NISAR science products",
+  "units": "m/day",
+  "qualityThreshold": 0.6,
+  "generation": "backend/src/demo.mjs",
+  "datesAreIllustrative": true
+}

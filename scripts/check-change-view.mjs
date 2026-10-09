@@ -1,0 +1,38 @@
+import {chromium,expect} from '@playwright/test'
+const browser=await chromium.launch({channel:'chrome',headless:true})
+const page=await browser.newPage({viewport:{width:1440,height:900},reducedMotion:'reduce'})
+const errors=[]
+const failedTiles=[]
+page.on('response',response=>{if(response.url().includes('/api/imagery/tiles/')&&response.status()!==200)failedTiles.push({url:response.url(),status:response.status()})})
+page.on('pageerror',error=>errors.push(error.message))
+const settled=async()=>{await expect(page.locator('.map-workspace')).toBeVisible();await page.waitForFunction(()=>document.querySelector('.layer-request-status.error,.map-error')||(document.querySelector('.map-canvas')&&!document.querySelector('.map-loading,.layer-request-status')),{},{timeout:210000});await expect(page.locator('.map-error,.layer-request-status.error')).toHaveCount(0);await page.waitForTimeout(350)}
+try{
+ await page.goto('http://127.0.0.1:5173/',{waitUntil:'domcontentloaded',timeout:60000});await page.getByLabel('Image source').selectOption('sentinel2');await settled()
+ await page.screenshot({path:'.impeccable/review/first-capture.png',clip:{x:430,y:300,width:620,height:300}})
+ await page.getByRole('button',{name:'Select capture 2025-08-08',exact:true}).click();await settled()
+ const detailStart=Date.now()
+ await page.getByRole('button',{name:'Inspect detail',exact:true}).click();await settled()
+ await page.screenshot({path:'.impeccable/review/inspect-detail-desktop.png',fullPage:true})
+ console.log(`On-demand source detail loaded in ${Date.now()-detailStart}ms`)
+ await page.getByRole('button',{name:'Explore',exact:true}).last().click();await settled()
+ await page.screenshot({path:'.impeccable/review/latest-capture.png',clip:{x:430,y:300,width:620,height:300}})
+ await page.getByRole('button',{name:'Compare captures',exact:true}).click();await settled()
+ await expect(page.locator('.compare-dates')).toContainText('2018')
+ await expect(page.locator('.compare-dates')).toContainText('2025')
+ const lens=page.locator('.change-lens');await expect(lens).toBeVisible()
+ const rect=await lens.boundingBox();await page.mouse.move(rect.x+rect.width/2,rect.y+rect.height/2);await page.mouse.down();await page.mouse.move(rect.x+rect.width/2+120,rect.y+rect.height/2+40);await page.mouse.up()
+ await expect(lens).not.toHaveCSS('left','575px')
+ await lens.focus();await page.keyboard.press('ArrowLeft')
+ await page.screenshot({path:'.impeccable/review/change-lens-desktop.png',fullPage:true})
+ await page.getByLabel('Comparison view').selectOption('swipe');await expect(page.getByLabel('Capture comparison divider')).toBeVisible()
+ await page.getByLabel('Comparison view').selectOption('lens')
+ await page.setViewportSize({width:390,height:844});await settled();await page.screenshot({path:'.impeccable/review/change-lens-mobile.png',fullPage:true})
+ await page.setViewportSize({width:1440,height:900});await page.getByRole('button',{name:'Exit comparison',exact:true}).click();await settled()
+ await page.getByRole('button',{name:'Blink change',exact:true}).click()
+ await expect(page.getByRole('button',{name:'Stop blink',exact:true})).toBeVisible()
+ await page.waitForFunction(()=>document.querySelector('.date-display strong')?.textContent==='Aug 8'&&!document.querySelector('.layer-request-status'),{},{timeout:30000})
+ await page.getByRole('button',{name:'Stop blink',exact:true}).click()
+ await page.getByRole('button',{name:'Select capture 2025-08-08',exact:true}).click();await settled()
+ if(errors.length||failedTiles.length)throw new Error(JSON.stringify({errors,failedTiles}))
+ console.log('Verified different real captures, oldest/latest comparison, draggable and keyboard lens, swipe, mobile layout, blink playback, and current-date reselection; no page errors.')
+}finally{await browser.close()}
