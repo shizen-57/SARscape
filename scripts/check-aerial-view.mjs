@@ -5,8 +5,10 @@ const errors=[],failed=[]
 page.on('pageerror',e=>errors.push(e.message))
 page.on('response',r=>{if(r.url().includes('/api/imagery/aerial/')&&r.status()!==200)failed.push({url:r.url(),status:r.status()})})
 const settle=async()=>{await page.waitForFunction(()=>document.querySelector('.map-error,.layer-request-status.error')||(!document.querySelector('.map-loading,.layer-request-status')&&document.querySelector('.date-display strong')?.textContent!=='—'),{},{timeout:120000});await expect(page.locator('.map-error,.layer-request-status.error')).toHaveCount(0);await page.waitForTimeout(600)}
+const openPanel=async name=>{const b=page.getByRole('button',{name,exact:true});if(await b.getAttribute('aria-expanded')!=='true')await b.click()}
 try{
- await page.goto('http://127.0.0.1:5173/',{waitUntil:'domcontentloaded',timeout:60000});await settle()
+ await page.goto('http://127.0.0.1:5173/#explore',{waitUntil:'domcontentloaded',timeout:60000});await settle()
+ await openPanel('Imagery')
  await expect(page.getByLabel('Image source')).toHaveValue('swissimage')
  await expect(page.getByRole('button',{name:'Inspect detail',exact:true})).toHaveCount(0)
  await page.getByRole('button',{name:'Look closer',exact:true}).click();await settle()
@@ -23,12 +25,12 @@ try{
  await page.screenshot({path:'.impeccable/review/globe-desktop.png',fullPage:true})
  await page.getByRole('button',{name:'Return to Aletsch Glacier',exact:true}).click();await settle()
  for(const name of ['Langtang Glacier','Columbia Glacier']){
-  await page.getByRole('button',{name:new RegExp(name)}).first().click();await settle()
+  await openPanel('Glaciers');await page.getByRole('button',{name:new RegExp(name)}).first().click();await settle()
   await expect(page.getByRole('button',{name:'Play timeline',exact:true})).toBeDisabled()
   await expect(page.locator('.map-top-actions')).toContainText('Reference · undated')
   await page.getByRole('button',{name:'Look closer',exact:true}).click();await settle()
  }
- await page.getByRole('button',{name:/Aletsch Glacier/}).first().click();await settle()
+ await openPanel('Glaciers');await page.getByRole('button',{name:/Aletsch Glacier/}).first().click();await settle()
  await page.setViewportSize({width:390,height:844});await settle()
  await page.screenshot({path:'.impeccable/review/aerial-mobile.png',fullPage:true})
  if(errors.length||failed.length)throw new Error(JSON.stringify({errors,failed}))

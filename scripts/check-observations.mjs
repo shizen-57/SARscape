@@ -17,7 +17,7 @@ const settled=async label=>{
  return failure.length===0
 }
 try{
- await page.goto('http://127.0.0.1:5173/',{waitUntil:'domcontentloaded'})
+ await page.goto('http://127.0.0.1:5173/#explore',{waitUntil:'domcontentloaded'})
  const initial=await settled('initial 2018 capture')
  await page.screenshot({path:`${directory}/desktop.png`,fullPage:true})
  if(!initial){await writeFile(`${directory}/observation-report.json`,JSON.stringify({responses,errors},null,2));process.exitCode=1}

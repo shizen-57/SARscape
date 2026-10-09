@@ -6,8 +6,9 @@ const failedTiles=[]
 page.on('response',response=>{if(response.url().includes('/api/imagery/tiles/')&&response.status()!==200)failedTiles.push({url:response.url(),status:response.status()})})
 page.on('pageerror',error=>errors.push(error.message))
 const settled=async()=>{await expect(page.locator('.map-workspace')).toBeVisible();await page.waitForFunction(()=>document.querySelector('.layer-request-status.error,.map-error')||(document.querySelector('.map-canvas')&&!document.querySelector('.map-loading,.layer-request-status')),{},{timeout:210000});await expect(page.locator('.map-error,.layer-request-status.error')).toHaveCount(0);await page.waitForTimeout(350)}
+const openPanel=async name=>{const b=page.getByRole('button',{name,exact:true});if(await b.getAttribute('aria-expanded')!=='true')await b.click()}
 try{
- await page.goto('http://127.0.0.1:5173/',{waitUntil:'domcontentloaded',timeout:60000});await page.getByLabel('Image source').selectOption('swissimage');await settled()
+ await page.goto('http://127.0.0.1:5173/#explore',{waitUntil:'domcontentloaded',timeout:60000});await openPanel('Imagery');await page.getByLabel('Image source').selectOption('swissimage');await settled()
  await page.getByRole('button',{name:'Select capture 2018',exact:true}).click();await settled()
  await page.screenshot({path:'.impeccable/review/first-capture.png',clip:{x:430,y:300,width:620,height:300}})
  await page.getByRole('button',{name:'Select capture 2025',exact:true}).click();await settled()
