@@ -2,15 +2,17 @@
 name: SARscape
 description: A map-first workstation for exploring genuine dated Earth observations.
 colors:
-  teal: "#176e75"
-  teal-hover: "#10565d"
-  ink: "#22363d"
-  muted: "#637780"
-  line: "#e0e7ea"
-  paper: "#fff"
-  soft: "#f2f6f7"
-  canvas: "#f5f7f8"
-  focus: "#469ca6"
+  accent: "#79dce8"
+  accent-soft: "rgba(121,220,232,.13)"
+  ink: "#e8edf2"
+  muted: "#97a3b0"
+  line: "rgba(255,255,255,.09)"
+  paper: "#0e1218"
+  soft: "#161b22"
+  raise: "#212833"
+  glass: "rgba(10,13,18,.82)"
+  space: "#020611"
+  button-ink: "#071227"
 typography:
   headline:
     fontFamily: "Manrope, sans-serif"
@@ -48,26 +50,24 @@ spacing:
   generous: "25px"
 components:
   button-primary:
-    backgroundColor: "{colors.teal}"
-    textColor: "{colors.paper}"
-    rounded: "{rounded.control}"
+    backgroundColor: "glossy white gradient"
+    textColor: "{colors.button-ink}"
+    rounded: "999px"
     padding: "8px 13px"
-  button-primary-hover:
-    backgroundColor: "{colors.teal-hover}"
   button-outline:
-    backgroundColor: "{colors.paper}"
+    backgroundColor: "{colors.glass}"
     textColor: "{colors.ink}"
-    rounded: "{rounded.control}"
+    rounded: "999px"
     padding: "8px 13px"
   button-ghost:
     backgroundColor: "transparent"
     textColor: "{colors.ink}"
-    rounded: "{rounded.control}"
+    rounded: "999px"
     padding: "8px 13px"
   floating-panel:
-    backgroundColor: "{colors.paper}"
+    backgroundColor: "{colors.glass}"
     textColor: "{colors.ink}"
-    rounded: "{rounded.panel}"
+    rounded: "20px"
 ---
 
 # Design System: SARscape
@@ -76,48 +76,47 @@ components:
 
 **Creative North Star: "The Geospatial Workstation"**
 
-SARscape places the landscape at the center of the interface. Frost-white instruments, restrained deep teal actions, and compact ink labels frame genuine natural-color imagery. Familiar geospatial and shadcn-like controls keep choosing, comparing, and tracing captures understandable.
+SARscape places the landscape at the center of the interface. Black and gray glass instruments float over a starfield, with white text, a sparing cyan accent, and glossy white pill actions framing genuine imagery. Familiar geospatial and shadcn-like controls keep choosing, comparing, and tracing captures understandable.
 
 This is a code-led system recorded from the implemented frontend, without a separate visual comp. The visual finish review covered the desktop detail view and desktop/mobile change lens and returned a ship disposition. That review establishes interface finish only. No authentic GOFF granule has yet been processed in this project, and independent science validation remains outstanding.
 
 **Key Characteristics:**
 
-- A full-height map with a compact instrument sidebar and floating tools.
+- A full-width map with a floating tool rail; each tool opens one collapsible panel.
 - Genuine dated imagery, fixed terrain, and visible provenance.
-- Quiet neutral surfaces with teal reserved for actions and selected states.
+- Roughly 80:20: black and gray surfaces dominate; cyan marks only selected states and small accents.
 - Comparison through a movable lens, swipe, or actual capture blink.
 
 ## Colors
 
-The palette is cool, restrained, and readable against varied satellite imagery; the frontmatter owns exact primitive values.
+The palette is the landing page's space palette carried into the workstation; the frontmatter owns exact primitive values.
 
-### Primary
+### Accent
 
-- **Deep Teal:** primary actions, selected navigation, switches, timeline selection, and source links.
-- **Deep Teal Hover:** primary button hover feedback.
-- **Clear Teal Focus:** keyboard outlines across buttons, links, inputs, and selects.
+- **Cyan:** selected navigation, active rail tool, switches, timeline selection, focus outlines, and source links.
+- **Glossy white pill:** primary actions (play, Start exploring, primary sheet buttons) with dark button ink.
 
 ### Neutral
 
-- **Ink:** headings and control text.
-- **Slate:** explanatory text and metadata.
-- **Frost Line:** dividers and panel boundaries.
-- **White Paper:** navigation, sidebar, sheets, timeline, and inspectors.
-- **Cool Soft:** subdued supporting surfaces.
-- **Frost Canvas:** application background.
+- **Ink:** near-white headings and control text.
+- **Muted gray:** explanatory text and metadata.
+- **Hairline:** translucent white dividers and panel boundaries.
+- **Glass:** blurred near-black surfaces for the rail, panels, timeline, inspector, badges, and map controls.
+- **Soft / Raise:** inputs, segmented tracks, and hover or selected fills.
+- **Space:** the starfield behind the landing, the map workspace, and the globe view.
 
-**The Instrument Accent Rule.** Use teal to identify an action or state; genuine imagery supplies the map's visual richness.
+**The Instrument Accent Rule.** Use cyan to identify an action or state, roughly one part in five; black and gray carry the rest, and genuine imagery supplies the map's visual richness.
 
 ## Typography
 
-**Body and heading font:** Manrope, with a sans-serif fallback. There is no separate display face or oversized editorial type role.
+**Body and heading font:** Manrope, with a sans-serif fallback. Inside the workstation there is no separate display face or oversized editorial type role; Prata appears only on the landing hero (see below).
 
-The hierarchy is compact and utilitarian. Map headings are larger than sidebar titles, while control labels and metadata remain subordinate. Reading panels enlarge explanatory copy so scientific caveats can be read comfortably.
+The hierarchy is compact and utilitarian. Map headings are larger than panel titles, while control labels and metadata remain subordinate. Reading panels enlarge explanatory copy so scientific caveats can be read comfortably.
 
 ### Hierarchy
 
 - **Headline:** map location heading; the base role scales to 34px on wide screens, 25px below 1200px, and 24px on mobile.
-- **Title:** sidebar heading; sheet headings use a larger related treatment, 23px on desktop and 21px on mobile.
+- **Title:** tool panel heading (16px); sheet headings use a larger related treatment, 23px on desktop and 21px on mobile.
 - **Body:** inherited application text.
 - **Reading:** explanatory sheet copy; science inputs use 16px on mobile.
 - **Label:** compact control titles; supporting metadata uses smaller sizes in dense instruments.
@@ -126,11 +125,11 @@ The hierarchy is compact and utilitarian. Map headings are larger than sidebar t
 
 ## Layout
 
-The shell occupies the viewport (100dvh). A 72px topbar sits above the workspace. The desktop sidebar is 290px wide, grows to 310px at 1500px, and narrows to 270px below 1200px. The remaining area belongs to the map. Tools float inside that map rather than splitting it into a dashboard grid.
+The shell occupies the viewport (100dvh). A 72px black topbar sits above the workspace, and the map takes the full width. A vertical rail of pill buttons (Glaciers, Imagery, Map layers, About the data) floats at the upper left; each opens one 300px glass panel beside it, closed by its X, the same rail button, or Escape. Look closer sits in the map control stack. Tools float inside the map rather than splitting it into a dashboard grid.
 
 The timeline anchors near the map's bottom edge; map actions occupy the upper right, and details open in a compact inspector. Supporting information uses a 450px right sheet capped at the viewport width. The spacing vocabulary centers on compact gaps, modest control insets, and larger sheet padding rather than large decorative whitespace.
 
-At 760px and below, the topbar is 61px tall and the sidebar becomes a user-opened drawer capped at 320px or 88vw. Timeline tools wrap, intermediate year ticks are hidden, capture labels stack, and the lens shrinks with the viewport. Short mobile heights further condense supporting tools. Preserve imagery attribution even when secondary map footnotes are hidden.
+At 760px and below, the topbar is 61px tall, the rail shows icons only, and the open panel fills the width beside it. Timeline tools wrap, intermediate year ticks are hidden, capture labels stack, and the lens shrinks with the viewport. Short mobile heights further condense supporting tools. Preserve imagery attribution even when secondary map footnotes are hidden.
 
 ## Elevation & Depth
 
@@ -153,23 +152,23 @@ Controls use modest rounded corners, with smaller inset segments and larger floa
 
 ### Buttons
 
-Compact and familiar. Primary, outline, and ghost variants share an inline icon/text arrangement, 36px minimum height, and moderate rounding. Small controls use 32px minimum height; icon controls are 34px square. Primary hover darkens teal; outline and ghost hover gently tint their backgrounds. Disabled controls lower opacity. Keyboard focus uses a 3px outline with a 3px offset.
+Compact and familiar. Primary, outline, and ghost variants share an inline icon/text arrangement, 36px minimum height, and pill rounding. Small controls use 32px minimum height; icon controls are 34px square. Primary is a glossy white pill whose glow strengthens on hover; outline (glass) and ghost hover gently lift their backgrounds. Disabled controls lower opacity. Keyboard focus uses a 3px outline with a 3px offset.
 
 ### Inputs / Fields
 
-Search uses a pale inset surface and thin border. Science fields use white surfaces, visible labels, and a two-column settings grid. Native selects and ranges preserve familiar interaction. Disabled, loading, and failure states must remain visible; failed requests expose a retry action.
+Search uses a dark pill inset and hairline border. Science fields use dark inset surfaces, visible labels, and a two-column settings grid. Native selects and ranges preserve familiar interaction. Disabled, loading, and failure states must remain visible; failed requests expose a retry action.
 
 ### Navigation
 
-The persistent header uses text with small outline icons. Teal text and a thin bottom rule identify the active Explore destination. Mobile removes supplementary icons/counts while preserving destination labels. Saved views retain the same instrument language.
+The persistent header uses text with small outline icons. White text and a thin cyan bottom rule identify the active Explore destination. Mobile removes supplementary icons/counts while preserving destination labels. Saved views retain the same instrument language.
 
 ### Chips
 
-The real-imagery badge is a light green-tinted rectangle with a small status dot. Date labels sit on white surfaces above the map. Use these for concise source or capture context, not ornamental headlines.
+The real-imagery badge is a glass pill with a glowing cyan status dot. Date labels sit on glass pills above the map. Use these for concise source or capture context, not ornamental headlines.
 
 ### Cards / Containers
 
-The sidebar, timeline, capture inspector, and source sheet share white surfaces and restrained borders or shadows. Notes use soft tinted insets. Sheet copy carries source explanations and caveats; the map remains the dominant surface.
+The tool panels, timeline, capture inspector, and source sheet share near-black glass surfaces with hairline borders and deep shadows. Notes use soft tinted insets. Sheet copy carries source explanations and caveats; the map remains the dominant surface.
 
 ### Observation Comparison
 
@@ -201,6 +200,10 @@ Not canonized: legacy demo velocity ramps and sample-chart styles remain in the 
 ### Imagery controls and globe
 
 Keep Image source as an ordinary labelled select. Aletsch offers Swiss aerial mosaics and dated Sentinel-2 images. Describe mosaic years separately from acquisition dates; do not invent annual flights or cloud percentages. Image adjustments uses a collapsed disclosure with labelled highlights, contrast and color sliders, live percentages, and reset. Adjustments are display-only and shared by comparison views. Globe overview uses the existing control stack; remove timeline and observation actions during globe exploration and provide an explicit Return to glacier action.
+
+### Landing hero
+
+`/` opens a scrolling landing page (`components/Hero.tsx`) above the workstation; `/#explore` opens the workstation directly, and the header brand returns to the landing. The first screen has a Prata "SARscape" headline, a cyan rule, glossy white pill actions, and Earth cut-outs labelled Optical and Radar, all sized in one design-pixel unit (`--u`) scoped to `.hero`. Behind it, a real Esri World Imagery globe (`components/LandingGlobe.tsx`) spins by continuous longitude, so it never restarts. Below come the instruments (NISAR, SWISSIMAGE, World Imagery), the three glaciers with real image thumbnails (the globe turns to whichever card crosses mid-screen), how it works, and a closing call to action. Entering the explorer dives the globe into the chosen glacier, fades out, then sets `#explore`. Prata stays on the landing; the workstation uses Manrope. Reduced motion stops the spin, skips reveals, and enters immediately.
 
 ### Sharp-only viewing correction
 
