@@ -8,7 +8,7 @@ Scope includes all glacier/radar controls plus the previously deferred wetland a
 | Repeated imagery failures | Bounded downloads/ranges, image/body retries with backoff, signature renewal and coalescing | Real socket-reset/HTTP 500 tests, timeout/range tests and actual caching |
 | Stale raster worker readiness | Recheck health after startup; restart lost owned workers and share concurrent startup | Worker exit/startup/recovery tests and live automatic startup |
 | Undated default | Nine-year actual Sentinel-2 sequence at every registered location; reference remains optional | Verified manifests and live API |
-| Playback stalls | Prepare visible captures before play with progress/cancel; persist bytes/crops | Cache/cancellation tests and real preparation |
+| Playback stalls | Prepare first two captures, warm later years at lower priority, cancel abandoned work; reuse local native/overview crops | Cache/cancellation tests and a 360-tile API check |
 | Abrupt or stale transitions | Crossfade loaded frames, rebuild draped layers, wait for render, restore prior capture on cancel | Timeline race/comparison/fade tests |
 | Heavy map retention | Keep one previous source, bound byte caches and mount only visible maps | Source audit; browser/GPU profiling pending |
 | Radar animation jumps | Elapsed-time animation frames, hidden-tab pause and endpoint clamp | Animation-time tests |
@@ -41,9 +41,19 @@ After the reported Vite connection resets, all nine Aletsch captures were reques
 
 ## Checks and limits
 
-The automated suite passes 65 Node tests, including invoked Python checks. TypeScript, the Vite frontend and the production Worker package build pass. Temporary GCOV fixtures remain outside public observations and products. Native CPU canvas checks cover the annual and radar renderers; these are not browser/GPU frame-rate measurements.
+The automated suite passes 73 Node tests, including invoked Python checks. TypeScript, the Vite frontend and the production Worker package build pass. Temporary GCOV fixtures remain outside public observations and products. Native CPU canvas checks cover the annual and radar renderers; these are not browser/GPU frame-rate measurements.
 
 No connected browser is available. Latest desktop/mobile layout, direct pointer/keyboard operation, import UI and measured frame rate remain unverified. Source/cache checks support implementation but do not replace GPU/browser validation.
+
+## Explore startup and backend recovery
+
+The reported 360-tile startup barrier is removed. Normal playback prepares only the first two captures for the current camera; blink prepares its two endpoints. Covering viewport tiles replace accumulated historical tile requests. Later captures warm using two low-priority downloads, while the visible capture has precedence and four shared download slots remain available. Cancelling the final consumer aborts the actual download, queued work or retry delay; a second consumer keeps a shared request alive.
+
+The tile renderer reuses a cached landscape overview when the requested finer overview is missing, preserving native study pixels over it. Tests use genuine GeoTIFF reprojection and verify exact native/context colors with upstream preparation forbidden. The versioned PNG cache prevents mixing the old rendering path with this path.
+
+A real local API run with nine Aletsch acquisitions and a 40-tile zoom-14 viewport completed 80 startup tiles in 4,357 ms, all 360 tiles in 21,418 ms, and cached startup in 20 ms, with no failed responses. The complete viewport and central tiles for all 45 observations are now cached on disk. Results are recorded in `database/processed/performance-checks/explore-playback.json`; timing excludes browser rendering, terrain/context downloads and browser CacheStorage overhead.
+
+The development runner now restarts unexpected API exits without waiting for another edit, watches only source/manifests, and shuts down through IPC so active tile requests can drain before the raster worker closes. A separate real Node HTTP fixture confirms recovery after a fatal exit and graceful IPC shutdown. The original cause of the user's backend exit is still unknown without its prior terminal output. The current backend has been restarted under the recovery runner; session output is retained in `database/runtime/backend-dev.stdout.log` and `backend-dev.stderr.log`.
 
 These workflows run locally. Earthdata-authenticated GCOV downloads, independent scientific interpretation and a deployed persistent processing service remain external requirements.
 

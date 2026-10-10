@@ -31,5 +31,16 @@ if(existsSync(join(root,'frontend/dist/index.html'))){
  app.get('/*',serveStatic({root:join(root,'frontend/dist')}))
 }
 const server=serve({fetch:app.fetch,hostname:'127.0.0.1',port:8787},()=>console.log('SARscape backend ready at http://127.0.0.1:8787'))
-const stop=()=>{science.close();analysis.close();raster.close();server.close(()=>{cache.close();process.exit(0)});server.closeAllConnections()}
+let stopping=false
+const stop=()=>{
+ if(stopping)return
+ stopping=true
+ // Finish tiles already being served before stopping their raster worker. A
+ // source reload should not reset every image connection in the browser.
+ const deadline=setTimeout(()=>server.closeAllConnections(),10000)
+ server.close(()=>{clearTimeout(deadline);science.close();analysis.close();raster.close();cache.close();process.exit(0)})
+ server.closeIdleConnections()
+}
 process.on('SIGINT',stop);process.on('SIGTERM',stop)
+process.on('message',message=>{if(message?.type==='shutdown')stop()})
+process.on('disconnect',stop)

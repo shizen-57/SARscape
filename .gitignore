@@ -19,3 +19,10 @@ __pycache__/
 *.pyc
 tmp/
 .openai/hosting.json
+
+# Local backend session logs
+/database/runtime/
+
+
+*.pdf
+*.h5    

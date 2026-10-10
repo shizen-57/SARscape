@@ -35,10 +35,11 @@ export default function TerrainMap(p:Props){
  const warm=()=>{
   const key=latest.current.frames.map(f=>f.id).join(',')+':'+latest.current.step+':'+[...visibleTiles.current].sort().join(',')
   if(key===warmKey.current)return
-  warmKey.current=key;stopWarm.current?.()
+  stopWarm.current?.();warmKey.current=''
   const connection=(navigator as Navigator&{connection?:{saveData?:boolean;effectiveType?:string}}).connection
-  if(globeRef.current||!frameReady.current||document.hidden||connection?.saveData||connection?.effectiveType?.includes('2g'))return
-  stopWarm.current=prefetchCaptures({frames:latest.current.frames,step:latest.current.step,tiles:[...visibleTiles.current],fetchTile:async(url,options)=>new Response(await tileStore.read(String(url),options?.signal??undefined))})
+  if(globeRef.current||!frameReady.current||primary.current?.isMoving()||document.hidden||connection?.saveData||connection?.effectiveType?.includes('2g'))return
+  warmKey.current=key
+  stopWarm.current=prefetchCaptures({frames:latest.current.frames,step:latest.current.step,tiles:[...visibleTiles.current],delayMs:200,concurrency:2,fetchTile:async(url,options)=>new Response(await tileStore.read(String(url),options?.signal??undefined,{priority:'low'}))})
  }
  const observationError=(event:maplibregl.ErrorEvent)=>{
   const props=latest.current,id=(event as maplibregl.ErrorEvent&{sourceId?:string}).sourceId
@@ -49,7 +50,7 @@ export default function TerrainMap(p:Props){
  const navigationReady=()=>{
   const props=latest.current,maps=[primary.current,...(props.compare?[secondary.current]:[])]
   if(!frameReady.current||tileError.current||maps.some(map=>!map||map.isMoving()))return
-  const loaded=maps.every(map=>{const frame=props.frames[map===primary.current&&props.compare?props.baseline:props.step];return frame&&map!.isSourceLoaded(`observation-${props.scenario.id}-${frame.id}-z${frame.tileTemplate?20:14}-v8`)})
+  const loaded=maps.every(map=>{const frame=props.frames[map===primary.current&&props.compare?props.baseline:props.step];return frame&&map!.isSourceLoaded(`observation-${props.scenario.id}-${frame.id}-z${frame.tileTemplate?20:14}-v9`)})
   if(loaded){props.onFrameState('ready');warm()}
  }
  const applyAdjustments=()=>{for(const map of [primary.current,secondary.current])if(map)for(const layer of map.getStyle().layers??[])if(layer.id.startsWith('observation-')){
@@ -80,7 +81,7 @@ export default function TerrainMap(p:Props){
   primary.current=map
   map.addControl(new maplibregl.ScaleControl({maxWidth:100,unit:'metric'}),'bottom-left')
   const timeout=setTimeout(()=>setFailure('The landscape is taking too long to load. Check your connection and retry.'),30000)
-  map.on('load',()=>{clearTimeout(timeout);setReady(true);latest.current.onStatus('3D map ready');latest.current.onReady({zoomIn:()=>map.zoomIn(),zoomOut:()=>map.zoomOut(),north:()=>map.easeTo({bearing:0}),reset:()=>reset(map),globe:()=>{stopWarm.current?.();globeRef.current=true;setGlobe(true);map.setTerrain(null);map.setProjection({type:'globe'});map.flyTo({center:latest.current.scenario.center,zoom:1.5,pitch:0,bearing:0,duration:window.matchMedia('(prefers-reduced-motion: reduce)').matches?0:1500})},camera:()=>({center:map.getCenter().toArray() as [number,number],zoom:map.getZoom(),pitch:map.getPitch(),bearing:map.getBearing()}),restore:c=>map.jumpTo(c),prepare:async(ids,onProgress,signal)=>{stopWarm.current?.();const props=latest.current,frame=props.frames[props.step];if(!frame||globeRef.current)throw new Error('Return to the study area before preparing playback.');const calculated=viewportTemplates(map.coveringTiles({tileSize:256,minzoom:8,maxzoom:frame.tileTemplate?20:14,roundZoom:true}),frame,props.scenario,location.origin);await prepareCaptures({frames:ids?props.frames.filter(f=>ids.includes(f.id)):props.frames,tiles:[...new Set([...calculated,...visibleTiles.current].map(url=>new URL(url,location.origin).href))],onProgress,signal})}})})
+  map.on('load',()=>{clearTimeout(timeout);setReady(true);latest.current.onStatus('3D map ready');latest.current.onReady({zoomIn:()=>map.zoomIn(),zoomOut:()=>map.zoomOut(),north:()=>map.easeTo({bearing:0}),reset:()=>reset(map),globe:()=>{stopWarm.current?.();globeRef.current=true;setGlobe(true);map.setTerrain(null);map.setProjection({type:'globe'});map.flyTo({center:latest.current.scenario.center,zoom:1.5,pitch:0,bearing:0,duration:window.matchMedia('(prefers-reduced-motion: reduce)').matches?0:1500})},camera:()=>({center:map.getCenter().toArray() as [number,number],zoom:map.getZoom(),pitch:map.getPitch(),bearing:map.getBearing()}),restore:c=>map.jumpTo(c),prepare:async(ids,onProgress,signal)=>{stopWarm.current?.();const props=latest.current,frame=props.frames[props.step];if(!frame||globeRef.current)throw new Error('Return to the study area before preparing playback.');const calculated=viewportTemplates(map.coveringTiles({tileSize:256,minzoom:8,maxzoom:frame.tileTemplate?20:14,roundZoom:true}),frame,props.scenario,location.origin);try{await prepareCaptures({frames:ids?props.frames.filter(f=>ids.includes(f.id)):props.frames.slice(0,2),tiles:[...new Set((calculated.length?calculated:[...visibleTiles.current]).map(url=>new URL(url,location.origin).href))],onProgress,signal})}finally{warmKey.current='';if(!signal.aborted)warm()}}})})
   map.on('move',()=>secondary.current?.jumpTo({center:map.getCenter(),zoom:map.getZoom(),bearing:map.getBearing(),pitch:map.getPitch()}))
   map.on('movestart',()=>{latest.current.onNavigation();stopWarm.current?.();warmKey.current='';visibleTiles.current.clear();tileError.current=false;if(frameReady.current)latest.current.onFrameState('loading')})
   map.on('moveend',()=>warm())
@@ -107,7 +108,7 @@ export default function TerrainMap(p:Props){
    const frame=p.frames[map===primary.current&&p.compare?p.baseline:p.step]
    const [w,s,e,n]=p.scenario.imageryExtent??p.scenario.extent,bbox=frame.bbox
    const maxzoom=frame.tileTemplate?20:14
-   return {map,id:`observation-${p.scenario.id}-${frame.id}-z${maxzoom}-v8`,scenarioId:p.scenario.id,source:{type:'raster' as const,tiles:[frame.tileTemplate??`${window.location.origin}/api/imagery/tiles/${p.scenario.id}/${frame.id}/{z}/{x}/{y}.png?v=8`],tileSize:256,minzoom:8,maxzoom,bounds:[Math.max(w,bbox[0]),Math.max(s,bbox[1]),Math.min(e,bbox[2]),Math.min(n,bbox[3])] as [number,number,number,number],attribution:frame.attribution??'Contains modified Copernicus Sentinel data · Sentinel-2 L2A · Microsoft Planetary Computer'}}
+   return {map,id:`observation-${p.scenario.id}-${frame.id}-z${maxzoom}-v9`,scenarioId:p.scenario.id,source:{type:'raster' as const,tiles:[frame.tileTemplate??`${window.location.origin}/api/imagery/tiles/${p.scenario.id}/${frame.id}/{z}/{x}/{y}.png?v=9`],tileSize:256,minzoom:8,maxzoom,bounds:[Math.max(w,bbox[0]),Math.max(s,bbox[1]),Math.min(e,bbox[2]),Math.min(n,bbox[3])] as [number,number,number,number],attribution:frame.attribution??'Contains modified Copernicus Sentinel data · Sentinel-2 L2A · Microsoft Planetary Computer'}}
   })
   stopWarm.current?.();frameReady.current=false;tileError.current=false
   const cancel=requestFrames(entries,{fadeMs:p.blink||matchMedia('(prefers-reduced-motion: reduce)').matches?0:400,onState:s=>{frameReady.current=s==='ready';latest.current.onFrameState(s);if(s==='ready')warm()},onCommit:()=>{applyAdjustments();latest.current.onDisplayed(p.scenario.id,p.frames[p.compare?p.baseline:p.step].id,p.frames[p.step].id)}})

@@ -33,6 +33,52 @@ test('persistent images are reused after a new store is created',async()=>{
  assert.equal((await restarted.read('https://local/one.png')).byteLength,8)
 })
 
+test('abandoned camera downloads and queued tiles release capacity for the next view',async()=>{
+ const controllers=Array.from({length:3},()=>new AbortController()),started=[]
+ const store=createTileStore({persistent:null,maxConcurrent:1,fetchTile:async(url,{signal})=>{
+  started.push(url)
+  if(url.endsWith('/new'))return new Response(png)
+  return new Promise((_resolve,reject)=>signal.addEventListener('abort',()=>reject(signal.reason),{once:true}))
+ }})
+ const old=store.read('https://local/old',controllers[0].signal),queued=store.read('https://local/queued',controllers[1].signal)
+ const rejected=Promise.allSettled([old,queued])
+ await new Promise(resolve=>setImmediate(resolve))
+ controllers[1].abort();controllers[0].abort()
+ assert.ok((await rejected).every(result=>result.status==='rejected'))
+ assert.equal((await store.read('https://local/new')).byteLength,8)
+ assert.deepEqual(started,['https://local/old','https://local/new'])
+ assert.equal(store.stats().pending,0)
+})
+
+test('background warming leaves capacity for visible imagery and foreground requests overtake queued warming',async()=>{
+ const started=[],release=new Map()
+ const store=createTileStore({persistent:null,maxConcurrent:3,fetchTile:async url=>{started.push(url);await new Promise(resolve=>release.set(url,resolve));return new Response(png)}})
+ const low=['warm1','warm2','warm3'].map(id=>store.read(id,undefined,{priority:'low'}))
+ await new Promise(resolve=>setImmediate(resolve))
+ assert.deepEqual(started,['warm1','warm2'])
+ const visible=store.read('visible'),next=store.read('next-visible')
+ await new Promise(resolve=>setImmediate(resolve))
+ assert.deepEqual(started,['warm1','warm2','visible'])
+ release.get('visible')();await visible
+ await new Promise(resolve=>setImmediate(resolve))
+ assert.equal(started.at(-1),'next-visible')
+ release.get('next-visible')();await next
+ release.get('warm1')();await low[0]
+ await new Promise(resolve=>setImmediate(resolve))
+ assert.equal(started.at(-1),'warm3')
+ release.get('warm2')();release.get('warm3')();await Promise.all(low)
+ assert.equal(store.stats().pending,0)
+})
+
+test('cancelling during retry backoff releases the download slot immediately',async()=>{
+ const controller=new AbortController(),calls=[]
+ const store=createTileStore({persistent:null,maxConcurrent:1,retryDelayMs:10000,fetchTile:async url=>{calls.push(url);return new Response(url==='old'?'Restarting':png,{status:url==='old'?503:200})}})
+ const old=store.read('old',controller.signal),rejected=assert.rejects(old)
+ await new Promise(resolve=>setImmediate(resolve));controller.abort();await rejected
+ assert.equal((await store.read('new')).byteLength,8)
+ assert.deepEqual(calls,['old','new'])
+})
+
 test('observation preparation survives a real connection reset and proxy 500 without caching failures',async()=>{
  let calls=0
  const server=createServer((request,response)=>{calls++;if(calls===1){request.socket.destroy();return}if(calls===2){response.writeHead(500);response.end('Proxy failed');return}response.writeHead(200,{'Content-Type':'image/png'});response.end(png)})

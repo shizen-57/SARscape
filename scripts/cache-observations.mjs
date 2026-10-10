@@ -12,7 +12,7 @@ async function image(path,jpeg=false){
 let completed=0,total=locations.length*9
 for(const scenario of locations){
  const response=await fetch(`${base}/api/imagery/${scenario.id}?source=sentinel2`);if(!response.ok)throw new Error('Start the local backend before caching observations.');const sequence=await response.json(),{z,x,y}=tile(scenario.center,14)
- for(const frame of sequence.frames){const start=performance.now();await image(`/api/imagery/tiles/${scenario.id}/${frame.id}/${z}/${x}/${y}.png?v=8`);console.log(`Cached ${++completed}/${total}: ${scenario.id} ${frame.date.slice(0,10)} (${Math.round(performance.now()-start)} ms)`)}
+ for(const frame of sequence.frames){const start=performance.now();await image(`/api/imagery/tiles/${scenario.id}/${frame.id}/${z}/${x}/${y}.png?v=9`);console.log(`Cached ${++completed}/${total}: ${scenario.id} ${frame.date.slice(0,10)} (${Math.round(performance.now()-start)} ms)`)}
 }
 if(locations.some(s=>s.id==='aletsch')){
  const {z,x,y}=tile(config.scenarios.find(s=>s.id==='aletsch').center,16)

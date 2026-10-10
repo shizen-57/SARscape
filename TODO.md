@@ -8,6 +8,8 @@
 - [x] Aletsch's 2018–2025 aerial mosaic versions and optional undated reference.
 - [x] Seeking/playback, persistent viewport preparation, crossfades, blink, synchronized lens/swipe.
 - [x] Bounded downloads, retries, complete ranges, renewable access, native/overview crops and disk/browser caches.
+- [x] Start Explore playback after two captures; prioritize visible tiles, cancel abandoned downloads and reuse cached overview context.
+- [x] Recover unexpected backend exits automatically and drain tile requests on development source reloads.
 - [x] Search, map tools, details, sources, adjustments, provenance and complete saved views.
 - [x] Supplied GOFF study: three layers, source cells, uncertainty, masks, measured-pair interpolation and 22 report pages.
 - [x] Presentation centerpiece: four chapters, cached 80-second guide, component-space playback, real-cell inspection, confidence controls, fullscreen, source QA and figure/evidence exports.

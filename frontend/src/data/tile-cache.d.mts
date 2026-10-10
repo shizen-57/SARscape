@@ -1,3 +1,3 @@
-export const tileStore:{read:(url:string,signal?:AbortSignal)=>Promise<ArrayBuffer>;stats:()=>{bytes:number;tiles:number;pending:number}}
+export const tileStore:{read:(url:string,signal?:AbortSignal,options?:{priority?:'low'|'auto'})=>Promise<ArrayBuffer>;stats:()=>{bytes:number;tiles:number;pending:number}}
 export function createTileStore(options?:{fetchTile?:typeof fetch;maxBytes?:number;persistent?:CacheStorage|null;maxConcurrent?:number;maxAttempts?:number;retryDelayMs?:number}):typeof tileStore
 export function prepareCaptures(options:{frames:{id:string}[];tiles:string[];signal?:AbortSignal;onProgress?:(value:{completed:number;total:number})=>void;read?:(url:string,signal?:AbortSignal)=>Promise<ArrayBuffer>;concurrency?:number}):Promise<{completed:number;total:number}>
