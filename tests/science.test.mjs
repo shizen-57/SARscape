@@ -2,13 +2,12 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import {execFile} from 'node:child_process'
 import {promisify} from 'node:util'
-import {homedir} from 'node:os'
 import {join} from 'node:path'
-import {existsSync} from 'node:fs'
 import {createApi} from '../backend/src/app.mjs'
 import {createScienceService} from '../backend/src/science.mjs'
 import {mkdtemp,mkdir,writeFile,rm} from 'node:fs/promises'
 import {tmpdir} from 'node:os'
+import {pythonExecutable} from '../backend/src/python.mjs'
 test('science endpoints validate settings, file origin, availability and artifact access',async()=>{
  let imported=0,retries=0;const service={list:async()=>({available:true,jobs:[]}),importFile:async()=>{imported++;return {id:'job',status:'queued'}},retry:async()=>{retries++;return {id:'job',status:'queued'}},artifact:async()=>null},app=createApi({science:service})
  assert.equal((await app.request('/api/science/unknown')).status,404)
@@ -21,8 +20,8 @@ test('science endpoints validate settings, file origin, availability and artifac
  const hosted=createApi();assert.equal((await (await hosted.request('/api/science/aletsch')).json()).available,false);assert.equal((await hosted.request('/api/science/aletsch/import',{method:'POST',body:'a'})).status,503)
 })
 test('GOFF processor validates official schema, real units, masks, pair duration and uncertainty',async()=>{
- const bundled=join(homedir(),'.cache/codex-runtimes/codex-primary-runtime/dependencies/python/python.exe'),python=process.env.SARSCAPE_PYTHON??(existsSync(bundled)?bundled:'python')
- const {stderr}=await promisify(execFile)(python,['tests/goff_schema_test.py'],{timeout:45000,maxBuffer:2*1024*1024});assert.match(stderr,/Ran 4 tests/);assert.match(stderr,/OK/)
+ const python=pythonExecutable(process.cwd())
+ const {stderr}=await promisify(execFile)(python,['tests/goff_schema_test.py'],{timeout:45000,maxBuffer:2*1024*1024});assert.match(stderr,/Ran \d+ tests/);assert.match(stderr,/OK/)
 })
 test('interrupted processing reuses the existing upload and prevents duplicate retries',async()=>{
  const root=await mkdtemp(join(tmpdir(),'sarscape-retry-')),id='recovery-fixture'

@@ -4,33 +4,35 @@ import {randomUUID} from 'node:crypto'
 import {spawn} from 'node:child_process'
 export function createScienceService({root,python}){
  const raw=join(root,'database/raw'),products=join(root,'database/processed/goff'),jobs=join(root,'database/jobs'),queue=[];let running=false
- const children=new Set(),jobMap=new Map(),retrying=new Set()
+ const children=new Set(),jobMap=new Map(),retrying=new Set();let closed=false
  const initialized=(async()=>{
   await Promise.all([mkdir(raw,{recursive:true}),mkdir(products,{recursive:true}),mkdir(jobs,{recursive:true})])
   for(const filename of await readdir(jobs))if(filename.endsWith('.json')){
-   try{const job=JSON.parse(await readFile(join(jobs,filename),'utf8'));if(['queued','processing','uploading'].includes(job.status)){job.status='interrupted';job.error='Processing was interrupted by a backend restart. Retry processing to reuse the uploaded file.';await writeFile(join(jobs,filename),JSON.stringify(job))}jobMap.set(job.id,job)}catch{}
+   try{const job=JSON.parse(await readFile(join(jobs,filename),'utf8'));if(['queued','processing','inspecting','uploading'].includes(job.status)){job.status='interrupted';job.error='Processing was interrupted by a backend restart. Retry processing to reuse the uploaded file.';await writeFile(join(jobs,filename),JSON.stringify(job))}jobMap.set(job.id,job)}catch{}
   }
  })()
  const persist=async job=>{job.updatedAt=new Date().toISOString();jobMap.set(job.id,job);const temporary=join(jobs,job.id+'.tmp');await writeFile(temporary,JSON.stringify(job,null,2));await rename(temporary,join(jobs,job.id+'.json'))}
  const pump=async()=>{
-  if(running||!queue.length)return
+  if(running||closed||!queue.length)return
   running=true;const job=queue.shift()
   try{
-   job.status='processing';await persist(job)
+   job.status=job.inspectOnly?'inspecting':'processing';await persist(job)
    const output=join(products,job.id)
-   await new Promise((resolve,reject)=>{
-    const child=spawn(python,['backend/geo/goff.py','--input',join(raw,job.id+'.h5'),'--output',output,'--scenario',job.scenario,'--frequency',job.frequency,'--polarization',job.polarization,'--layer',job.layer,'--correlation',String(job.correlation)],{cwd:root,windowsHide:true,stdio:['ignore','ignore','pipe']});children.add(child)
+   const stdout=await new Promise((resolve,reject)=>{
+    const args=job.inspectOnly?['backend/geo/inspect_nisar.py','--input',join(raw,(job.inputId??job.id)+'.h5'),'--scenario',job.scenario]:['backend/geo/science.py','--input',join(raw,(job.inputId??job.id)+'.h5'),'--output',output,'--scenario',job.scenario,'--frequency',job.frequency,'--polarization',job.polarization,'--layer',job.layer??'layer1','--correlation',String(job.correlation??.3)]
+    const child=spawn(python,[...(job.comparison?['backend/geo/gcov_compare.py','--older',join(products,job.comparison.older),'--newer',join(products,job.comparison.newer),'--output',output]:args),'--parent-pid',String(process.pid)],{cwd:root,windowsHide:true,stdio:['ignore','pipe','pipe']});children.add(child)
+    let stdout='';child.stdout.on('data',chunk=>stdout=(stdout+chunk).slice(-128000))
     let errors='';child.stderr.on('data',chunk=>{errors=(errors+chunk.toString()).slice(-3000)})
     const timer=setTimeout(()=>{child.kill();reject(new Error('Processing exceeded 20 minutes'))},20*60*1000)
     child.once('error',error=>{clearTimeout(timer);children.delete(child);reject(error)})
-    child.once('exit',code=>{clearTimeout(timer);children.delete(child);code===0?resolve():reject(new Error(errors.trim()||'Science processor failed'))})
+    child.once('exit',code=>{clearTimeout(timer);children.delete(child);code===0?resolve(stdout):reject(new Error(errors.trim()||'Science processor failed'))})
    })
-   job.provenance=JSON.parse(await readFile(join(output,'provenance.json'),'utf8'));job.status='complete'
+   if(job.inspectOnly){job.inventory=JSON.parse(stdout);job.status='awaiting_settings'}else{job.provenance=JSON.parse(await readFile(join(output,'provenance.json'),'utf8'));job.status='complete'}
   }catch(error){job.status='failed';job.error=error.message.replaceAll(root,'[project]')}
   await persist(job);running=false;void pump()
  }
  return {
-  async list(scenario){await initialized;return {available:true,source:'Local NISAR GOFF processor',jobs:[...jobMap.values()].filter(j=>j.scenario===scenario).sort((a,b)=>b.createdAt.localeCompare(a.createdAt)).map(({input,...job})=>job)}},
+  async list(scenario){await initialized;return {available:true,source:'Local NISAR GOFF / GCOV processor',jobs:[...jobMap.values()].filter(j=>j.scenario===scenario).sort((a,b)=>b.createdAt.localeCompare(a.createdAt)).map(({input,inputId,...job})=>job)}},
   async importFile(scenario,request,options){
    await initialized
    if(queue.length>=3)throw Object.assign(new Error('The processing queue is full. Wait for the current files to finish.'),{status:429})
@@ -50,6 +52,26 @@ export function createScienceService({root,python}){
    const job={id,scenario,status:'queued',createdAt:new Date().toISOString(),bytes:size,...options};await persist(job);queue.push(job);void pump();return job
   },
   async artifact(scenario,id,filename){await initialized;const job=jobMap.get(id);if(!job||job.scenario!==scenario||job.status!=='complete'||!['samples.geojson','provenance.json','radar-components.tif','radar-preview.tif'].includes(filename))return null;try{return await readFile(join(products,id,filename))}catch(error){if(error.code==='ENOENT')return null;throw error}},
+  async process(scenario,id,settings){
+   await initialized
+   const source=jobMap.get(id)
+   if(!source||source.scenario!==scenario)throw Object.assign(new Error('Observation job not found'),{status:404})
+   if(!['awaiting_settings','complete','failed'].includes(source.status)||!source.inventory)throw Object.assign(new Error('Wait for file inspection before processing'),{status:409})
+   if(!source.inventory.choices.some(c=>c.intersects&&c.frequency===settings.frequency&&c.polarization===settings.polarization&&(source.inventory.product==='GCOV'||c.layer===settings.layer)))throw Object.assign(new Error('This channel or layer is unavailable in this study area'),{status:400})
+   if(queue.length>=3)throw Object.assign(new Error('The processing queue is full'),{status:429})
+   const job=source.status==='awaiting_settings'?source:{id:randomUUID(),inputId:source.inputId??source.id,scenario,createdAt:new Date().toISOString(),bytes:source.bytes,inventory:source.inventory}
+   Object.assign(job,settings,{status:'queued',inspectOnly:false});delete job.error;await persist(job);queue.push(job);void pump();return {id:job.id,status:job.status}
+  },
+  async compare(scenario,older,newer){
+   await initialized
+   const a=jobMap.get(older),b=jobMap.get(newer)
+   if(!a||!b||[a,b].some(j=>j.scenario!==scenario||j.status!=='complete'||j.provenance?.product!=='GCOV'))throw Object.assign(new Error('Choose two completed GCOV acquisitions from this study area'),{status:400})
+   if(a.provenance.frequency!==b.provenance.frequency||a.provenance.polarization!==b.provenance.polarization||Date.parse(a.provenance.date)>=Date.parse(b.provenance.date))throw Object.assign(new Error('Choose the same channel, with a strictly older baseline'),{status:400})
+   if(queue.length>=3)throw Object.assign(new Error('The processing queue is full'),{status:429})
+   const previous=[...jobMap.values()].find(j=>j.scenario===scenario&&j.comparison?.older===older&&j.comparison?.newer===newer&&['queued','processing','complete'].includes(j.status))
+   if(previous)return {id:previous.id,status:previous.status}
+   const job={id:randomUUID(),scenario,status:'queued',createdAt:new Date().toISOString(),comparison:{older,newer}};await persist(job);queue.push(job);void pump();return {id:job.id,status:job.status}
+  },
   async retry(scenario,id){
    await initialized
    const job=jobMap.get(id)
@@ -59,10 +81,10 @@ export function createScienceService({root,python}){
    if(queue.length>=3)throw Object.assign(new Error('The processing queue is full'),{status:429})
    retrying.add(id)
    try{
-    try{await stat(join(raw,id+'.h5'))}catch{throw Object.assign(new Error('The original file is missing. Import the file again.'),{status:410})}
+    try{if(job.comparison)await Promise.all([stat(join(products,job.comparison.older,'radar-components.tif')),stat(join(products,job.comparison.newer,'radar-components.tif'))]);else await stat(join(raw,(job.inputId??id)+'.h5'))}catch{throw Object.assign(new Error('The original data is missing. Import the file again.'),{status:410})}
     job.status='queued';delete job.error;await persist(job);queue.push(job);void pump();return job
    }finally{retrying.delete(id)}
   },
-  close(){for(const child of children)child.kill()}
+  close(){closed=true;for(const child of children)child.kill()}
  }
 }

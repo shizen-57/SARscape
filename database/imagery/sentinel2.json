@@ -1,349 +1,553 @@
 {
-  "source": "Copernicus Sentinel-2 L2A / Element 84 Earth Search",
-  "retrievedAt": "2026-10-08T19:51:11.897Z",
+  "source": "Copernicus Sentinel-2 L2A / Earth Search discovery and Planetary Computer delivery",
+  "retrievedAt": "2026-10-09T20:35:05.376Z",
   "resolutionMeters": 10,
-  "selection": "One lowest scene-cloud-cover August–September capture per year; scene cloud percentage is not a local glacier cloud mask.",
+  "selection": "One low scene-cloud-cover capture per available year; August–September preferred, June–October used when unavailable. Scene cloud percentage is not a local glacier cloud mask.",
   "scenarios": {
     "aletsch": [
       {
         "id": "S2B_32TMS_20180927_1_L2A",
-        "date": "2018-09-27T10:37:53.731000Z",
-        "cloudCover": 0.000205,
-        "url": "https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/32/T/MS/2018/9/S2B_32TMS_20180927_1_L2A/TCI.tif",
-        "metadataUrl": "https://earth-search.aws.element84.com/v1/collections/sentinel-2-l2a/items/S2B_32TMS_20180927_1_L2A",
+        "date": "2018-09-27T10:30:19.024000Z",
+        "cloudCover": 0.376291,
+        "url": "https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/32/T/MS/2018/09/27/S2B_MSIL2A_20180927T103019_N0212_R108_T32TMS_20201009T053643.SAFE/GRANULE/L2A_T32TMS_A008142_20180927T103016/IMG_DATA/R10m/T32TMS_20180927T103019_TCI_10m.tif",
+        "metadataUrl": "https://planetarycomputer.microsoft.com/api/stac/v1/collections/sentinel-2-l2a/items/S2B_MSIL2A_20180927T103019_R108_T32TMS_20201009T053643",
         "collection": "sentinel-2-l2a",
-        "platform": "sentinel-2b",
+        "platform": "Sentinel-2B",
         "bbox": [
-          7.685452604182684,
-          45.959167646508305,
-          9.1282537815538,
-          46.95362834968302
+          7.6854392,
+          45.9582587,
+          9.1282669,
+          46.9536373
         ],
-        "resolutionMeters": 10
+        "resolutionMeters": 10,
+        "sourceSceneId": "S2B_MSIL2A_20180927T103019_R108_T32TMS_20201009T053643",
+        "discoveryUrl": "https://earth-search.aws.element84.com/v1/collections/sentinel-2-l2a/items/S2B_32TMS_20180927_1_L2A",
+        "datePrecision": "acquisition",
+        "deliverySource": "Microsoft Planetary Computer"
       },
       {
         "id": "S2B_32TMS_20190912_3_L2A",
-        "date": "2019-09-12T10:38:00.435000Z",
-        "cloudCover": 0.304419,
-        "url": "https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/32/T/MS/2019/9/S2B_32TMS_20190912_3_L2A/TCI.tif",
-        "metadataUrl": "https://earth-search.aws.element84.com/v1/collections/sentinel-2-l2a/items/S2B_32TMS_20190912_3_L2A",
+        "date": "2019-09-12T10:30:19.024000Z",
+        "cloudCover": 1.051067,
+        "url": "https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/32/T/MS/2019/09/12/S2B_MSIL2A_20190912T103019_N0212_R108_T32TMS_20201004T122454.SAFE/GRANULE/L2A_T32TMS_A013147_20190912T103022/IMG_DATA/R10m/T32TMS_20190912T103019_TCI_10m.tif",
+        "metadataUrl": "https://planetarycomputer.microsoft.com/api/stac/v1/collections/sentinel-2-l2a/items/S2B_MSIL2A_20190912T103019_R108_T32TMS_20201004T122454",
         "collection": "sentinel-2-l2a",
-        "platform": "sentinel-2b",
+        "platform": "Sentinel-2B",
         "bbox": [
-          7.685452604182684,
-          45.959167650727686,
-          9.126939563937157,
-          46.953629814238084
+          7.6854392,
+          45.9582587,
+          9.1282669,
+          46.9536373
         ],
-        "resolutionMeters": 10
+        "resolutionMeters": 10,
+        "sourceSceneId": "S2B_MSIL2A_20190912T103019_R108_T32TMS_20201004T122454",
+        "discoveryUrl": "https://earth-search.aws.element84.com/v1/collections/sentinel-2-l2a/items/S2B_32TMS_20190912_3_L2A",
+        "datePrecision": "acquisition",
+        "deliverySource": "Microsoft Planetary Computer"
       },
       {
         "id": "S2B_32TMS_20200807_1_L2A",
-        "date": "2020-08-07T10:38:03.019000Z",
-        "cloudCover": 0.5671,
-        "url": "https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/32/T/MS/2020/8/S2B_32TMS_20200807_1_L2A/TCI.tif",
-        "metadataUrl": "https://earth-search.aws.element84.com/v1/collections/sentinel-2-l2a/items/S2B_32TMS_20200807_1_L2A",
+        "date": "2020-08-07T10:25:59.024000Z",
+        "cloudCover": 1.1326,
+        "url": "https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/32/T/MS/2020/08/07/S2B_MSIL2A_20200807T102559_N0212_R108_T32TMS_20200815T092324.SAFE/GRANULE/L2A_T32TMS_A017866_20200807T103614/IMG_DATA/R10m/T32TMS_20200807T102559_TCI_10m.tif",
+        "metadataUrl": "https://planetarycomputer.microsoft.com/api/stac/v1/collections/sentinel-2-l2a/items/S2B_MSIL2A_20200807T102559_R108_T32TMS_20200815T092324",
         "collection": "sentinel-2-l2a",
-        "platform": "sentinel-2b",
+        "platform": "Sentinel-2B",
         "bbox": [
-          7.685452604182684,
-          45.95916765071902,
-          9.1282537815538,
-          46.95362834968302
+          7.6854392,
+          45.9582587,
+          9.1282669,
+          46.9536373
         ],
-        "resolutionMeters": 10
+        "resolutionMeters": 10,
+        "sourceSceneId": "S2B_MSIL2A_20200807T102559_R108_T32TMS_20200815T092324",
+        "discoveryUrl": "https://earth-search.aws.element84.com/v1/collections/sentinel-2-l2a/items/S2B_32TMS_20200807_1_L2A",
+        "datePrecision": "acquisition",
+        "deliverySource": "Microsoft Planetary Computer"
       },
       {
         "id": "S2A_32TMS_20210814_1_L2A",
-        "date": "2021-08-14T10:28:05.997000Z",
-        "cloudCover": 2.089904,
-        "url": "https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/32/T/MS/2021/8/S2A_32TMS_20210814_1_L2A/TCI.tif",
-        "metadataUrl": "https://earth-search.aws.element84.com/v1/collections/sentinel-2-l2a/items/S2A_32TMS_20210814_1_L2A",
+        "date": "2021-08-14T10:20:31.024000Z",
+        "cloudCover": 2.24417,
+        "url": "https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/32/T/MS/2021/08/14/S2A_MSIL2A_20210814T102031_N0300_R065_T32TMS_20210814T231408.SAFE/GRANULE/L2A_T32TMS_A032094_20210814T102609/IMG_DATA/R10m/T32TMS_20210814T102031_TCI_10m.tif",
+        "metadataUrl": "https://planetarycomputer.microsoft.com/api/stac/v1/collections/sentinel-2-l2a/items/S2A_MSIL2A_20210814T102031_R065_T32TMS_20210814T231408",
         "collection": "sentinel-2-l2a",
-        "platform": "sentinel-2a",
+        "platform": "Sentinel-2A",
         "bbox": [
-          7.691924,
-          45.958268,
-          9.128254,
-          46.953628
+          7.6916408,
+          45.9582587,
+          9.1282669,
+          46.9536373
         ],
-        "resolutionMeters": 10
+        "resolutionMeters": 10,
+        "sourceSceneId": "S2A_MSIL2A_20210814T102031_R065_T32TMS_20210814T231408",
+        "discoveryUrl": "https://earth-search.aws.element84.com/v1/collections/sentinel-2-l2a/items/S2A_32TMS_20210814_1_L2A",
+        "datePrecision": "acquisition",
+        "deliverySource": "Microsoft Planetary Computer"
       },
       {
         "id": "S2A_32TMS_20220918_0_L2A",
-        "date": "2022-09-18T10:28:11.956000Z",
-        "cloudCover": 2.886708,
-        "url": "https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/32/T/MS/2022/9/S2A_32TMS_20220918_0_L2A/TCI.tif",
-        "metadataUrl": "https://earth-search.aws.element84.com/v1/collections/sentinel-2-l2a/items/S2A_32TMS_20220918_0_L2A",
+        "date": "2022-09-18T10:17:01.024000Z",
+        "cloudCover": 2.898907,
+        "url": "https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/32/T/MS/2022/09/18/S2A_MSIL2A_20220918T101701_N0510_R065_T32TMS_20240730T065346.SAFE/GRANULE/L2A_T32TMS_A037814_20220918T101921/IMG_DATA/R10m/T32TMS_20220918T101701_TCI_10m.tif",
+        "metadataUrl": "https://planetarycomputer.microsoft.com/api/stac/v1/collections/sentinel-2-l2a/items/S2A_MSIL2A_20220918T101701_R065_T32TMS_20240730T065346",
         "collection": "sentinel-2-l2a",
-        "platform": "sentinel-2a",
+        "platform": "Sentinel-2A",
         "bbox": [
-          7.6910275057300765,
-          45.95826783231756,
-          9.1282537815538,
-          46.95362834968302
+          7.6908219,
+          45.9582587,
+          9.1282669,
+          46.9536373
         ],
-        "resolutionMeters": 10
+        "resolutionMeters": 10,
+        "sourceSceneId": "S2A_MSIL2A_20220918T101701_R065_T32TMS_20240730T065346",
+        "discoveryUrl": "https://earth-search.aws.element84.com/v1/collections/sentinel-2-l2a/items/S2A_32TMS_20220918_0_L2A",
+        "datePrecision": "acquisition",
+        "deliverySource": "Microsoft Planetary Computer"
       },
       {
         "id": "S2A_32TMS_20230926_0_L2A",
-        "date": "2023-09-26T10:38:01.995000Z",
-        "cloudCover": 0.016484,
-        "url": "https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/32/T/MS/2023/9/S2A_32TMS_20230926_0_L2A/TCI.tif",
-        "metadataUrl": "https://earth-search.aws.element84.com/v1/collections/sentinel-2-l2a/items/S2A_32TMS_20230926_0_L2A",
+        "date": "2023-09-26T10:28:01.024000Z",
+        "cloudCover": 0.016495,
+        "url": "https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/32/T/MS/2023/09/26/S2A_MSIL2A_20230926T102801_N0509_R108_T32TMS_20230926T183612.SAFE/GRANULE/L2A_T32TMS_A043148_20230926T103133/IMG_DATA/R10m/T32TMS_20230926T102801_TCI_10m.tif",
+        "metadataUrl": "https://planetarycomputer.microsoft.com/api/stac/v1/collections/sentinel-2-l2a/items/S2A_MSIL2A_20230926T102801_R108_T32TMS_20230926T183612",
         "collection": "sentinel-2-l2a",
-        "platform": "sentinel-2a",
+        "platform": "Sentinel-2A",
         "bbox": [
-          7.685452604182684,
-          45.95916765076701,
-          9.126939534465274,
-          46.95362981427077
+          7.6854392,
+          45.9582587,
+          9.1282669,
+          46.9536373
         ],
-        "resolutionMeters": 10
+        "resolutionMeters": 10,
+        "sourceSceneId": "S2A_MSIL2A_20230926T102801_R108_T32TMS_20230926T183612",
+        "discoveryUrl": "https://earth-search.aws.element84.com/v1/collections/sentinel-2-l2a/items/S2A_32TMS_20230926_0_L2A",
+        "datePrecision": "acquisition",
+        "deliverySource": "Microsoft Planetary Computer"
       },
       {
         "id": "S2B_32TMS_20240915_0_L2A",
-        "date": "2024-09-15T10:37:58.598000Z",
-        "cloudCover": 9.350917,
-        "url": "https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/32/T/MS/2024/9/S2B_32TMS_20240915_0_L2A/TCI.tif",
-        "metadataUrl": "https://earth-search.aws.element84.com/v1/collections/sentinel-2-l2a/items/S2B_32TMS_20240915_0_L2A",
+        "date": "2024-10-30T10:31:51.024000Z",
+        "cloudCover": 0.743306,
+        "url": "https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/32/T/MS/2024/10/30/S2A_MSIL2A_20241030T103151_N0511_R108_T32TMS_20241030T145052.SAFE/GRANULE/L2A_T32TMS_A048868_20241030T103149/IMG_DATA/R10m/T32TMS_20241030T103151_TCI_10m.tif",
+        "metadataUrl": "https://planetarycomputer.microsoft.com/api/stac/v1/collections/sentinel-2-l2a/items/S2A_MSIL2A_20241030T103151_R108_T32TMS_20241030T145052",
         "collection": "sentinel-2-l2a",
-        "platform": "sentinel-2b",
+        "platform": "Sentinel-2A",
         "bbox": [
-          7.685452604182684,
-          45.95916765077578,
-          9.1282537815538,
-          46.95362834968302
+          7.6854392,
+          45.9582587,
+          9.1282669,
+          46.9536373
         ],
-        "resolutionMeters": 10
+        "resolutionMeters": 10,
+        "sourceSceneId": "S2A_MSIL2A_20241030T103151_R108_T32TMS_20241030T145052",
+        "discoveryUrl": "https://earth-search.aws.element84.com/v1/collections/sentinel-2-l2a/items/S2B_32TMS_20240915_0_L2A",
+        "datePrecision": "acquisition",
+        "deliverySource": "Microsoft Planetary Computer"
       },
       {
         "id": "S2A_32TMS_20250808_1_L2A",
-        "date": "2025-08-08T10:38:14.660000Z",
+        "date": "2025-08-08T10:27:01.024000Z",
         "cloudCover": 0.156713,
-        "url": "https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/32/T/MS/2025/8/S2A_32TMS_20250808_1_L2A/TCI.tif",
-        "metadataUrl": "https://earth-search.aws.element84.com/v1/collections/sentinel-2-l2a/items/S2A_32TMS_20250808_1_L2A",
+        "url": "https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/32/T/MS/2025/08/08/S2A_MSIL2A_20250808T102701_N0511_R108_T32TMS_20250808T143113.SAFE/GRANULE/L2A_T32TMS_A052901_20250808T103728/IMG_DATA/R10m/T32TMS_20250808T102701_TCI_10m.tif",
+        "metadataUrl": "https://planetarycomputer.microsoft.com/api/stac/v1/collections/sentinel-2-l2a/items/S2A_MSIL2A_20250808T102701_R108_T32TMS_20250808T143113",
         "collection": "sentinel-2-l2a",
-        "platform": "sentinel-2a",
+        "platform": "Sentinel-2A",
         "bbox": [
-          7.685453,
-          45.959168,
-          9.128254,
-          46.953628
+          7.6854392,
+          45.9582587,
+          9.1282669,
+          46.9536373
         ],
-        "resolutionMeters": 10
+        "resolutionMeters": 10,
+        "sourceSceneId": "S2A_MSIL2A_20250808T102701_R108_T32TMS_20250808T143113",
+        "discoveryUrl": "https://earth-search.aws.element84.com/v1/collections/sentinel-2-l2a/items/S2A_32TMS_20250808_1_L2A",
+        "datePrecision": "acquisition",
+        "deliverySource": "Microsoft Planetary Computer"
+      },
+      {
+        "id": "S2C_32TMS_20260927_0_L2A",
+        "date": "2026-09-27T10:18:01.025000Z",
+        "datePrecision": "acquisition",
+        "cloudCover": 0.015639,
+        "url": "https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/32/T/MS/2026/09/27/S2C_MSIL2A_20260927T101801_N0513_R065_T32TMS_20260927T153810.SAFE/GRANULE/L2A_T32TMS_A010760_20260927T102053/IMG_DATA/R10m/T32TMS_20260927T101801_TCI_10m.tif",
+        "metadataUrl": "https://planetarycomputer.microsoft.com/api/stac/v1/collections/sentinel-2-l2a/items/S2C_MSIL2A_20260927T101801_R065_T32TMS_20260927T153810",
+        "collection": "sentinel-2-l2a",
+        "platform": "Sentinel-2C",
+        "bbox": [
+          7.6908329,
+          45.9582587,
+          9.1282669,
+          46.9536373
+        ],
+        "resolutionMeters": 10,
+        "sourceSceneId": "S2C_MSIL2A_20260927T101801_R065_T32TMS_20260927T153810",
+        "discoveryUrl": "https://earth-search.aws.element84.com/v1/collections/sentinel-2-l2a/items/S2C_32TMS_20260927_0_L2A",
+        "deliverySource": "Microsoft Planetary Computer"
       }
     ],
     "langtang": [
       {
         "id": "S2B_45RUM_20180925_1_L2A",
-        "date": "2018-09-25T05:00:46.698000Z",
-        "cloudCover": 17.452368,
-        "url": "https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/45/R/UM/2018/9/S2B_45RUM_20180925_1_L2A/TCI.tif",
-        "metadataUrl": "https://earth-search.aws.element84.com/v1/collections/sentinel-2-l2a/items/S2B_45RUM_20180925_1_L2A",
+        "date": "2018-09-25T04:46:59.024000Z",
+        "cloudCover": 19.6152,
+        "url": "https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/45/R/UM/2018/09/25/S2B_MSIL2A_20180925T044659_N0212_R076_T45RUM_20201030T214729.SAFE/GRANULE/L2A_T45RUM_A008110_20180925T045829/IMG_DATA/R10m/T45RUM_20180925T044659_TCI_10m.tif",
+        "metadataUrl": "https://planetarycomputer.microsoft.com/api/stac/v1/collections/sentinel-2-l2a/items/S2B_MSIL2A_20180925T044659_R076_T45RUM_20201030T214729",
         "collection": "sentinel-2-l2a",
-        "platform": "sentinel-2b",
+        "platform": "Sentinel-2B",
         "bbox": [
-          85.31910349195131,
-          27.926898029793303,
-          86.08318007625961,
-          28.925093490386516
+          85.3150446,
+          27.9258701,
+          86.0831903,
+          28.9251026
         ],
-        "resolutionMeters": 10
+        "resolutionMeters": 10,
+        "sourceSceneId": "S2B_MSIL2A_20180925T044659_R076_T45RUM_20201030T214729",
+        "discoveryUrl": "https://earth-search.aws.element84.com/v1/collections/sentinel-2-l2a/items/S2B_45RUM_20180925_1_L2A",
+        "datePrecision": "acquisition",
+        "deliverySource": "Microsoft Planetary Computer"
+      },
+      {
+        "id": "S2A_45RUM_20191015_1_L2A",
+        "date": "2019-10-15T04:47:51.024000Z",
+        "datePrecision": "acquisition",
+        "cloudCover": 53.46736,
+        "url": "https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/45/R/UM/2019/10/15/S2A_MSIL2A_20191015T044751_N0212_R076_T45RUM_20201004T022811.SAFE/GRANULE/L2A_T45RUM_A022524_20191015T045321/IMG_DATA/R10m/T45RUM_20191015T044751_TCI_10m.tif",
+        "metadataUrl": "https://planetarycomputer.microsoft.com/api/stac/v1/collections/sentinel-2-l2a/items/S2A_MSIL2A_20191015T044751_R076_T45RUM_20201004T022811",
+        "collection": "sentinel-2-l2a",
+        "platform": "Sentinel-2A",
+        "bbox": [
+          85.3029235,
+          27.9257403,
+          86.0831903,
+          28.9251026
+        ],
+        "resolutionMeters": 10,
+        "sourceSceneId": "S2A_MSIL2A_20191015T044751_R076_T45RUM_20201004T022811",
+        "discoveryUrl": "https://earth-search.aws.element84.com/v1/collections/sentinel-2-l2a/items/S2A_45RUM_20191015_1_L2A",
+        "deliverySource": "Microsoft Planetary Computer"
       },
       {
         "id": "S2A_45RUM_20200929_0_L2A",
-        "date": "2020-09-29T05:00:58.770000Z",
-        "cloudCover": 10.98185,
-        "url": "https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/45/R/UM/2020/9/S2A_45RUM_20200929_0_L2A/TCI.tif",
-        "metadataUrl": "https://earth-search.aws.element84.com/v1/collections/sentinel-2-l2a/items/S2A_45RUM_20200929_0_L2A",
+        "date": "2020-09-29T04:47:11.024000Z",
+        "cloudCover": 10.98257,
+        "url": "https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/45/R/UM/2020/09/29/S2A_MSIL2A_20200929T044711_N0212_R076_T45RUM_20201001T184344.SAFE/GRANULE/L2A_T45RUM_A027529_20200929T045454/IMG_DATA/R10m/T45RUM_20200929T044711_TCI_10m.tif",
+        "metadataUrl": "https://planetarycomputer.microsoft.com/api/stac/v1/collections/sentinel-2-l2a/items/S2A_MSIL2A_20200929T044711_R076_T45RUM_20201001T184344",
         "collection": "sentinel-2-l2a",
-        "platform": "sentinel-2a",
+        "platform": "Sentinel-2A",
         "bbox": [
-          85.30487695800684,
-          27.926723627834612,
-          86.08318007625961,
-          28.925093490386516
+          85.3040669,
+          27.9257526,
+          86.0831903,
+          28.9251026
         ],
-        "resolutionMeters": 10
+        "resolutionMeters": 10,
+        "sourceSceneId": "S2A_MSIL2A_20200929T044711_R076_T45RUM_20201001T184344",
+        "discoveryUrl": "https://earth-search.aws.element84.com/v1/collections/sentinel-2-l2a/items/S2A_45RUM_20200929_0_L2A",
+        "datePrecision": "acquisition",
+        "deliverySource": "Microsoft Planetary Computer"
       },
       {
         "id": "S2B_45RUM_20210919_1_L2A",
-        "date": "2021-09-19T05:00:49.882000Z",
-        "cloudCover": 14.683692,
-        "url": "https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/45/R/UM/2021/9/S2B_45RUM_20210919_1_L2A/TCI.tif",
-        "metadataUrl": "https://earth-search.aws.element84.com/v1/collections/sentinel-2-l2a/items/S2B_45RUM_20210919_1_L2A",
+        "date": "2021-09-19T04:46:59.024000Z",
+        "cloudCover": 33.184764,
+        "url": "https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/45/R/UM/2021/09/19/S2B_MSIL2A_20210919T044659_N0300_R076_T45RUM_20210919T154217.SAFE/GRANULE/L2A_T45RUM_A023697_20210919T045550/IMG_DATA/R10m/T45RUM_20210919T044659_TCI_10m.tif",
+        "metadataUrl": "https://planetarycomputer.microsoft.com/api/stac/v1/collections/sentinel-2-l2a/items/S2B_MSIL2A_20210919T044659_R076_T45RUM_20210919T154217",
         "collection": "sentinel-2-l2a",
-        "platform": "sentinel-2b",
+        "platform": "Sentinel-2B",
         "bbox": [
-          85.3184934486781,
-          27.92689058148674,
-          86.08318007625961,
-          28.925093490386516
+          85.3145209,
+          27.9258645,
+          86.0831903,
+          28.9251026
         ],
-        "resolutionMeters": 10
+        "resolutionMeters": 10,
+        "sourceSceneId": "S2B_MSIL2A_20210919T044659_R076_T45RUM_20210919T154217",
+        "discoveryUrl": "https://earth-search.aws.element84.com/v1/collections/sentinel-2-l2a/items/S2B_45RUM_20210919_1_L2A",
+        "datePrecision": "acquisition",
+        "deliverySource": "Microsoft Planetary Computer"
       },
       {
         "id": "S2A_45RUM_20220929_0_L2A",
-        "date": "2022-09-29T05:01:00.492000Z",
-        "cloudCover": 16.158579,
-        "url": "https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/45/R/UM/2022/9/S2A_45RUM_20220929_0_L2A/TCI.tif",
-        "metadataUrl": "https://earth-search.aws.element84.com/v1/collections/sentinel-2-l2a/items/S2A_45RUM_20220929_0_L2A",
+        "date": "2022-09-29T04:47:11.024000Z",
+        "cloudCover": 16.158031,
+        "url": "https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/45/R/UM/2022/09/29/S2A_MSIL2A_20220929T044711_N0400_R076_T45RUM_20220929T201920.SAFE/GRANULE/L2A_T45RUM_A037968_20220929T045919/IMG_DATA/R10m/T45RUM_20220929T044711_TCI_10m.tif",
+        "metadataUrl": "https://planetarycomputer.microsoft.com/api/stac/v1/collections/sentinel-2-l2a/items/S2A_MSIL2A_20220929T044711_R076_T45RUM_20220929T201920",
         "collection": "sentinel-2-l2a",
-        "platform": "sentinel-2a",
+        "platform": "Sentinel-2A",
         "bbox": [
-          85.30569671930851,
-          27.926733717135658,
-          86.08318007625961,
-          28.925093490386516
+          85.3042211,
+          27.9257542,
+          86.0831903,
+          28.9251026
         ],
-        "resolutionMeters": 10
+        "resolutionMeters": 10,
+        "sourceSceneId": "S2A_MSIL2A_20220929T044711_R076_T45RUM_20220929T201920",
+        "discoveryUrl": "https://earth-search.aws.element84.com/v1/collections/sentinel-2-l2a/items/S2A_45RUM_20220929_0_L2A",
+        "datePrecision": "acquisition",
+        "deliverySource": "Microsoft Planetary Computer"
       },
       {
         "id": "S2B_45RUM_20230830_0_L2A",
-        "date": "2023-08-30T05:00:57.881000Z",
-        "cloudCover": 15.596171,
-        "url": "https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/45/R/UM/2023/8/S2B_45RUM_20230830_0_L2A/TCI.tif",
-        "metadataUrl": "https://earth-search.aws.element84.com/v1/collections/sentinel-2-l2a/items/S2B_45RUM_20230830_0_L2A",
+        "date": "2023-08-30T04:47:09.024000Z",
+        "cloudCover": 13.197778,
+        "url": "https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/45/R/UM/2023/08/30/S2B_MSIL2A_20230830T044709_N0510_R076_T45RUM_20240912T075905.SAFE/GRANULE/L2A_T45RUM_A033850_20230830T045941/IMG_DATA/R10m/T45RUM_20230830T044709_TCI_10m.tif",
+        "metadataUrl": "https://planetarycomputer.microsoft.com/api/stac/v1/collections/sentinel-2-l2a/items/S2B_MSIL2A_20230830T044709_R076_T45RUM_20240912T075905",
         "collection": "sentinel-2-l2a",
-        "platform": "sentinel-2b",
+        "platform": "Sentinel-2B",
         "bbox": [
-          85.30437666582323,
-          27.92671746803604,
-          86.08318007625961,
-          28.925093490386516
+          85.3003261,
+          27.9257125,
+          86.0831903,
+          28.9251026
         ],
-        "resolutionMeters": 10
+        "resolutionMeters": 10,
+        "sourceSceneId": "S2B_MSIL2A_20230830T044709_R076_T45RUM_20240912T075905",
+        "discoveryUrl": "https://earth-search.aws.element84.com/v1/collections/sentinel-2-l2a/items/S2B_45RUM_20230830_0_L2A",
+        "datePrecision": "acquisition",
+        "deliverySource": "Microsoft Planetary Computer"
       },
       {
         "id": "S2A_45RUM_20240918_0_L2A",
-        "date": "2024-09-18T05:00:53.630000Z",
-        "cloudCover": 10.384691,
-        "url": "https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/45/R/UM/2024/9/S2A_45RUM_20240918_0_L2A/TCI.tif",
-        "metadataUrl": "https://earth-search.aws.element84.com/v1/collections/sentinel-2-l2a/items/S2A_45RUM_20240918_0_L2A",
+        "date": "2024-10-13T04:46:59.024000Z",
+        "cloudCover": 2.412255,
+        "url": "https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/45/R/UM/2024/10/13/S2B_MSIL2A_20241013T044659_N0511_R076_T45RUM_20241013T071647.SAFE/GRANULE/L2A_T45RUM_A039713_20241013T045225/IMG_DATA/R10m/T45RUM_20241013T044659_TCI_10m.tif",
+        "metadataUrl": "https://planetarycomputer.microsoft.com/api/stac/v1/collections/sentinel-2-l2a/items/S2B_MSIL2A_20241013T044659_R076_T45RUM_20241013T071647",
         "collection": "sentinel-2-l2a",
-        "platform": "sentinel-2a",
+        "platform": "Sentinel-2B",
         "bbox": [
-          85.30630826574001,
-          27.9267412406309,
-          86.08318007625961,
-          28.925093490386516
+          85.3068642,
+          27.9257825,
+          86.0831903,
+          28.9251026
         ],
-        "resolutionMeters": 10
+        "resolutionMeters": 10,
+        "sourceSceneId": "S2B_MSIL2A_20241013T044659_R076_T45RUM_20241013T071647",
+        "discoveryUrl": "https://earth-search.aws.element84.com/v1/collections/sentinel-2-l2a/items/S2A_45RUM_20240918_0_L2A",
+        "datePrecision": "acquisition",
+        "deliverySource": "Microsoft Planetary Computer"
+      },
+      {
+        "id": "S2B_45RUM_20251021_0_L2A",
+        "date": "2025-10-21T04:57:29.024000Z",
+        "datePrecision": "acquisition",
+        "cloudCover": 0.498852,
+        "url": "https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/45/R/UM/2025/10/21/S2B_MSIL2A_20251021T045729_N0511_R119_T45RUM_20251021T083739.SAFE/GRANULE/L2A_T45RUM_A045047_20251021T051010/IMG_DATA/R10m/T45RUM_20251021T045729_TCI_10m.tif",
+        "metadataUrl": "https://planetarycomputer.microsoft.com/api/stac/v1/collections/sentinel-2-l2a/items/S2B_MSIL2A_20251021T045729_R119_T45RUM_20251021T083739",
+        "collection": "sentinel-2-l2a",
+        "platform": "Sentinel-2B",
+        "bbox": [
+          84.9485681,
+          27.9221491,
+          86.0759249,
+          28.9251026
+        ],
+        "resolutionMeters": 10,
+        "sourceSceneId": "S2B_MSIL2A_20251021T045729_R119_T45RUM_20251021T083739",
+        "discoveryUrl": "https://earth-search.aws.element84.com/v1/collections/sentinel-2-l2a/items/S2B_45RUM_20251021_0_L2A",
+        "deliverySource": "Microsoft Planetary Computer"
+      },
+      {
+        "id": "S2C_45RUM_20260928_0_L2A",
+        "date": "2026-09-28T04:47:01.025000Z",
+        "datePrecision": "acquisition",
+        "cloudCover": 1.587821,
+        "url": "https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/45/R/UM/2026/09/28/S2C_MSIL2A_20260928T044701_N0513_R076_T45RUM_20260928T075011.SAFE/GRANULE/L2A_T45RUM_A010771_20260928T045730/IMG_DATA/R10m/T45RUM_20260928T044701_TCI_10m.tif",
+        "metadataUrl": "https://planetarycomputer.microsoft.com/api/stac/v1/collections/sentinel-2-l2a/items/S2C_MSIL2A_20260928T044701_R076_T45RUM_20260928T075011",
+        "collection": "sentinel-2-l2a",
+        "platform": "Sentinel-2C",
+        "bbox": [
+          85.2952667,
+          27.9256583,
+          86.0831903,
+          28.9251026
+        ],
+        "resolutionMeters": 10,
+        "sourceSceneId": "S2C_MSIL2A_20260928T044701_R076_T45RUM_20260928T075011",
+        "discoveryUrl": "https://earth-search.aws.element84.com/v1/collections/sentinel-2-l2a/items/S2C_45RUM_20260928_0_L2A",
+        "deliverySource": "Microsoft Planetary Computer"
       }
     ],
     "columbia": [
       {
         "id": "S2B_6VVN_20180909_0_L2A",
-        "date": "2018-09-09T21:15:04.463000Z",
-        "cloudCover": 0.429113,
-        "url": "https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/6/V/VN/2018/9/S2B_6VVN_20180909_0_L2A/TCI.tif",
-        "metadataUrl": "https://earth-search.aws.element84.com/v1/collections/sentinel-2-l2a/items/S2B_6VVN_20180909_0_L2A",
+        "date": "2018-09-09T21:15:09.024000Z",
+        "cloudCover": 0.435679,
+        "url": "https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/06/V/VN/2018/09/09/S2B_MSIL2A_20180909T211509_N0212_R143_T06VVN_20201008T232833.SAFE/GRANULE/L2A_T06VVN_A007891_20180909T211504/IMG_DATA/R10m/T06VVN_20180909T211509_TCI_10m.tif",
+        "metadataUrl": "https://planetarycomputer.microsoft.com/api/stac/v1/collections/sentinel-2-l2a/items/S2B_MSIL2A_20180909T211509_R143_T06VVN_20201008T232833",
         "collection": "sentinel-2-l2a",
-        "platform": "sentinel-2b",
+        "platform": "Sentinel-2B",
         "bbox": [
-          -148.8687325627272,
-          60.336309537374504,
-          -146.81764479449598,
-          61.33431117437037
+          -148.86876,
+          60.3363003,
+          -146.81763,
+          61.3343201
         ],
-        "resolutionMeters": 10
+        "resolutionMeters": 10,
+        "sourceSceneId": "S2B_MSIL2A_20180909T211509_R143_T06VVN_20201008T232833",
+        "discoveryUrl": "https://earth-search.aws.element84.com/v1/collections/sentinel-2-l2a/items/S2B_6VVN_20180909_0_L2A",
+        "datePrecision": "acquisition",
+        "deliverySource": "Microsoft Planetary Computer"
       },
       {
         "id": "S2B_6VVN_20190818_0_L2A",
-        "date": "2019-08-18T21:28:29.903000Z",
-        "cloudCover": 4.465251,
-        "url": "https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/6/V/VN/2019/8/S2B_6VVN_20190818_0_L2A/TCI.tif",
-        "metadataUrl": "https://earth-search.aws.element84.com/v1/collections/sentinel-2-l2a/items/S2B_6VVN_20190818_0_L2A",
+        "date": "2019-08-18T21:25:29.024000Z",
+        "cloudCover": 4.443774,
+        "url": "https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/06/V/VN/2019/08/18/S2B_MSIL2A_20190818T212529_N0212_R043_T06VVN_20201005T020536.SAFE/GRANULE/L2A_T06VVN_A012796_20190818T212528/IMG_DATA/R10m/T06VVN_20190818T212529_TCI_10m.tif",
+        "metadataUrl": "https://planetarycomputer.microsoft.com/api/stac/v1/collections/sentinel-2-l2a/items/S2B_MSIL2A_20190818T212529_R043_T06VVN_20201005T020536",
         "collection": "sentinel-2-l2a",
-        "platform": "sentinel-2b",
+        "platform": "Sentinel-2B",
         "bbox": [
-          -148.8687325627272,
-          60.336309537374504,
-          -146.81764479449598,
-          61.33431117437037
+          -148.86876,
+          60.3363003,
+          -146.81763,
+          61.3343201
         ],
-        "resolutionMeters": 10
+        "resolutionMeters": 10,
+        "sourceSceneId": "S2B_MSIL2A_20190818T212529_R043_T06VVN_20201005T020536",
+        "discoveryUrl": "https://earth-search.aws.element84.com/v1/collections/sentinel-2-l2a/items/S2B_6VVN_20190818_0_L2A",
+        "datePrecision": "acquisition",
+        "deliverySource": "Microsoft Planetary Computer"
       },
       {
         "id": "S2B_6VVN_20200911_1_L2A",
-        "date": "2020-09-11T21:28:26.322000Z",
-        "cloudCover": 0.170716,
-        "url": "https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/6/V/VN/2020/9/S2B_6VVN_20200911_1_L2A/TCI.tif",
-        "metadataUrl": "https://earth-search.aws.element84.com/v1/collections/sentinel-2-l2a/items/S2B_6VVN_20200911_1_L2A",
+        "date": "2020-09-11T21:25:29.024000Z",
+        "cloudCover": 0.591836,
+        "url": "https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/06/V/VN/2020/09/11/S2B_MSIL2A_20200911T212529_N0212_R043_T06VVN_20200913T062418.SAFE/GRANULE/L2A_T06VVN_A018373_20200911T212524/IMG_DATA/R10m/T06VVN_20200911T212529_TCI_10m.tif",
+        "metadataUrl": "https://planetarycomputer.microsoft.com/api/stac/v1/collections/sentinel-2-l2a/items/S2B_MSIL2A_20200911T212529_R043_T06VVN_20200913T062418",
         "collection": "sentinel-2-l2a",
-        "platform": "sentinel-2b",
+        "platform": "Sentinel-2B",
         "bbox": [
-          -148.8687325627272,
-          60.336309537374504,
-          -146.81764479449598,
-          61.33431117437037
+          -148.86876,
+          60.3363003,
+          -146.81763,
+          61.3343201
         ],
-        "resolutionMeters": 10
+        "resolutionMeters": 10,
+        "sourceSceneId": "S2B_MSIL2A_20200911T212529_R043_T06VVN_20200913T062418",
+        "discoveryUrl": "https://earth-search.aws.element84.com/v1/collections/sentinel-2-l2a/items/S2B_6VVN_20200911_1_L2A",
+        "datePrecision": "acquisition",
+        "deliverySource": "Microsoft Planetary Computer"
       },
       {
         "id": "S2A_6VVN_20210829_0_L2A",
-        "date": "2021-08-29T21:18:28.199000Z",
-        "cloudCover": 0.70527,
-        "url": "https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/6/V/VN/2021/8/S2A_6VVN_20210829_0_L2A/TCI.tif",
-        "metadataUrl": "https://earth-search.aws.element84.com/v1/collections/sentinel-2-l2a/items/S2A_6VVN_20210829_0_L2A",
+        "date": "2021-08-29T21:15:21.024000Z",
+        "cloudCover": 0.705101,
+        "url": "https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/06/V/VN/2021/08/29/S2A_MSIL2A_20210829T211521_N0300_R143_T06VVN_20210830T101424.SAFE/GRANULE/L2A_T06VVN_A032315_20210829T211714/IMG_DATA/R10m/T06VVN_20210829T211521_TCI_10m.tif",
+        "metadataUrl": "https://planetarycomputer.microsoft.com/api/stac/v1/collections/sentinel-2-l2a/items/S2A_MSIL2A_20210829T211521_R143_T06VVN_20210830T101424",
         "collection": "sentinel-2-l2a",
-        "platform": "sentinel-2a",
+        "platform": "Sentinel-2A",
         "bbox": [
-          -148.8687325627272,
-          60.336309537374504,
-          -146.81764479449598,
-          61.33431117437037
+          -148.86876,
+          60.3363003,
+          -146.81763,
+          61.3343201
         ],
-        "resolutionMeters": 10
+        "resolutionMeters": 10,
+        "sourceSceneId": "S2A_MSIL2A_20210829T211521_R143_T06VVN_20210830T101424",
+        "discoveryUrl": "https://earth-search.aws.element84.com/v1/collections/sentinel-2-l2a/items/S2A_6VVN_20210829_0_L2A",
+        "datePrecision": "acquisition",
+        "deliverySource": "Microsoft Planetary Computer"
+      },
+      {
+        "id": "S2A_6VVN_20220728_0_L2A",
+        "date": "2022-07-28T21:25:31.024000Z",
+        "datePrecision": "acquisition",
+        "cloudCover": 0.360535,
+        "url": "https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/06/V/VN/2022/07/28/S2A_MSIL2A_20220728T212531_N0400_R043_T06VVN_20220730T031533.SAFE/GRANULE/L2A_T06VVN_A037077_20220728T212531/IMG_DATA/R10m/T06VVN_20220728T212531_TCI_10m.tif",
+        "metadataUrl": "https://planetarycomputer.microsoft.com/api/stac/v1/collections/sentinel-2-l2a/items/S2A_MSIL2A_20220728T212531_R043_T06VVN_20220730T031533",
+        "collection": "sentinel-2-l2a",
+        "platform": "Sentinel-2A",
+        "bbox": [
+          -148.86876,
+          60.3363003,
+          -146.81763,
+          61.3343201
+        ],
+        "resolutionMeters": 10,
+        "sourceSceneId": "S2A_MSIL2A_20220728T212531_R043_T06VVN_20220730T031533",
+        "discoveryUrl": "https://earth-search.aws.element84.com/v1/collections/sentinel-2-l2a/items/S2A_6VVN_20220728_0_L2A",
+        "deliverySource": "Microsoft Planetary Computer"
       },
       {
         "id": "S2B_6VVN_20230817_1_L2A",
-        "date": "2023-08-17T21:28:29.459000Z",
-        "cloudCover": 0.759822,
-        "url": "https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/6/V/VN/2023/8/S2B_6VVN_20230817_1_L2A/TCI.tif",
-        "metadataUrl": "https://earth-search.aws.element84.com/v1/collections/sentinel-2-l2a/items/S2B_6VVN_20230817_1_L2A",
+        "date": "2023-08-17T21:25:29.024000Z",
+        "cloudCover": 1.451501,
+        "url": "https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/06/V/VN/2023/08/17/S2B_MSIL2A_20230817T212529_N0509_R043_T06VVN_20230818T012048.SAFE/GRANULE/L2A_T06VVN_A033674_20230817T212525/IMG_DATA/R10m/T06VVN_20230817T212529_TCI_10m.tif",
+        "metadataUrl": "https://planetarycomputer.microsoft.com/api/stac/v1/collections/sentinel-2-l2a/items/S2B_MSIL2A_20230817T212529_R043_T06VVN_20230818T012048",
         "collection": "sentinel-2-l2a",
-        "platform": "sentinel-2b",
+        "platform": "Sentinel-2B",
         "bbox": [
-          -148.868733,
-          60.33631,
-          -146.817645,
-          61.334311
+          -148.86876,
+          60.3363003,
+          -146.81763,
+          61.3343201
         ],
-        "resolutionMeters": 10
+        "resolutionMeters": 10,
+        "sourceSceneId": "S2B_MSIL2A_20230817T212529_R043_T06VVN_20230818T012048",
+        "discoveryUrl": "https://earth-search.aws.element84.com/v1/collections/sentinel-2-l2a/items/S2B_6VVN_20230817_1_L2A",
+        "datePrecision": "acquisition",
+        "deliverySource": "Microsoft Planetary Computer"
       },
       {
         "id": "S2B_6VVN_20240927_0_L2A",
-        "date": "2024-09-27T21:18:26.763000Z",
+        "date": "2024-09-27T21:15:09.024000Z",
         "cloudCover": 4.948666,
-        "url": "https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/6/V/VN/2024/9/S2B_6VVN_20240927_0_L2A/TCI.tif",
-        "metadataUrl": "https://earth-search.aws.element84.com/v1/collections/sentinel-2-l2a/items/S2B_6VVN_20240927_0_L2A",
+        "url": "https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/06/V/VN/2024/09/27/S2B_MSIL2A_20240927T211509_N0511_R143_T06VVN_20240927T221024.SAFE/GRANULE/L2A_T06VVN_A039494_20240927T211511/IMG_DATA/R10m/T06VVN_20240927T211509_TCI_10m.tif",
+        "metadataUrl": "https://planetarycomputer.microsoft.com/api/stac/v1/collections/sentinel-2-l2a/items/S2B_MSIL2A_20240927T211509_R143_T06VVN_20240927T221024",
         "collection": "sentinel-2-l2a",
-        "platform": "sentinel-2b",
+        "platform": "Sentinel-2B",
         "bbox": [
-          -148.8687325627272,
-          60.336309537374504,
-          -146.81764479449598,
-          61.33431117437037
+          -148.8687518,
+          60.3363003,
+          -146.8176261,
+          61.3343201
         ],
-        "resolutionMeters": 10
+        "resolutionMeters": 10,
+        "sourceSceneId": "S2B_MSIL2A_20240927T211509_R143_T06VVN_20240927T221024",
+        "discoveryUrl": "https://earth-search.aws.element84.com/v1/collections/sentinel-2-l2a/items/S2B_6VVN_20240927_0_L2A",
+        "datePrecision": "acquisition",
+        "deliverySource": "Microsoft Planetary Computer"
       },
       {
         "id": "S2C_6VVN_20250917_0_L2A",
-        "date": "2025-09-17T21:18:39.400000Z",
+        "date": "2025-09-17T21:15:21.025000Z",
         "cloudCover": 0.25188,
-        "url": "https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/6/V/VN/2025/9/S2C_6VVN_20250917_0_L2A/TCI.tif",
-        "metadataUrl": "https://earth-search.aws.element84.com/v1/collections/sentinel-2-l2a/items/S2C_6VVN_20250917_0_L2A",
+        "url": "https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/06/V/VN/2025/09/17/S2C_MSIL2A_20250917T211521_N0511_R143_T06VVN_20250918T015012.SAFE/GRANULE/L2A_T06VVN_A005404_20250917T211524/IMG_DATA/R10m/T06VVN_20250917T211521_TCI_10m.tif",
+        "metadataUrl": "https://planetarycomputer.microsoft.com/api/stac/v1/collections/sentinel-2-l2a/items/S2C_MSIL2A_20250917T211521_R143_T06VVN_20250918T015012",
         "collection": "sentinel-2-l2a",
-        "platform": "sentinel-2c",
+        "platform": "Sentinel-2C",
         "bbox": [
-          -148.868733,
-          60.33631,
-          -146.817645,
-          61.334311
+          -148.8687518,
+          60.3363003,
+          -146.8176261,
+          61.3343201
         ],
-        "resolutionMeters": 10
+        "resolutionMeters": 10,
+        "sourceSceneId": "S2C_MSIL2A_20250917T211521_R143_T06VVN_20250918T015012",
+        "discoveryUrl": "https://earth-search.aws.element84.com/v1/collections/sentinel-2-l2a/items/S2C_6VVN_20250917_0_L2A",
+        "datePrecision": "acquisition",
+        "deliverySource": "Microsoft Planetary Computer"
+      },
+      {
+        "id": "S2C_6VVN_20260902_0_L2A",
+        "date": "2026-09-02T21:15:11.025000Z",
+        "datePrecision": "acquisition",
+        "cloudCover": 0.471475,
+        "url": "https://sentinel2l2a01.blob.core.windows.net/sentinel2-l2/06/V/VN/2026/09/02/S2C_MSIL2A_20260902T211511_N0512_R143_T06VVN_20260903T001008.SAFE/GRANULE/L2A_T06VVN_A010409_20260902T211509/IMG_DATA/R10m/T06VVN_20260902T211511_TCI_10m.tif",
+        "metadataUrl": "https://planetarycomputer.microsoft.com/api/stac/v1/collections/sentinel-2-l2a/items/S2C_MSIL2A_20260902T211511_R143_T06VVN_20260903T001008",
+        "collection": "sentinel-2-l2a",
+        "platform": "Sentinel-2C",
+        "bbox": [
+          -148.8687518,
+          60.3363003,
+          -146.8176261,
+          61.3343201
+        ],
+        "resolutionMeters": 10,
+        "sourceSceneId": "S2C_MSIL2A_20260902T211511_R143_T06VVN_20260903T001008",
+        "discoveryUrl": "https://earth-search.aws.element84.com/v1/collections/sentinel-2-l2a/items/S2C_6VVN_20260902_0_L2A",
+        "deliverySource": "Microsoft Planetary Computer"
       }
     ]
   }

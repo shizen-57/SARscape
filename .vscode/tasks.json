@@ -1,0 +1,19 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Run SARscape frontend",
+			"type": "shell",
+			"command": "npm run dev:frontend",
+			"isBackground": true,
+			"problemMatcher": []
+		},
+		{
+			"label": "Run SARscape backend",
+			"type": "shell",
+			"command": "npm run dev:backend",
+			"isBackground": true,
+			"problemMatcher": []
+		}
+	]
+}

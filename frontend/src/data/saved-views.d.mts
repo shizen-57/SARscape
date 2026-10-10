@@ -1,0 +1,4 @@
+export type SavedView={version?:number;name:string;scenario:string;step:number;terrain:boolean;satellite:boolean;imagerySource:'sentinel2'|'swissimage'|'reference';camera:{center:[number,number];zoom:number;pitch:number;bearing:number}|null;frameId?:string;baselineId?:string;baseline:number;compare:boolean;compareMode:'lens'|'swipe';split:number;lens:{x:number;y:number};boundary:boolean;adjustments:{brightness:number;contrast:number;saturation:number};studyOverlay:{layer:string;threshold:number;progress:number;scale:number}|null;environmentMode:'index'|'change'|null;lowReturn:boolean;backscatterThreshold:number;scienceJob?:string;component:'alongTrack'|'slantRange'|'backscatterDb'|'backscatterChange'}
+export function readSavedViews(raw:string|null,scenarios:{id:string;kind:string}[]):SavedView[]
+export function validCamera(camera:SavedView['camera']):boolean
+export function savedFrameIndex(frames:{id:string}[],id:string|undefined,fallback?:number):number

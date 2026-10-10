@@ -1,5 +1,5 @@
 """Render genuine Sentinel-2 COGs into cached map tiles; no synthetic pixels."""
-import io, json, math, os, pathlib, threading, sys
+import io, json, math, os, pathlib, threading, sys, time
 sys.path.insert(0,str(pathlib.Path(__file__).resolve().parents[1] / '.python'))
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import numpy as np
@@ -10,31 +10,35 @@ from rasterio.enums import Resampling
 from rasterio.windows import Window, from_bounds as window_from_bounds
 from rasterio.warp import transform_bounds
 from PIL import Image
+from indices import render_tile as render_index_tile
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 MANIFEST = json.loads((ROOT / 'database/imagery/sentinel2.json').read_text())
-CACHE = ROOT / 'database/processed/imagery-tiles-v6'
+MANIFEST['scenarios'].update(json.loads((ROOT / 'database/imagery/additional-sentinel2.json').read_text())['scenarios'])
+CACHE = ROOT / 'database/processed/imagery-tiles-v7'
 SCENARIOS = {s['id']:s for s in json.loads((ROOT / 'database/scenarios.json').read_text())['scenarios']}
 SLOTS = threading.BoundedSemaphore(4)
 DETAIL_SLOTS = threading.BoundedSemaphore(2)
 PREPARE_SLOTS = threading.BoundedSemaphore(1)
 FRAME_LOCKS = {}
 LOCK_GUARD = threading.Lock()
-PREPARED = ROOT / 'database/processed/optical-studies-v2'
-NATIVE = ROOT / 'database/processed/optical-studies-v1'
+PREPARED = ROOT / 'database/processed/optical-studies-v3'
+NATIVE = ROOT / 'database/processed/optical-studies-native-v2'
 os.environ.setdefault('GDAL_DISABLE_READDIR_ON_OPEN', 'EMPTY_DIR')
 os.environ.setdefault('GDAL_HTTP_TIMEOUT', '60')
 os.environ.setdefault('GDAL_HTTP_MAX_RETRY', '0')
-os.environ.setdefault('GDAL_HTTP_MULTIRANGE', 'NO')
+os.environ.setdefault('GDAL_HTTP_MULTIRANGE', 'YES')
+os.environ.setdefault('GDAL_HTTP_MAX_TOTAL_CONNECTIONS', '6')
 os.environ.setdefault('CPL_VSIL_CURL_ALLOWED_EXTENSIONS', '.tif')
 
 def prepare(frame, scenario, factor=1):
     """Read the small study window once; tile requests never repeatedly fetch the full scene."""
-    full = NATIVE / scenario / f"{frame['id']}.tif"
+    cache_id = frame.get('sourceSceneId',frame['id'])
+    full = NATIVE / scenario / f"{cache_id}.tif"
     if factor==1 and full.exists(): return full
-    target = full if factor==1 else PREPARED / scenario / f"{frame['id']}-lod{factor}.tif"
+    target = full if factor==1 else PREPARED / scenario / f"{cache_id}-lod{factor}.tif"
     with LOCK_GUARD:
-        lock = FRAME_LOCKS.setdefault((scenario,frame['id'],factor), threading.Lock())
+        lock = FRAME_LOCKS.setdefault((scenario,cache_id,factor), threading.Lock())
     with lock:
         if target.exists(): return target
         with PREPARE_SLOTS:
@@ -74,19 +78,23 @@ def render(frame, z, x, y, scenario):
     north = 20037508.342789244 - y * span
     transform = from_bounds(west, north-span, west+span, north, 256, 256)
     with rasterio.Env(GDAL_CACHEMAX=64_000_000):
-        source=prepare(frame,scenario,2 if z>=12 else min(16,2**max(0,13-z)))
         def pixels(path):
             with rasterio.open(path) as src:
                 with WarpedVRT(src,crs='EPSG:3857',transform=transform,width=256,height=256,
                                resampling=Resampling.bilinear,nodata=0) as vrt:
                     return vrt.read((1,2,3)).transpose(1,2,0).astype(np.uint8)
-        rgb=pixels(source)
         if z>=13:
             # Load the glacier crop once on demand, then keep all map-tile reads local.
-            # Surrounding landscape retains the same capture's small overview.
             native=pixels(prepare(frame,scenario,1))
             valid=np.any(native!=0,axis=2)
-            rgb[valid]=native[valid]
+            if np.all(valid):
+                # A central glacier tile needs no download of the distant landscape.
+                rgb=native
+            else:
+                rgb=pixels(prepare(frame,scenario,2))
+                rgb[valid]=native[valid]
+        else:
+            rgb=pixels(prepare(frame,scenario,2 if z>=12 else min(16,2**max(0,13-z))))
     alpha = np.where(np.any(rgb != 0, axis=2), 255, 0).astype(np.uint8)
     w,s,e,n=transform_bounds('EPSG:4326','EPSG:3857',*SCENARIOS[scenario].get('imageryExtent',SCENARIOS[scenario]['extent']))
     columns=west+(np.arange(256)+0.5)*span/256
@@ -103,13 +111,20 @@ class Handler(BaseHTTPRequestHandler):
             self.send_response(200); self.end_headers(); self.wfile.write(b'OK'); return
         parts = self.path.split('/')
         try:
+            if len(parts)==8 and parts[1]=='index':
+                _,_,scenario,frame_id,mode,z,x,y=parts
+                if scenario not in MANIFEST['scenarios'] or mode not in ['index','change'] or not any(f['id']==frame_id for f in MANIFEST['scenarios'][scenario]):raise ValueError('Invalid index study')
+                z,x,y=int(z),int(x),int(y.removesuffix('.png'))
+                if not 0<=z<=14 or not 0<=x<2**z or not 0<=y<2**z:raise ValueError('Invalid index tile')
+                data=render_index_tile(scenario,frame_id,z,x,y,mode=='change')
+                self.send_response(200);self.send_header('Content-Type','image/png');self.send_header('Content-Length',str(len(data)));self.end_headers();self.wfile.write(data);return
             if len(parts) != 7 or parts[1] != 'tile': raise ValueError('Invalid tile')
             _,_,scenario,frame_id,z,x,y = parts
             z,x,y = int(z),int(x),int(y.removesuffix('.png'))
             if not 0 <= z <= 17 or not 0 <= x < 2**z or not 0 <= y < 2**z: raise ValueError('Invalid tile bounds')
-            frame = next((f for f in MANIFEST['scenarios'].get(scenario,[]) if f['id'] == frame_id), None)
+            frame = next((f for f in MANIFEST['scenarios'].get(scenario,[]) if f['id'] == frame_id or f.get('sourceSceneId') == frame_id), None)
             if not frame: raise ValueError('Unknown frame')
-            target = CACHE / scenario / frame_id / str(z) / str(x) / f'{y}.png'
+            target = CACHE / scenario / frame.get('sourceSceneId',frame_id) / str(z) / str(x) / f'{y}.png'
             if target.exists(): data = target.read_bytes()
             else:
                 prepare(frame,scenario,1 if z>=13 else min(16,2**max(0,13-z)))
@@ -133,5 +148,25 @@ class Handler(BaseHTTPRequestHandler):
             except (BrokenPipeError, ConnectionAbortedError, ConnectionResetError): pass
     def log_message(self,*args): pass
 
+def watch_parent():
+    """Windows watch mode can terminate Node without running its exit hooks."""
+    if '--parent-pid' not in sys.argv: return
+    parent=int(sys.argv[sys.argv.index('--parent-pid')+1])
+    if os.name=='nt':
+        import ctypes
+        kernel=ctypes.WinDLL('kernel32',use_last_error=True)
+        kernel.OpenProcess.argtypes=[ctypes.c_uint32,ctypes.c_int,ctypes.c_uint32]
+        kernel.OpenProcess.restype=ctypes.c_void_p
+        kernel.WaitForSingleObject.argtypes=[ctypes.c_void_p,ctypes.c_uint32]
+        handle=kernel.OpenProcess(0x00100000,False,parent)
+        if handle: kernel.WaitForSingleObject(handle,0xFFFFFFFF)
+    else:
+        while True:
+            try: os.kill(parent,0)
+            except ProcessLookupError: break
+            time.sleep(0.25)
+    os._exit(0)
+
+threading.Thread(target=watch_parent,daemon=True).start()
 print('Geospatial tile processor ready on 127.0.0.1:8788',flush=True)
 ThreadingHTTPServer(('127.0.0.1',8788),Handler).serve_forever()

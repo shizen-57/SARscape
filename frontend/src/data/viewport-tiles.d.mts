@@ -1,0 +1,1 @@
+export function viewportTemplates(tiles:{canonical:{z:number;x:number;y:number}}[],frame:{id:string;tileTemplate?:string},scenario:{id:string;extent:number[];imageryExtent?:number[]},origin:string):string[]

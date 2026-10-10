@@ -27,9 +27,9 @@
       "title": "A landscape in motion",
       "subtitle": "Follow the flow of ice through the Swiss Alps.",
       "unit": "m/day",
-      "metric": "Illustrative ice speed",
+      "metric": "Signed radar components",
       "product": "GOFF",
-      "explanation": "Pixel offsets from paired radar observations can help estimate glacier motion. This demonstration illustrates speed; it is not measured NISAR velocity.",
+      "explanation": "Actual optical observations show surface appearance. The supplied GOFF pair provides raw signed radar offsets and formal uncertainty; stable-ground bias correction and independent ice-motion validation remain necessary.",
       "extent": [
         8.02,
         46.39,
@@ -88,9 +88,9 @@
       "title": "Ice in the Himalayas",
       "subtitle": "Explore a glacier in its mountain setting.",
       "unit": "m/day",
-      "metric": "Illustrative ice speed",
+      "metric": "Signed radar components",
       "product": "GOFF",
-      "explanation": "This is an illustrative glacier-motion layer, not a mapped glacier inventory or NISAR measurement. Real offsets need quality checks and acquisition-pair metadata.",
+      "explanation": "Annual optical observations show surface changes. Import a matching GOFF science file to inspect signed radar-component rates with masks, correlation screening, formal uncertainty and acquisition-pair provenance.",
       "extent": [
         85.57,
         28.17,
@@ -143,11 +143,11 @@
       "pitch": 60,
       "kind": "glacier",
       "title": "Ice on the coast",
-      "subtitle": "Explore a tidewater glacier surrounded by Alaska\u00e2\u20ac\u2122s mountains.",
+      "subtitle": "Explore a tidewater glacier surrounded by Alaska's mountains.",
       "unit": "m/day",
-      "metric": "Illustrative ice speed",
+      "metric": "Signed radar components",
       "product": "GOFF",
-      "explanation": "All displayed speeds are synthetic. Real tidewater glacier analysis needs matched radar observations, reliable offset estimates, and independent validation.",
+      "explanation": "Annual optical observations show surface changes. Quantitative tidewater-glacier motion requires a matching radar pair, quality screening, stable-ground bias assessment and independent validation.",
       "extent": [
         -147.35,
         60.94,
@@ -186,6 +186,44 @@
         -146.153,
         61.552
       ]
+    },
+    {
+      "id": "sundarbans",
+      "name": "Sundarbans wetlands",
+      "country": "Bangladesh",
+      "center": [89.58, 21.96],
+      "zoom": 12.7,
+      "bearing": 0,
+      "pitch": 35,
+      "kind": "wetland",
+      "title": "Water through the mangroves",
+      "subtitle": "Compare dry-season water signals in the Sundarbans.",
+      "unit": "NDWI",
+      "metric": "Optical water signal",
+      "product": "GCOV",
+      "explanation": "NDWI uses measured green and near-infrared reflectance. Tides, shadows and turbidity affect this water signal; it is not a confirmed flood or water-depth measurement.",
+      "extent": [89.48, 21.90, 89.68, 22.03],
+      "imageryExtent": [89.48, 21.90, 89.68, 22.03],
+      "path": []
+    },
+    {
+      "id": "rondonia",
+      "name": "Rondônia forest",
+      "country": "Brazil",
+      "center": [-63.08, -10.26],
+      "zoom": 13,
+      "bearing": 0,
+      "pitch": 35,
+      "kind": "forest",
+      "title": "A changing forest landscape",
+      "subtitle": "Inspect dry-season vegetation signals in Rondônia.",
+      "unit": "NDVI",
+      "metric": "Optical vegetation signal",
+      "product": "GCOV",
+      "explanation": "NDVI uses measured red and near-infrared reflectance. Changes in greenness need land-cover and field evidence to establish forest loss, biomass or regrowth.",
+      "extent": [-63.14, -10.32, -63.02, -10.20],
+      "imageryExtent": [-63.14, -10.32, -63.02, -10.20],
+      "path": []
     }
   ]
 }

@@ -10,6 +10,8 @@ Delegated by the request to reuse established modules. React, TypeScript, Vite, 
 ## Product Purpose
 An interactive NASA Space Apps challenge solution that helps visitors explore surface change on a 3D map and understand how NISAR observations support that exploration.
 
+The current presentation centers on the user's supplied Aletsch GOFF acquisition pair. A dedicated guided experience makes the signed radar signal, quality screening and source evidence understandable to judges, while retaining the broader exploration workspace. The same measurements drive both views; intermediate playback is explicitly illustrative and never presented as validated glacier velocity or a forecast.
+
 ## Users
 Assumption for the initial build: challenge judges, students, and curious non-specialists exploring changes at a selected location.
 
@@ -23,4 +25,4 @@ Map-first geospatial UI with shadcn or similarly capable UI components. Product 
 User-provided NASA Space Apps challenge screenshot. ASF NISAR product guide, MapLibre terrain examples, kepler.gl, and shadcn component documentation.
 
 ## Open Decisions
-Confirmed: focus on glacier movement now; keep wetlands and forest-change work on the next-step list. Reuse established GitHub/open-source modules instead of building Earth modeling or other major systems from scratch. A reminder is requested for October 10, 2026 at 10:00 AM Asia/Dhaka.
+Confirmed: finish existing glacier and radar features and include wetlands and forest change in this pass. All five registered locations have real annual imagery; water/vegetation indices and GCOV workflows preserve measured signals and interpretation limits. Reuse established modules instead of building Earth modeling from scratch. See FEATURE_AUDIT.md for current verification evidence.

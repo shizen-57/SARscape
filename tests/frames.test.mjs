@@ -40,3 +40,20 @@ test('failed frame keeps previous image, retries its failed source, and removes 
  const other=entry(map,'2024','langtang'),stop=requestFrames([other],{onState:()=>{},onCommit:()=>{}})
  assert.equal(map.getSource(previous.id),undefined);assert.equal(map.getSource(next.id),undefined);stop()
 })
+
+test('cancelling during a crossfade restores the last committed capture',async()=>{
+ const map=new Map(),previous=entry(map,'2018'),next=entry(map,'2026');let commits=0
+ requestFrames([previous],{onState:()=>{},onCommit:()=>{}});map.finish(previous.id)
+ const stop=requestFrames([next],{fadeMs:20,onState:()=>{},onCommit:()=>commits++});map.finish(next.id);stop()
+ await new Promise(resolve=>setTimeout(resolve,35))
+ assert.equal(commits,0);assert.equal(map.getLayer(next.id),undefined);assert.equal(map.getLayer(previous.id).paint['raster-opacity'],1)
+})
+
+test('the unchanged comparison capture stays fully visible while its partner crossfades',async()=>{
+ const left=new Map(),right=new Map(),a=entry(left,'2018'),b=entry(right,'2026'),draws=[]
+ requestFrames([a],{onState:()=>{},onCommit:()=>{}});left.finish(a.id)
+ left.on('render',()=>draws.push(left.getLayer(a.id)?.paint['raster-opacity']))
+ const stop=requestFrames([a,b],{fadeMs:5,onState:()=>{},onCommit:()=>{}});right.finish(b.id)
+ await new Promise(resolve=>setTimeout(resolve,15))
+ assert.ok(draws.length);assert.ok(draws.every(opacity=>opacity===1));stop()
+})

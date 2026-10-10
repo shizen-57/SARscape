@@ -1,5 +1,6 @@
 node_modules/
 backend/.python/
+backend/.venv/
 dist/
 frontend/dist/
 database/*.sqlite*

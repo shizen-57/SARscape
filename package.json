@@ -3,6 +3,9 @@
  "version": "0.1.0",
  "private": true,
  "type": "module",
+ "engines": {
+  "node": ">=20.19.0"
+ },
  "workspaces": [
   "frontend",
   "backend"
@@ -12,10 +15,15 @@
   "start": "node scripts/start.mjs",
   "dev:frontend": "npm run dev --workspace frontend",
   "dev:backend": "npm run dev --workspace backend",
+  "imagery:refresh": "node scripts/select-imagery.mjs --refresh",
+  "imagery:cache": "node scripts/cache-observations.mjs",
+  "science:study": "node scripts/prepare-study.mjs",
+  "science:presentation": "node scripts/prepare-presentation.mjs",
   "build": "node scripts/build.mjs",
-  "test": "node --test tests/*.test.mjs"
+  "test": "node --test tests"
  },
  "devDependencies": {
+  "@napi-rs/canvas": "^1.0.10",
   "@playwright/test": "^1.64.0",
   "esbuild": "^0.25.0"
  }

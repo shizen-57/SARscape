@@ -23,7 +23,7 @@ export default function LandingGlobe({focus}:{focus:GlobeFocus}){
   map.current=m
   let frame=0,last=performance.now()
   const tick=(now:number)=>{
-   if(spinning.current&&!reduced()){const lng=m.getCenter().lng-(now-last)*DEG_PER_MS;m.jumpTo({center:[((lng+540)%360)-180,LAT]})}
+   if(spinning.current&&!document.hidden&&!reduced()){const lng=m.getCenter().lng-(now-last)*DEG_PER_MS;m.jumpTo({center:[((lng+540)%360)-180,LAT]})}
    last=now;frame=requestAnimationFrame(tick)
   }
   frame=requestAnimationFrame(tick)

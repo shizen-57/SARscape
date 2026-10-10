@@ -1,30 +1,27 @@
 # SARscape
 
-A 3D glacier observation workspace for **Dancing with the SARs**. Explore full-detail aerial mosaics and reference imagery, compare dated mosaic versions with a synchronized camera, and process NISAR GOFF science files through a separate backend. The application does not ship synthetic glacier measurements.
+A local 3D Earth-observation workspace for **Dancing with the SARs**. Explore glaciers, Sundarbans wetlands and a Rondônia forest landscape with genuine annual imagery, measured optical indices, and NISAR radar processing. Elevation remains fixed; the application does not invent missing acquisitions or predict future landscape change.
 
-## Project layout
+## Presentation centerpiece
 
-```text
-frontend/    React, TypeScript, MapLibre terrain, Radix controls, image timeline
-backend/     Hono API, Python/GDAL tile renderer, queued GOFF processing
-database/    Scene manifests, SQLite cache, uploaded HDF5, processed products, jobs
-scripts/     Development, production build/start, scene selection
-tests/       API, timeline races, caching, GOFF schema and quality-mask checks
-```
+Open **http://127.0.0.1:5173/#simulation** for the supplied Aletsch NISAR pair. The dedicated screen has an 80-second guided story, cached satellite context, animated radar component space, real-cell inspection, interactive screening, source QA pages, fullscreen and evidence exports. Existing features remain available through **Explore**.
 
-## Setup and run
+See [PRESENTATION_GUIDE.md](PRESENTATION_GUIDE.md) for the timed script, source facts, judge questions and rehearsal checklist. Prepare its fixed optical context with `npm run science:presentation` after the supplied study and Aletsch imagery cache exist. The main animation uses one measured 12-day pair; it does not claim intermediate radar observations or validated glacier velocity.
 
-Requires Node.js 24+ and Python 3.12+ with the libraries in `backend/requirements.txt`.
+## Run locally
+
+Requires Node.js 20.19+ (24+ recommended) and Python 3.12+. Node versions without `node:sqlite` use `better-sqlite3` automatically.
 
 ```sh
 npm install
-python -m pip install --target backend/.python -r backend/requirements.txt
+python -m venv backend/.venv
+backend/.venv/Scripts/python.exe -m pip install -r backend/requirements.txt
 npm run dev
 ```
 
-Development UI: http://127.0.0.1:5173. API: http://127.0.0.1:8787. Raster worker: http://127.0.0.1:8788. Set `SARSCAPE_PYTHON` when your interpreter is not on PATH. The launcher also recognizes the bundled Codex Python runtime on this machine.
+On macOS/Linux use `backend/.venv/bin/python`. The backend prefers this project environment; `SARSCAPE_PYTHON` can select another interpreter. Verified dependencies are recorded in `backend/requirements.lock.txt`.
 
-To run the built local application:
+Open http://127.0.0.1:5173/#explore. The API listens on 8787 and automatically starts its owned raster worker on 8788 when needed. Stop an existing stack before launching another.
 
 ```sh
 npm test
@@ -32,68 +29,101 @@ npm run build
 npm start
 ```
 
-Open http://127.0.0.1:8787. Stop the development stack before starting the production stack; they use the same backend ports. The production launcher serves compiled frontend files and runs the geospatial worker without Vite or backend file watching.
+The production launcher serves the built application at http://127.0.0.1:8787 without Vite. Frontend, backend, database and processing scripts remain separate.
 
-## Observe real images
+## Annual observations and playback
 
-Choose Aletsch, Langtang, or Columbia. The timeline contains actual August–September Sentinel-2 L2A captures from 2018–2025; availability varies by location. Each capture links to its original scene metadata. Source pixels are 10 metres, with lower-resolution overviews used when zoomed out. Images are reprojected in the backend, cached on disk, then rendered over fixed elevation. The dated capture includes a wider landscape buffer; the undated Esri basemap is context beyond capture coverage.
+All five registered locations have nine actual Sentinel-2 L2A acquisitions, one per year from 2018 through 2026. Aletsch defaults to official SWISSIMAGE aerial mosaic versions for 2018–2025; use **Imagery → Satellite captures** for its dated satellite sequence. Swiss mosaic years are version labels: local flight dates vary, and adjacent versions can repeat imagery. **Reference imagery** remains an explicitly undated optional source.
 
-Compare captures starts with the oldest and newest available Swiss aerial mosaic versions. Change lens, Swipe and Blink support comparison at a synchronized camera. Full-detail tile selection is automatic; there is no reduced-resolution quality mode. Undated reference imagery on other glaciers has no yearly playback. The backend retains Sentinel-2 crops as archived optical data, rather than the visible low-resolution overlay.
+The timeline supports scrubbing, playback, blink, a draggable and keyboard-accessible change lens, and synchronized swipe comparison. Comparison dates are committed only after both maps load and render. Playback first prepares the actual viewport for every selected year, with progress and cancellation, then crossfades loaded captures. Moving the camera pauses playback. Reduced-motion preferences suppress fades; hidden tabs pause animation and background warming.
 
-Comparison commits both images together after their tiles load and render. Draped raster layers are rebuilt to invalidate stale terrain textures. Cancelled timeline requests cannot replace the chosen frame. Playback waits for a loaded capture, and loading messages identify the previously displayed date. Scene cloud cover does not establish that the glacier itself is cloud-free. Seasonal snow, shadows, illumination, and processing differences must be considered before interpreting retreat.
+Image bytes persist in browser CacheStorage and a bounded memory cache. The backend retains prepared study crops, overview crops and PNG tiles on disk; SQLite coalesces repeated requests. Browser image downloads use six shared slots and retry connection resets, interrupted image bodies, HTTP 408/429 and server errors up to five attempts with backoff. Retries bypass the HTTP cache; only successful images enter the observation cache. The backend rechecks the raster worker and restarts its owned worker when it stops. Swiss aerial downloads also use six shared slots, retry transient failures, and cache validated JPEGs for one day. Satellite tiles are cacheable for 30 days. Keeping one previous map source bounds GPU retention while the byte caches retain the annual sequence.
 
-## Process a NISAR file
+To prepare every native study crop and central imagery tile ahead of exploration:
 
-1. Open **Data & sources** and find a matching GOFF product in the ASF catalog.
-2. Download the `.h5` science file through [ASF Vertex](https://search.asf.alaska.edu/) using your NASA Earthdata account. Keep credentials outside the application and chat.
-3. Import the file in **Process a radar observation**, choosing the product's frequency, polarization, offset layer, and correlation threshold.
-4. The backend validates the mission/product, acquisition interval, projected coordinate grid, metre units, variance units, nodata, source masks, and spatial intersection. Processing is queued separately from the UI, and status survives backend restarts.
-5. Completed products provide a five-band GeoTIFF, bounded GeoJSON samples, and source provenance with SHA-256. Show the optional radar-component layer and click a sample to inspect signed rates and formal uncertainty.
+```sh
+npm run imagery:cache
+# Optionally cache one location:
+npm run imagery:cache -- --location=columbia
+```
 
-GOFF offsets are already in metres. The processor divides along-track and slant-range offsets by the acquisition interval in days, and divides the square root of their variances by the same interval for formal 1σ uncertainty. These are **radar-coordinate components, not horizontal glacier speed**. The correlation threshold is an adjustable screening choice. Stable-ground bias correction and independent glacier validation remain necessary. See the [ASF GOFF guide](https://nisar-docs.asf.alaska.edu/goff/) and [official GOFF writer schema](https://github.com/isce-framework/isce3/blob/develop/python/packages/nisar/products/insar/GOFF_writer.py).
+This also caches 72 central Swiss aerial tiles when Aletsch is selected. Exact camera viewports are prepared in the browser when playback starts. A new camera view, terrain, basemap context, and uncached distant tiles can still require network access. Source imagery is 10 m for Sentinel-2 and typically 25 cm over the Alps for SWISSIMAGE; zoom does not manufacture finer source detail.
+
+`npm run imagery:refresh` refreshes the glacier manifest. The additional environmental manifest separately preserves verified green, red, NIR and SCL band metadata, seasonal selections and product-XML radiometry.
+
+## Water and vegetation change
+
+Choose **Sundarbans wetlands** or **Rondônia forest**, then open **Water change** or **Vegetation change**. The local analysis panel provides all nine annual captures, distributions, mean/median indices, valid coverage, threshold candidate area, change from the first year, map overlays and original-resolution GeoTIFF/provenance downloads.
+
+- NDWI = `(green - NIR) / (green + NIR)` for water signals.
+- NDVI = `(NIR - red) / (NIR + red)` for vegetation signals.
+
+Each capture uses its original product's scale and additive offset, including the offset change in newer processing baselines. All years share a 10 m projected grid. Screening accepts SCL classes 4/5/6 and excludes nodata, saturation, shadows, unclassified samples, clouds, cirrus and snow. The 20 m classification band is sampled using nearest neighbours. Changes include only cells valid in both dates.
+
+The supplied local workspace has all 18 annual index and change products prepared under `database/processed/environment-v1`. In a fresh checkout, **Download & analyze all years** prepares them in the background and reuses completed crops after interruption. Threshold area is estimated from 0.02-wide histogram bins. NDWI does not establish flood extent, water depth or tidal stage; NDVI does not establish forest loss, biomass or a land-cover class. The panel records these interpretation limits.
+
+## Supplied NISAR study
+
+At Aletsch, open **NISAR study** or **Data & sources → Open detailed radar study**. The root GOFF HDF5 and matching 22-page QA report are preserved. Prepared artifacts expose all three frequency-A / HH layers, original signed offsets, pair-average rates, formal sigma, covariance, SNR, mask diagnostics, correlation screening, distributions, cell inspection, QA pages and downloads.
+
+The measured interval is September 23–October 5, 2026: 12 days. Layers use 32/64/128-input-pixel correlation windows on an 80 m output grid. The study rectangle contains ice and surrounding terrain. At correlation >= 0.30, layers retain 1,112 / 1,144 / 1,816 of 13,272 grid cells. These raw offsets have not been corrected for stable-ground bias or independently validated as glacier velocity.
+
+Continuous pair playback distributes signed endpoint offsets linearly across the measured interval. Intermediate states are visualization assumptions. Formal endpoint uncertainty is preserved; no intermediate uncertainty model, annual extrapolation, horizontal-velocity conversion or moving elevation is inferred.
+
+```sh
+npm run science:study
+```
+
+Regeneration expects exactly one matching root `NISAR_*.h5` / `*_QA_REPORT.pdf` pair and the project Python dependencies. Optional Poppler `pdftoppm` prepares report thumbnails. Hashes and matched granule identifiers are recorded under ignored `database/processed/supplied-nisar`. GOFF specification 1.5.0's encoded source mask is explicitly supported when its later `validDataMask` is absent; unknown missing-mask schemas are rejected.
+
+GeoTIFFs use a fixed 0.30 cutoff. Cell JSON and point GeoJSON retain all source-eligible samples so interactive screening does not rewrite measurements. The QA report supplies diagnostics, not an independent velocity-validation certificate.
+
+## Import and compare radar files
+
+1. Open **Data & sources**. ASF searches GOFF for glacier presets and GCOV for wetland/forest presets.
+2. Download a matching HDF5 through [ASF Vertex](https://search.asf.alaska.edu/) with an Earthdata account. Keep credentials outside SARscape.
+3. Import the file. The backend inspects its actual channels and spatial coverage before presenting supported frequency, polarization and layer choices.
+4. Process a channel. Durable jobs expose queued, processing, complete, failed and interrupted states; retry reuses the stored upload. Processing another channel preserves prior products.
+5. Download original GeoTIFFs, bounded original-value sample GeoJSON and provenance. Show the analysis on the terrain map and click samples.
+
+GOFF validates projected grids, metre/variance units, acquisition pairs, finite values and masks, then divides offsets and formal sigma by pair duration. Outputs are signed along-track and slant-range components in m/day, not horizontal speed. Separate int16 previews record scale, offset, block aggregation and observed quantization error; original float32 rasters are preserved.
+
+GCOV accepts supported real diagonal covariance channels, preserves power and normalization metadata, applies valid-data/input-exception masks and receive-only exclusions, and computes `10 log10(power)` for positive power. Zero power remains valid linear power with missing dB. Optional low-return screening displays candidates without classifying them as water or forest loss.
+
+Two completed GCOV captures can produce a signed newer-minus-older dB comparison. Channel, normalization, acquisition order and available track/look/orbit geometry must match. The older raster is aligned to the newer grid; only paired finite cells contribute. Original values, paired area and processing differences remain in exports. No authentic GCOV file is included: this path has been checked with isolated schema fixtures, while the supplied GOFF study uses the actual user file. See the [ASF GOFF guide](https://nisar-docs.asf.alaska.edu/goff/) and [GCOV guide](https://nisar-docs.asf.alaska.edu/gcov/).
+
+## Controls and saved views
+
+Location search, source selection, adjustments/reset, terrain, study boundary, satellite/street context, zoom, north, reset, globe/return, capture details and provenance downloads are connected. Saved views preserve real capture IDs, camera, source, comparison mode/date/divider/lens, adjustments, map layers and analysis settings. Stored views are validated and older saves migrate. Saved radar overlays require their processed product to remain locally available.
 
 ## API
 
 | Route | Purpose |
 | --- | --- |
-| `/api/health` | API and configured processing capability |
-| `/api/scenarios` | Geographic presets |
-| `/api/imagery/:id` | Real dated captures and metadata |
-| `/api/imagery/tiles/:id/:frame/{z}/{x}/{y}.png` | Cached genuine image tiles |
-| `/api/imagery/cog/:id/:frame/TCI.tif` | Registered-scene HEAD or bounded byte-range reads |
-| `/api/catalog/:id` | Actual ASF NISAR GOFF catalog records |
-| `/api/science/:id` | Processor availability and persisted jobs |
-| `POST /api/science/:id/import` | Stream an HDF5 file into the local processing queue |
-| `/api/science/:id/products/:job/:file` | Completed GeoTIFF, GeoJSON, or provenance |
+| `/api/health`, `/api/scenarios` | Health and registered locations |
+| `/api/imagery/:id` | Actual captures and metadata |
+| `/api/imagery/tiles/:id/:frame/{z}/{x}/{y}.png` | Cached satellite imagery |
+| `/api/imagery/aerial/:year/{z}/{x}/{y}.jpeg` | Cached Swiss aerial tiles |
+| `/api/imagery/cog/:id/:frame/:asset.tif` | Registered-scene byte ranges |
+| `/api/catalog/:id` | ASF GOFF or GCOV metadata |
+| `/api/analysis/:id` | Environmental status and annual statistics |
+| `POST /api/analysis/:id/prepare` | Prepare/resume annual analysis |
+| `/api/analysis/:id/:frame/:file` | Index/change GeoTIFF, PNG and JSON |
+| `/api/analysis/tiles/:id/:frame/:mode/{z}/{x}/{y}.png` | Index/change overlays |
+| `/api/science/:id` | Durable radar jobs |
+| `POST /api/science/:id/import` | Stream and inspect HDF5 |
+| `POST /api/science/:id/jobs/:job/process` | Process an inspected channel |
+| `POST /api/science/:id/jobs/:job/retry` | Retry a job |
+| `POST /api/science/:id/compare` | Compare completed GCOV captures |
+| `/api/science/:id/products/:job/:file` | Radar exports |
+| `/api/science/study/supplied/:file` | Supplied study and QA pages |
 
-Synthetic `/api/layers` and `/api/export` routes have been removed. Remaining legacy generators are test fixtures only and are not connected to the application.
+Local mutation endpoints validate origin. Files, bands, locations and tile coordinates are allowlisted. Satellite signatures stay only in backend memory and renew automatically; manifests and provenance retain unsigned URLs. Synthetic layer/export endpoints are absent; obsolete demo generators remain isolated test fixtures.
 
-## Rendering and hosting
+## Verification and hosting limits
 
-The local renderer reads registered public Sentinel COGs through a Node byte-range proxy that verifies complete chunks, limits parallel reads, and keeps a bounded memory cache. PNG tiles persist under `database/processed/imagery-tiles-v5`; prepared overview crops persist under `database/processed/optical-studies-v2`; SQLite protects/coalesces repeated API tile requests. No hosted demo raster service is used by default. Optional `SARSCAPE_RASTER_SERVICE` selects an operator-managed TiTiler-compatible fallback; `SARSCAPE_TILE_SERVER` selects a different local worker.
+See [FEATURE_AUDIT.md](FEATURE_AUDIT.md) and [TODO.md](TODO.md). Automated checks cover API failures, caches, cancellation, atomic frame commits, animation time, saved views, GOFF masks/units, GCOV inspection/comparison and aligned optical changes. Actual environmental rasters were checked against their statistics and paired differences; prepared previews were inspected locally.
 
-The build also produces a lightweight Worker package in `dist/`. Hosted imagery needs a deployed TiTiler-compatible service via `RASTER_SERVICE_URL`. Heavy HDF5 jobs must remain in a dedicated scientific backend. The Worker alone is not a complete hosted science deployment, and no deployment is claimed here.
+This session has no connected browser surface. Latest desktop/mobile interaction and measured playback frame rate are unverified. Scientific interpretation needs independent evidence; software checks do not establish glacier velocity, flood extent or forest loss.
 
-## Quantized science preview
-
-Every new GOFF job writes both the original five-band float32 `radar-components.tif` and a compressed five-band int16 `radar-preview.tif`. The preview averages accepted finite samples into blocks with a maximum dimension of 512 cells, then quantizes each band separately. GeoTIFF scales and offsets decode each value as `code * scale + offset`; -32768 is missing data. Provenance records aggregation, observed quantization error, and the rounding bound. Aggregation can hide local detail; mean formal sigma is not the uncertainty of an aggregated mean. Use the unchanged original GeoTIFF for scientific analysis. The map’s bounded sample points retain original values.
-
-Interrupted or failed jobs can be retried from Data & sources using their stored HDF5 file. No second upload is needed.
-
-## Completion status
-
-Real optical rendering and the GOFF processing workflow are implemented and tested. **No authenticated production NISAR granule has yet been processed or independently validated.** Schema fixtures establish software behavior; they are not scientific observations. Isolated-browser checks cover real capture changes, comparison, lens dragging and keyboard controls, swipe, blink playback, and mobile layout. Native-detail network performance still requires production monitoring; first reads depend on upstream COG access. The final submission remains gated on that check and a working hosted scientific backend if online delivery is required. Track the remaining work in `TODO.md`.
-
-Upcoming captures warm in the background after the current view loads. One low-priority tile request runs at a time, nearest years first, using the actual visible preview tile URLs. Navigation, capture changes, and hidden tabs cancel warming; data-saver and 2G connections skip it. PNG tiles persist on disk and in SQLite and are HTTP-cacheable. A first uncached view still depends on upstream processing. The dashed capture edge separates dated Sentinel-2 imagery from the undated Esri context; their resolutions and colors differ.
-
-## High-resolution Aletsch imagery and globe
-
-Aletsch defaults to swisstopo SWISSIMAGE aerial mosaics, with an undated reference alternative in Image source. Alps imagery is typically 25 cm at source. The 2018–2025 timeline selects official mosaic versions, not annual flights or exact acquisition dates; adjacent versions can repeat imagery and acquisition dates vary locally. Look closer requests a useful inspection scale; further zoom loads higher-resolution tiles on demand. Official JPEG tiles are proxied, validated, coalesced and persisted in SQLite for one day because swisstopo can revise a mosaic without changing its year.
-
-The globe control switches MapLibre to globe projection with undated context imagery; Return to the glacier restores terrain exploration. Image adjustments provides highlights, contrast and color plus reset. These GPU display settings apply equally to both comparison maps, are included in provenance export, and never rewrite source pixels or scientific products.
-
-Official sources: https://www.swisstopo.admin.ch/en/orthoimage-swissimage-10 and https://docs.geo.admin.ch/visualize-data/xyz.html.
-
-### Sharp imagery policy
-
-The visible map no longer exposes a reduced-resolution Explore mode or an Inspect-detail gate. Swiss aerial sources can request through zoom 20 at any camera position. Maps begin at an inspection scale; zoom-dependent tile selection still avoids downloading invisible pixels. Aletsch retains dated aerial mosaic versions. Langtang and Columbia now show World Imagery reference coverage, with variable unverified acquisition dates and resolution; their year playback and comparison are unavailable until dated high-resolution sources are connected. Sentinel-2 imagery remains accessible through the backend as archived data and is not a selectable low-resolution visual overlay.
+The build also creates a lightweight Worker package. Hosting requires a deployed raster service and a dedicated scientific backend with persistent storage; the Worker alone cannot perform HDF5 or environmental-band processing. Hosted routes report unavailable services instead of substituting data. No deployment is claimed.
