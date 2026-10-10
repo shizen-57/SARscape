@@ -11,7 +11,8 @@
 - [x] Discover actual ASF NISAR GOFF granules.
 - [x] Implement GOFF file import, durable job status, coordinate/unit/pair validation, quality screening, component-rate products, uncertainty, and map inspection.
 - [x] Test timeline race conditions, cache behavior, API validation, GOFF schema/masks/uncertainty, and production build.
-- [ ] Import and process an authenticated real production GOFF granule; no science file has been supplied yet.
+- [x] Import and process the user-supplied Aletsch production GOFF granule for September 23–October 5, 2026 through the production API code and queue; verify all four products and ten source-to-output checks. Recorded 1,112 accepted study-area cells at correlation 0.3.
+- [x] Verify both real GOFF pairs (September 11–23 and September 23–October 5, 2026) above dated GCOV in the browser's 3D map. Low correlation and large component rates still need spatial outlier review. Study-area cells are not a glacier-only selection.
 - [ ] Independently validate radar components, quality screening, uncertainty, and stable-ground bias correction.
 - [x] Verify actual dated-image changes, draggable/keyboard change lens, first/latest comparison, blink playback, swipe, and mobile layout in an isolated browser.
 - [x] Add explicit Explore previews and original-source detail requested on demand.

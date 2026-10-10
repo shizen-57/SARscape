@@ -21,6 +21,18 @@ export function createApi({cache,fetchUpstream=fetch,renderTile=()=>{throw new E
   if(!config.scenarios.some(s=>s.id===c.req.param('id')))return c.json({error:'Unknown glacier'},404)
   return c.json(science?await science.list(c.req.param('id')):{available:false,jobs:[],reason:'Science processing requires the local backend or a dedicated processing service.'})
  })
+ app.get('/api/science/:id/gcov',async c=>{
+  if(!config.scenarios.some(s=>s.id===c.req.param('id')))return c.json({error:'Unknown study area'},404)
+  return c.json(science?.gcovList?await science.gcovList(c.req.param('id')):{available:false,observations:[]})
+ })
+ app.get('/api/science/:id/gcov/:observation/:file',async c=>{
+  if(!config.scenarios.some(s=>s.id===c.req.param('id')))return c.json({error:'Unknown study area'},404)
+  const file=c.req.param('file'),types={'backscatter.png':'image/png','backscatter.tif':'image/tiff','provenance.json':'application/json'}
+  if(!Object.hasOwn(types,file))return c.json({error:'Unknown GCOV artifact'},404)
+  const bytes=await science?.gcovArtifact?.(c.req.param('id'),c.req.param('observation'),file)
+  if(!bytes)return c.json({error:'GCOV artifact not found'},404)
+  return c.body(bytes,200,{'Content-Type':types[file],'Cache-Control':'private,max-age=3600'})
+ })
  app.post('/api/science/:id/import',async c=>{
   if(!science)return c.json({error:'A dedicated science backend is required'},503)
   if(!config.scenarios.some(s=>s.id===c.req.param('id')))return c.json({error:'Unknown glacier'},404)

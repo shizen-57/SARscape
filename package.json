@@ -12,6 +12,7 @@
   "start": "node scripts/start.mjs",
   "dev:frontend": "npm run dev --workspace frontend",
   "dev:backend": "npm run dev --workspace backend",
+  "data:aletsch": "node scripts/prepare-aletsch.mjs",
   "build": "node scripts/build.mjs",
   "test": "node --test tests/*.test.mjs"
  },

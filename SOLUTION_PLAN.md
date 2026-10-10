@@ -16,8 +16,8 @@ The target is a finished glacier-change application with real observations, a fa
 
 ## Finish the scientific application
 
-1. Obtain a real matching GOFF science file using Earthdata-authorized access. Import it through the UI; select only frequency/polarization/layer combinations present in that product.
-2. Confirm the processor against the actual file, not only schema fixtures. Inspect HDF5 paths, mask values, dates, posting, maturity, units, quality coverage, raster orientation, and output lineage.
+1. Completed locally: the user supplied a matching production Aletsch GOFF file for September 23–October 5, 2026. The production import API code, queue, processor, and artifact APIs were exercised in-process using frequency A, HH, layer1, and correlation 0.3. Verify the saved job in the UI after starting or restarting the local backend.
+2. Completed software checks against the actual file: specification 1.5.0 combined source mask without polarization validDataMask, dates, 80 m posting, metre/variance units, raster orientation, five output bands, sample coordinates, preview precision, and original-source SHA-256. Ten checks passed. Only 1,112 of 13,272 study-area cells passed screening; low correlation and large component rates still need spatial outlier review and scientific validation. No glacier outline has been applied.
 3. Estimate and correct bias using independently identified stable ground. Compare glacier results to independent observations and document interpretation limits. Screening thresholds need evidence before being presented as validated criteria.
 4. Validate real capture sequences visually across all three glaciers. Exclude cloud-obscured scenes where appropriate, account for seasonal snow, and retain exact acquisition dates rather than implying evenly spaced measurements.
 5. Verify the interface on desktop, mobile, keyboard input, rapid timeline seeking, comparison, restoration, import, processing failure, and export. Complete the independent design finish review and record the resulting design system.

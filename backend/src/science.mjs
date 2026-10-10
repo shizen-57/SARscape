@@ -4,6 +4,13 @@ import {randomUUID} from 'node:crypto'
 import {spawn} from 'node:child_process'
 export function createScienceService({root,python}){
  const raw=join(root,'database/raw'),products=join(root,'database/processed/goff'),jobs=join(root,'database/jobs'),queue=[];let running=false
+ const gcov=join(root,'database/processed/gcov')
+ const gcovObservations=async scenario=>{
+  let manifest
+  try{manifest=JSON.parse(await readFile(join(gcov,'manifest.json'),'utf8'))}catch(error){if(error.code==='ENOENT')return [];throw error}
+  if(!Array.isArray(manifest.observations))throw new Error('Invalid GCOV observation manifest')
+  return manifest.observations.filter(observation=>observation?.scenario===scenario&&observation.product==='GCOV'&&typeof observation.id==='string'&&/^[A-Za-z0-9][A-Za-z0-9_-]{0,255}$/.test(observation.id)&&typeof observation.acquisitionDate==='string'&&observation.displayPreview?.file==='gcov-context.png'&&Array.isArray(observation.displayPreview.coordinates)&&observation.displayPreview.coordinates.length===4&&observation.displayPreview.coordinates.every(point=>Array.isArray(point)&&point.length===2&&point.every(Number.isFinite)&&Math.abs(point[0])<=180&&Math.abs(point[1])<=90)).sort((a,b)=>a.acquisitionDate.localeCompare(b.acquisitionDate))
+ }
  const children=new Set(),jobMap=new Map(),retrying=new Set()
  const initialized=(async()=>{
   await Promise.all([mkdir(raw,{recursive:true}),mkdir(products,{recursive:true}),mkdir(jobs,{recursive:true})])
@@ -30,7 +37,13 @@ export function createScienceService({root,python}){
   await persist(job);running=false;void pump()
  }
  return {
-  async list(scenario){await initialized;return {available:true,source:'Local NISAR GOFF processor',jobs:[...jobMap.values()].filter(j=>j.scenario===scenario).sort((a,b)=>b.createdAt.localeCompare(a.createdAt)).map(({input,...job})=>job)}},
+  async gcovList(scenario){return {available:true,observations:await gcovObservations(scenario)}},
+  async gcovArtifact(scenario,id,filename){
+   const files={'backscatter.png':'gcov-context.png','backscatter.tif':'gcov-backscatter.tif','provenance.json':'gcov-provenance.json'}
+   if(!Object.hasOwn(files,filename)||!(await gcovObservations(scenario)).some(observation=>observation.id===id))return null
+   try{return await readFile(join(gcov,id,files[filename]))}catch(error){if(error.code==='ENOENT')return null;throw error}
+  },
+  async list(scenario){await initialized;const seen=new Set();return {available:true,source:'Local NISAR GOFF processor',jobs:[...jobMap.values()].filter(j=>j.scenario===scenario).sort((a,b)=>b.createdAt.localeCompare(a.createdAt)).filter(job=>{const p=job.provenance;if(job.status!=='complete'||!p?.sourceGranuleId)return true;const key=JSON.stringify([p.sourceGranuleId,p.frequency,p.polarization,p.layer,p.correlationThreshold]);if(seen.has(key))return false;seen.add(key);return true}).map(({input,...job})=>job)}},
   async importFile(scenario,request,options){
    await initialized
    if(queue.length>=3)throw Object.assign(new Error('The processing queue is full. Wait for the current files to finish.'),{status:429})

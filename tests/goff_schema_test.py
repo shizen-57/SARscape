@@ -47,6 +47,35 @@ class SchemaTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,'does not intersect'):goff.process(self.source,self.root/'bad','columbia')
         with h5py.File(self.source,'r+') as h:h['/science/LSAR/GOFF/grids/frequencyA/pixelOffsets/HH/validDataMask'][...]=0
         with self.assertRaisesRegex(ValueError,'No samples'):goff.process(self.source,self.root/'bad','aletsch')
+    def test_specification_150_combined_mask_without_valid_data_mask(self):
+        with h5py.File(self.source,'r+') as h:
+            identification=h['/science/LSAR/identification']
+            identification.create_dataset('productSpecificationVersion',data=np.bytes_('1.5.0'))
+            identification.create_dataset('granuleId',data=np.bytes_('schema-fixture-only'))
+            offsets=h['/science/LSAR/GOFF/grids/frequencyA/pixelOffsets']
+            del offsets['HH/validDataMask']
+            offsets['mask'][0,0]=0
+            offsets['mask'][0,1]=111
+            offsets['mask'][0,2]=11|(1<<16)
+        metadata=goff.process(self.source,self.root/'real-layout','aletsch')
+        self.assertEqual(metadata['acceptedSamples'],13)
+        self.assertEqual(metadata['sourceGranuleId'],'schema-fixture-only')
+        self.assertEqual(metadata['productSpecificationVersion'],'1.5.0')
+        self.assertEqual(len(metadata['qualityMaskDatasets']),1)
+        self.assertNotIn('validDataMask bits',metadata['qualityMask'])
+        self.assertFalse(metadata['qualitySummary']['glacierOutlineApplied'])
+        with rasterio.open(self.root/'real-layout/radar-components.tif') as raster:
+            self.assertTrue(np.isnan(raster.read(1)[0,:3]).all())
+            self.assertEqual(raster.read(1)[1,1],1)
+    def test_missing_masks_and_unknown_specification_are_rejected(self):
+        with h5py.File(self.source,'r+') as h:
+            del h['/science/LSAR/GOFF/grids/frequencyA/pixelOffsets/HH/validDataMask']
+        with self.assertRaisesRegex(ValueError,'unsupported GOFF specification'):
+            goff.process(self.source,self.root/'unknown-layout','aletsch')
+        with h5py.File(self.source,'r+') as h:
+            del h['/science/LSAR/GOFF/grids/frequencyA/pixelOffsets/mask']
+        with self.assertRaisesRegex(ValueError,'required GOFF source mask'):
+            goff.process(self.source,self.root/'missing-mask','aletsch')
     def test_preview_bounds_rounding_error_and_preserves_invalid_cells(self):
         from preview import write_preview
         from rasterio.transform import from_origin

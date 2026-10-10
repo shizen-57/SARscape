@@ -52,11 +52,27 @@ def process(source, output, scenario_id, frequency='A', polarization='HH', layer
                 if attr in dataset.attrs: values[values==dataset.attrs[attr]]=np.nan
             arrays.append(values)
         along,slant,av,sv,peak=arrays
-        valid_mask=h[f'{path}/{polarization}/validDataMask']; mask=h[f'{path}/mask']
-        if valid_mask.shape!=shape or mask.shape!=shape: raise ValueError('Mismatched quality mask')
-        valid=valid_mask[window]; flags=mask[window].astype(np.uint32)
+        specification=text(identification['productSpecificationVersion'][()]) if 'productSpecificationVersion' in identification else None
+        mask=h.get(f'{path}/mask')
+        if mask is None: raise ValueError('The required GOFF source mask is missing')
+        if mask.shape!=shape: raise ValueError('Mismatched quality mask')
+        flags=mask[window].astype(np.uint32)
         code=flags&255
-        accepted=(valid==3)&((code%100)//10>0)&(code%10>0)&(code<100)&(((flags>>8)&65535)==0)
+        accepted=((code%100)//10>0)&(code%10>0)&(code<100)&(((flags>>8)&65535)==0)
+        quality_datasets=[f'{path}/mask']
+        quality_description='Non-water valid reference/secondary subswaths, zero known anomaly flags'
+        valid_mask=h.get(f'{path}/{polarization}/validDataMask')
+        if valid_mask is not None:
+            if valid_mask.shape!=shape: raise ValueError('Mismatched quality mask')
+            accepted &= valid_mask[window]==3
+            quality_datasets.append(f'{path}/{polarization}/validDataMask')
+            quality_description='Both validDataMask bits, '+quality_description.lower()
+        elif specification!='1.5.0':
+            raise ValueError(f'Missing validDataMask for unsupported GOFF specification: {specification or "unspecified"}')
+        # The real P05023/specification 1.5.0 product has the combined source mask
+        # and NaN-valued invalid offsets, with no polarization validDataMask.
+        source_mask_samples=int(accepted.sum())
+        finite_samples=int((accepted & np.isfinite(along)&np.isfinite(slant)&np.isfinite(av)&np.isfinite(sv)&np.isfinite(peak)&(av>=0)&(sv>=0)&(peak>=0)&(peak<=1)).sum())
         accepted &= np.isfinite(along)&np.isfinite(slant)&np.isfinite(av)&np.isfinite(sv)&np.isfinite(peak)&(av>=0)&(sv>=0)&(peak>=correlation)&(peak<=1)
         if not np.any(accepted): raise ValueError('No samples passed the declared quality mask in this glacier extent')
         # Offsets already have metre units. Rates and 1-sigma uncertainty divide by pair duration.
@@ -79,7 +95,12 @@ def process(source, output, scenario_id, frequency='A', polarization='HH', layer
         digest=hashlib.sha256()
         with open(source,'rb') as raw:
             while chunk:=raw.read(8*1024*1024): digest.update(chunk)
-        metadata={'scenario':scenario_id,'sourceFilename':pathlib.Path(source).name,'sha256':digest.hexdigest(),'mission':'NISAR','product':'GOFF','frequency':frequency,'polarization':polarization,'layer':layer,'referenceDate':reference,'secondaryDate':secondary,'pairDays':days,'epsg':epsg,'postingMetres':[dx,abs(dy)],'units':'m/day','acceptedSamples':int(accepted.sum()),'totalSamples':int(accepted.size),'returnedSamples':len(features),'correlationThreshold':correlation,'createdAt':dt.datetime.now(dt.timezone.utc).isoformat(),'horizontalVelocity':False,'validation':'Derived radar-coordinate components; no independent glacier validation or stable-ground bias correction applied.','qualityMask':'Both validDataMask bits, non-water valid reference/secondary subswaths, zero known anomaly flags, finite offsets/nonnegative variances, declared correlation threshold.','schemaSource':'https://github.com/isce-framework/isce3/blob/develop/python/packages/nisar/products/insar/GOFF_writer.py'}
+        metadata={'scenario':scenario_id,'sourceFilename':pathlib.Path(source).name,'sha256':digest.hexdigest(),'mission':'NISAR','product':'GOFF','frequency':frequency,'polarization':polarization,'layer':layer,'referenceDate':reference,'secondaryDate':secondary,'pairDays':days,'epsg':epsg,'postingMetres':[dx,abs(dy)],'units':'m/day','acceptedSamples':int(accepted.sum()),'totalSamples':int(accepted.size),'returnedSamples':len(features),'correlationThreshold':correlation,'createdAt':dt.datetime.now(dt.timezone.utc).isoformat(),'horizontalVelocity':False,'validation':'Derived radar-coordinate components; no independent glacier validation or stable-ground bias correction applied.','qualityMask':quality_description+', finite offsets/nonnegative variances, declared correlation threshold.','schemaSource':'https://github.com/isce-framework/isce3/blob/develop/python/packages/nisar/products/insar/GOFF_writer.py'}
+        metadata['productSpecificationVersion']=specification
+        for key,target in [('granuleId','sourceGranuleId'),('productVersion','productVersion'),('compositeReleaseId','compositeReleaseId')]:
+            if key in identification: metadata[target]=text(identification[key][()])
+        metadata['qualityMaskDatasets']=quality_datasets
+        metadata['qualitySummary']={'studyAreaExtent':scenario['extent'],'sourceMaskAccepted':source_mask_samples,'finiteDataAccepted':finite_samples,'acceptedFraction':float(accepted.sum()/accepted.size),'glacierOutlineApplied':False}
         metadata['displayPreview']=preview
         (output/'provenance.json').write_text(json.dumps(metadata,indent=2,allow_nan=False))
         return metadata
