@@ -4,9 +4,9 @@ A local 3D Earth-observation workspace for **Dancing with the SARs**. Explore gl
 
 ## Presentation centerpiece
 
-Open **http://127.0.0.1:5173/#simulation** for the supplied Aletsch NISAR pair. The dedicated screen has an 80-second guided story, cached satellite context, animated radar component space, real-cell inspection, interactive screening, source QA pages, fullscreen and evidence exports. Existing features remain available through **Explore**.
+Open **http://127.0.0.1:5173/#simulation** for two clearly separated modes. **Glacier changes** opens with a real 2018/2026 ice-front comparison, then smoothly replays nine cached, registered annual captures. **Radar displacement** shows the supplied Aletsch NISAR pair with growing signed offsets, an 80-second guided story, real-cell inspection, screening, source QA pages and evidence exports. Each mode has one timeline. Existing features remain available through **Explore**.
 
-See [PRESENTATION_GUIDE.md](PRESENTATION_GUIDE.md) for the timed script, source facts, judge questions and rehearsal checklist. Prepare its fixed optical context with `npm run science:presentation` after the supplied study and Aletsch imagery cache exist. The main animation uses one measured 12-day pair; it does not claim intermediate radar observations or validated glacier velocity.
+See [PRESENTATION_GUIDE.md](PRESENTATION_GUIDE.md) for the two-minute demo, source facts, judge questions and rehearsal notes. `npm run science:presentation` prepares both the registered annual images and fixed radar context after the supplied study and Aletsch imagery cache exist. Annual transitions blend observed images; radar replay interpolates one measured 12-day pair. Source evidence remains explicit in both modes.
 
 ## Run locally
 

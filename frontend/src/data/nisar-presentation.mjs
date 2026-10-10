@@ -2,12 +2,12 @@ import {acceptedCells,summaryStats,STUDY_COLUMNS} from './radar-study.mjs'
 
 export const CHAPTERS=[
  {id:'observe',label:'The two passes',title:'Two passes.\nTwelve days.',text:'Aletsch, seen by NISAR. Follow one real radar pair from acquisition to the measurements behind the image.',duration:14000},
- {id:'signal',label:'Replay the signal',title:'Make the\nsignal visible.',text:'Replay the measured signed offsets in radar component space. Each point is a source cell; the in-between positions are linear interpolation.',duration:24000},
+ {id:'signal',label:'Replay the change',title:'Zero to\nmeasured.',text:'The reference is zero. Watch signed displacement grow toward the measured endpoint. Each dot is a source cell; pale dots mark the final measurement.',duration:24000},
  {id:'quality',label:'Question the signal',title:'Confidence\non stage.',text:'Raise the correlation cutoff and watch the coverage change. Better matching narrows the sample; it does not remove systematic bias.',duration:22000},
  {id:'evidence',label:'Trace the evidence',title:'Every number.\nIts source.',text:'Choose a cell, compare the processing windows, and open the original QA report. A compelling visual should be a checkable one.',duration:20000},
 ]
 export const GUIDE_DURATION=CHAPTERS.reduce((sum,c)=>sum+c.duration,0)
-export function chapterPreset(chapter){return {chapter,progress:chapter===0?0:1,threshold:chapter===0?0:.3,view:chapter===1?'radar':'geographic',reveal:0}}
+export function chapterPreset(chapter){return {chapter,progress:chapter<=1?0:1,threshold:chapter===0?0:.3,view:chapter===1||chapter===2?'radar':'geographic',reveal:0}}
 export function guideState(fraction){
  let elapsed=Math.max(0,Math.min(1,fraction))*GUIDE_DURATION,index=0
  while(index<CHAPTERS.length-1&&elapsed>=CHAPTERS[index].duration){elapsed-=CHAPTERS[index].duration;index++}

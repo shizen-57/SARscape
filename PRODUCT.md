@@ -10,7 +10,7 @@ Delegated by the request to reuse established modules. React, TypeScript, Vite, 
 ## Product Purpose
 An interactive NASA Space Apps challenge solution that helps visitors explore surface change on a 3D map and understand how NISAR observations support that exploration.
 
-The current presentation centers on the user's supplied Aletsch GOFF acquisition pair. A dedicated guided experience makes the signed radar signal, quality screening and source evidence understandable to judges, while retaining the broader exploration workspace. The same measurements drive both views; intermediate playback is explicitly illustrative and never presented as validated glacier velocity or a forecast.
+The presentation starts with visible glacier change: real 2018/2026 Aletsch images side by side, with nine registered annual captures available for smooth playback. A separate radar mode makes the user's supplied 12-day GOFF pair, signed displacement, screening and source evidence inspectable. Only one clock is active, and each option has one home. Annual image blends and intermediate radar interpolation remain clearly distinguished from acquired observations, while the broader exploration workspace retains its existing features.
 
 ## Users
 Assumption for the initial build: challenge judges, students, and curious non-specialists exploring changes at a selected location.

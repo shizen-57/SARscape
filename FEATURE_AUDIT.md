@@ -14,7 +14,7 @@ Scope includes all glacier/radar controls plus the previously deferred wetland a
 | Radar animation jumps | Elapsed-time animation frames, hidden-tab pause and endpoint clamp | Animation-time tests |
 | Partial saved views | Restore IDs, camera, source, comparisons, adjustments, layers and analyses | Migration/validation/restoration-data tests |
 | Supplied GOFF/QA | Three-layer study, original cells, uncertainties, diagnostics, pair playback and report pages | Authentic HDF5/report identity and source-cell/artifact checks |
-| Presentation centerpiece | Four chapters, 80-second guide, geographic/radar views, real-cell inspection, screening, cached evidence, fullscreen and PNG/JSON exports | Chapter/model/cache/API tests, actual React ready-state rendering, real-data renderer images and 15 live asset checks |
+| Presentation centerpiece | Real annual glacier image comparison and cached replay; separate 12-day radar mode, 80-second guide, real-cell inspection, screening, evidence and PNG/JSON exports | 65 tests, source-image fingerprints, real renderer comparisons, ready-state React checks and live local assets |
 | Unsupported upload choices | Inspect first; expose only intersecting supported channels | Queued inspection/processing workflow tests |
 | Interrupted/additional jobs | Retry stored inputs; preserve products for additional channels | Restart/retry/input-reuse tests |
 | GCOV processing | Power/dB, channel/mask/receive-only rules, metadata, exports and map candidates | Six Python schema/index/comparison checks and service fixtures |
@@ -41,8 +41,16 @@ After the reported Vite connection resets, all nine Aletsch captures were reques
 
 ## Checks and limits
 
-The automated suite passes 61 Node tests, including invoked Python checks. TypeScript, the Vite frontend and the production Worker package build pass. Temporary GCOV fixtures remain outside public observations and products. Native CPU canvas checks recorded 240 drawn frames; these are not browser/GPU frame-rate measurements.
+The automated suite passes 65 Node tests, including invoked Python checks. TypeScript, the Vite frontend and the production Worker package build pass. Temporary GCOV fixtures remain outside public observations and products. Native CPU canvas checks cover the annual and radar renderers; these are not browser/GPU frame-rate measurements.
 
 No connected browser is available. Latest desktop/mobile layout, direct pointer/keyboard operation, import UI and measured frame rate remain unverified. Source/cache checks support implementation but do not replace GPU/browser validation.
 
 These workflows run locally. Earthdata-authenticated GCOV downloads, independent scientific interpretation and a deployed persistent processing service remain external requirements.
+
+
+## Visible-change presentation and control organization
+
+- Simulation opens with real 2018/2026 Aletsch lower-tongue images side by side; nine registered captures preload for smooth 28-second annual playback. Focus presets, synchronized inspection zoom, a reference selector, swipe comparison, exact-year seeking, speed, PNG export and scene-fingerprint evidence are connected.
+- Radar mode opens at zero in component space with fixed pale endpoint anchors, an accumulating selected-cell arrow, signed values, formal uncertainties and the existing 80-second narrative. Annual images and the 12-day radar pair have distinct modes and clocks.
+- Explore uses one bottom timeline; a supplied radar overlay replaces the annual clock. Map layers owns analysis display settings; Data & analysis owns source details, exports, detailed study, ingestion, environmental inspection and progress. Sheet openings dismiss other tool panels and pause replay. Top-map duplicates and independent floating control cards are removed.
+- Verification: 65 automated tests; TypeScript and production build; authentic annual PNG/native-input hashes; all annual assets through the local API; ready-state React markup; unchanged reference pixels and changed current-image pixels from the actual renderer. Native CPU timing is not a browser FPS claim. Connected browser layout and pointer testing were unavailable; live rehearsal remains advisable.

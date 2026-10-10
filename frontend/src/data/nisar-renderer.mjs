@@ -34,6 +34,13 @@ export function drawBase(ctx,{width,height,context,image,view,model,extent}){
 export function drawSignal(ctx,{width,height,context,model,progress,selected,view,chapter,reveal}){
  ctx.clearRect(0,0,width,height)
  const transform=geographicTransform(width,height,context.bounds),markers=[]
+ if(view==='radar'){
+  ctx.fillStyle='#c6e8dc24'
+  for(const point of model.points){const end=radarPosition(point.cell,1,width,height,model);ctx.fillRect(end[0]-1,end[1]-1,2,2)}
+  ctx.strokeStyle='#dbe9ce70';ctx.lineWidth=1;ctx.beginPath();ctx.arc(width/2,height/2,7,0,Math.PI*2);ctx.stroke()
+  ctx.font='11px system-ui';ctx.fillStyle='#c4d4c4';ctx.fillText('REFERENCE / ZERO',width/2+13,height/2-12)
+  ctx.fillStyle='#90aaa2';ctx.fillText('Pale dots: measured endpoints',24,24)
+ }
  const radius=view==='radar'?1.55:Math.max(.9,Math.min(2.3,width/420))
  for(const group of model.groups){
   const t=group.t*progress,target=group.negative?[242,128,157]:[86,224,218]
@@ -49,6 +56,12 @@ export function drawSignal(ctx,{width,height,context,model,progress,selected,vie
    const end=radarPosition(selected,1,width,height,model),start=[width/2,height/2]
    ctx.strokeStyle='#e8ead980';ctx.setLineDash([4,5]);ctx.beginPath();ctx.moveTo(...start);ctx.lineTo(...end);ctx.stroke();ctx.setLineDash([])
    ctx.strokeStyle='#fff5c6';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(...start);ctx.lineTo(point.x,point.y);ctx.stroke()
+   const dx=point.x-start[0],dy=point.y-start[1],length=Math.hypot(dx,dy)
+   if(length>12){const ux=dx/length,uy=dy/length;ctx.beginPath();ctx.moveTo(point.x,point.y);ctx.lineTo(point.x-ux*10+uy*5,point.y-uy*10-ux*5);ctx.lineTo(point.x-ux*10-uy*5,point.y-uy*10+ux*5);ctx.closePath();ctx.fillStyle='#fff5c6';ctx.fill()}
+   // Reference and endpoint are explicit anchors. This arrow belongs to radar
+   // component space, not the optical map's geographic coordinate system.
+   ctx.font='12px system-ui';ctx.fillStyle='#f4ebc6';ctx.fillText(`SELECTED CELL / ${(progress*100).toFixed(0)}% OF PAIR OFFSET`,24,height-67)
+   ctx.font='bold 17px system-ui';ctx.fillText(`Along ${(Number(selected[4])*progress).toFixed(1)} m  /  Slant ${(Number(selected[5])*progress).toFixed(1)} m`,24,height-43)
    // Formal uncertainty belongs to the observed endpoint, never a new observation.
    const ex=selected[6]/model.aScale*width*.38,ey=selected[7]/model.sScale*height*.33
    ctx.strokeStyle='#fff5c6a0';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(end[0]-ex,end[1]);ctx.lineTo(end[0]+ex,end[1]);ctx.moveTo(end[0],end[1]-ey);ctx.lineTo(end[0],end[1]+ey);ctx.stroke()

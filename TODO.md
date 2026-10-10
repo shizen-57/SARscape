@@ -34,3 +34,9 @@ Wetlands and forest change are included following the user's latest scope expans
 - [ ] Deploy and exercise a persistent raster/science backend if online delivery is required.
 
 See [FEATURE_AUDIT.md](FEATURE_AUDIT.md) for changes and verification evidence.
+
+
+- [x] Make glacier change visible immediately with real 2018/2026 endpoint comparison and a cached annual image replay.
+- [x] Separate annual optical appearance from 12-day NISAR component replay; one active clock and one canonical home for each setting.
+- [x] Consolidate source/details/export actions and remove duplicate floating presentation/analysis controls.
+- [ ] Rehearse both presentation modes on the actual browser/projector; connected UI verification was unavailable in the coding session.
