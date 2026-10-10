@@ -43,6 +43,16 @@ class SchemaTests(unittest.TestCase):
         with h5py.File(self.source,'r+') as h:
             self.layer(h)['alongTrackOffset'].attrs['units']='meters';h['/science/LSAR/identification/secondaryZeroDopplerStartTime'][()]=np.bytes_('2026-09-22T04:27:22Z')
         with self.assertRaisesRegex(ValueError,'positive duration'):goff.process(self.source,self.root/'bad','aletsch')
+    def test_specification_150_uses_encoded_source_mask_without_invented_valid_bits(self):
+        with h5py.File(self.source,'r+') as h:
+            del h['/science/LSAR/GOFF/grids/frequencyA/pixelOffsets/HH/validDataMask']
+            h['/science/LSAR/identification'].create_dataset('productSpecificationVersion',data=np.bytes_('1.5.0'))
+            h['/science/LSAR/GOFF/grids/frequencyA/pixelOffsets/mask'][0,0]=111
+        meta=goff.process(self.source,self.root/'legacy','aletsch')
+        self.assertEqual(meta['acceptedSamples'],15)
+        self.assertIn('absent',meta['maskSchema'])
+        with h5py.File(self.source,'r+') as h:h['/science/LSAR/identification/productSpecificationVersion'][()]=np.bytes_('1.6.0')
+        with self.assertRaisesRegex(ValueError,'unrecognized'):goff.process(self.source,self.root/'bad','aletsch')
     def test_rejects_nonintersecting_granule_and_empty_quality_mask(self):
         with self.assertRaisesRegex(ValueError,'does not intersect'):goff.process(self.source,self.root/'bad','columbia')
         with h5py.File(self.source,'r+') as h:h['/science/LSAR/GOFF/grids/frequencyA/pixelOffsets/HH/validDataMask'][...]=0

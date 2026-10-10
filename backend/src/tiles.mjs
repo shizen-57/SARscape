@@ -1,7 +1,7 @@
 export function createTileCache(cache,render){
  const pending=new Map()
  return async(frame,z,x,y,id)=>{
-  const key=`optical-tile-v7-${id}-${frame.id}-${z}-${x}-${y}`
+  const key=`optical-tile-v9-${id}-${frame.sourceSceneId??frame.id}-${z}-${x}-${y}`
   const cached=await cache.get(key)
   if(cached)return Uint8Array.from(Buffer.from(cached,'base64'))
   if(!pending.has(key))pending.set(key,(async()=>{

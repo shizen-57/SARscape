@@ -1,5 +1,14 @@
 {
- "name":"@sarscape/backend","private":true,"type":"module",
- "scripts":{"dev":"node --watch src/server.mjs","start":"node src/server.mjs"},
- "dependencies":{"hono":"^4.10.0","@hono/node-server":"^1.19.0"}
+ "name": "@sarscape/backend",
+ "private": true,
+ "type": "module",
+ "scripts": {
+  "dev": "node ../scripts/backend-dev.mjs",
+  "start": "node src/server.mjs"
+ },
+ "dependencies": {
+  "@hono/node-server": "^1.19.0",
+  "better-sqlite3": "^12.11.1",
+  "hono": "^4.10.0"
+ }
 }

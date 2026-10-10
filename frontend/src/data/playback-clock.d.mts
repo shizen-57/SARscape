@@ -1,0 +1,1 @@
+export function animateProgress(options:{start?:number;duration?:number;onFrame:(value:number)=>void;onComplete?:()=>void;request?:typeof requestAnimationFrame;cancel?:typeof cancelAnimationFrame;now?:()=>number;hidden?:()=>boolean;subscribeVisibility?:(callback:()=>void)=>()=>void}):()=>void

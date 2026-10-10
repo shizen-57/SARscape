@@ -5,6 +5,26 @@ import {createApi} from '../backend/src/app.mjs'
 test('catalog normalization handles real ASF field shapes and caches upstream',async()=>{let requests=0;const app=createApi({fetchUpstream:async url=>{requests++;assert.match(url,/dataset=NISAR/);assert.match(url,/processingLevel=GOFF/);return Response.json({features:[{properties:{fileID:'real-test-granule',startTime:'2026-09-23T04:27:22Z',stopTime:'2026-10-05T04:28:01Z',url:'https://example.org/PROVISIONAL/granule.h5',polarization:['HH','HV'],processingLevel:'GOFF'}}]})}});const response=await app.request('/api/catalog/aletsch');const body=await response.json();assert.equal(body.records[0].maturity,'PROVISIONAL');assert.equal(body.records[0].polarization,'HH, HV');assert.equal(body.records[0].id,'real-test-granule');await app.request('/api/catalog/aletsch');assert.equal(requests,1)})
 test('upstream failures produce recoverable error responses',async()=>{const app=createApi({fetchUpstream:async()=>{throw new Error('Network down')}});assert.equal((await app.request('/api/catalog/aletsch')).status,502)})
 test('imagery endpoint returns real dated optical captures and rejects unknown glaciers',async()=>{const app=createApi();const res=await app.request('/api/imagery/aletsch');assert.equal(res.status,200);const body=await res.json();assert.ok(Array.isArray(body.frames)&&body.frames.length>0);assert.ok(body.frames.every(f=>typeof f.id==='string'&&typeof f.url==='string'&&Array.isArray(f.bbox)));assert.match(body.source,/Sentinel-2/);assert.equal((await app.request('/api/imagery/unknown')).status,404)})
+
+test('all glaciers have chronological dated captures that can render and compare across years',async()=>{
+ const rendered=[]
+ const app=createApi({renderTile:async(frame,z,x,y,id)=>{rendered.push({id,date:frame.date});return new Uint8Array([137,80,78,71,13,10,26,10])}})
+ const {scenarios}=await (await app.request('/api/scenarios')).json()
+ for(const scenario of scenarios){
+  const response=await app.request(`/api/imagery/${scenario.id}?source=sentinel2`)
+  assert.equal(response.status,200)
+  const {frames}=await response.json()
+  assert.ok(frames.length>=2,`${scenario.id} must have captures to compare`)
+  assert.ok(frames.every(frame=>frame.datePrecision==='acquisition'&&Number.isFinite(Date.parse(frame.date))&&frame.resolutionMeters===10))
+  assert.deepEqual(frames.map(f=>f.date),frames.map(f=>f.date).sort())
+  assert.equal(new Set(frames.map(f=>f.date.slice(0,4))).size,frames.length)
+  for(const frame of [frames[0],frames.at(-1)]){
+   const tile=await app.request(`/api/imagery/tiles/${scenario.id}/${frame.id}/12/1/2.png`)
+   assert.equal(tile.status,200);assert.equal(tile.headers.get('content-type'),'image/png')
+  }
+ }
+ assert.equal(rendered.length,scenarios.length*2)
+})
 test('imagery tile route validates coordinates and streams bytes from the injected renderer',async()=>{let call=null;const png=new Uint8Array([0x89,0x50,0x4e,0x47,0x0d,0x0a,0x1a,0x0a]);const app=createApi({renderTile:async(frame,z,x,y,id)=>{call={frame:frame.id,z,x,y,id};return png}});assert.equal((await app.request('/api/imagery/tiles/aletsch/does-not-exist/12/2139/1448.png')).status,404);assert.equal((await app.request('/api/imagery/tiles/aletsch/S2B_32TMS_20180927_1_L2A/12/99999/1448.png')).status,400);const ok=await app.request('/api/imagery/tiles/aletsch/S2B_32TMS_20180927_1_L2A/12/2139/1448.png');assert.equal(ok.status,200);assert.equal(ok.headers.get('Content-Type'),'image/png');assert.match(ok.headers.get('Cache-Control'),/immutable/);assert.deepEqual([...new Uint8Array(await ok.arrayBuffer()).slice(0,4)],[0x89,0x50,0x4e,0x47]);assert.deepEqual(call,{frame:'S2B_32TMS_20180927_1_L2A',z:12,x:2139,y:1448,id:'aletsch'})})
 
 test('shipping API never exposes synthetic measurements',async()=>{const app=createApi();for(const path of ['/api/layers/aletsch','/api/export/aletsch'])assert.equal((await app.request(path)).status,404)})
@@ -31,4 +51,4 @@ test('sharp reference coverage never invents capture dates or yearly frames',asy
   assert.match(sequence.frames[0].tileTemplate,/World_Imagery/)
  }
 })
-test('COG proxy requires a registered scene and a small range',async()=>{let calls=0;const app=createApi({fetchUpstream:async(url,options)=>{calls++;assert.match(url,/sentinel-cogs/);assert.equal(options.headers.Range,'bytes=0-3');return new Response(new Uint8Array([73,73,42,0]),{status:206,headers:{'Content-Length':'4','Content-Range':'bytes 0-3/100'}})}});const path='/api/imagery/cog/aletsch/S2B_32TMS_20180927_1_L2A/TCI.tif';assert.equal((await app.request(path)).status,416);assert.equal((await app.request(path,{headers:{Range:'bytes=0-999999999'}})).status,416);assert.equal((await app.request('/api/imagery/cog/aletsch/unknown/TCI.tif',{headers:{Range:'bytes=0-3'}})).status,404);const r=await app.request(path,{headers:{Range:'bytes=0-3'}});assert.equal(r.status,206);assert.equal(r.headers.get('content-range'),'bytes 0-3/100');assert.equal(calls,1)})
+test('COG proxy requires a registered scene and a small range',async()=>{let calls=0;const app=createApi({fetchUpstream:async(url,options)=>{calls++;assert.match(url,/sentinel-cogs|\.blob\.core\.windows\.net/);assert.equal(options.headers.Range,'bytes=0-3');return new Response(new Uint8Array([73,73,42,0]),{status:206,headers:{'Content-Length':'4','Content-Range':'bytes 0-3/100'}})}});const path='/api/imagery/cog/aletsch/S2B_32TMS_20180927_1_L2A/TCI.tif';assert.equal((await app.request(path)).status,416);assert.equal((await app.request(path,{headers:{Range:'bytes=0-999999999'}})).status,416);assert.equal((await app.request('/api/imagery/cog/aletsch/unknown/TCI.tif',{headers:{Range:'bytes=0-3'}})).status,404);const r=await app.request(path,{headers:{Range:'bytes=0-3'}});assert.equal(r.status,206);assert.equal(r.headers.get('content-range'),'bytes 0-3/100');assert.equal(calls,1)})

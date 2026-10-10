@@ -1,9 +1,12 @@
 import manifest from '../../database/imagery/sentinel2.json' with {type:'json'}
-export const imageryManifest=manifest
-export function imageryFrame(scenarioId,frameId){return manifest.scenarios[scenarioId]?.find(f=>f.id===frameId)}
+import additional from '../../database/imagery/additional-sentinel2.json' with {type:'json'}
+import {satelliteAccess} from './satellite-fetch.mjs'
+export const imageryManifest={...manifest,scenarios:{...manifest.scenarios,...additional.scenarios}}
+export const imagerySelection=id=>additional.scenarios[id]?additional.selection:manifest.selection
+export function imageryFrame(scenarioId,frameId){return imageryManifest.scenarios[scenarioId]?.find(f=>f.id===frameId||f.sourceSceneId===frameId)}
 export async function hostedImageryTile(frame,z,x,y,service){
  if(!service)throw new Error('A production raster service must be configured for hosted imagery')
- const params=new URLSearchParams({url:frame.url})
+ const params=new URLSearchParams({url:await satelliteAccess.sign(frame.url)})
  const response=await fetch(`${service.replace(/\/$/,'')}/cog/tiles/WebMercatorQuad/${z}/${x}/${y}.png?${params}`,{signal:AbortSignal.timeout(20000)})
  if(!response.ok)throw new Error(`Raster service returned ${response.status}`)
  return new Uint8Array(await response.arrayBuffer())

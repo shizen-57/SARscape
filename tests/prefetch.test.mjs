@@ -2,14 +2,15 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import {prefetchCaptures} from '../frontend/src/components/imagery-prefetch.mjs'
 
-test('warming caches identical tile URLs serially, nearest captures first',async()=>{
- const urls=[],options=[];let active=0,maxActive=0
+test('warming caches identical tile URLs serially, nearest captures first',{timeout:2000},async()=>{
+ const urls=[],options=[];let active=0,maxActive=0,finish
+ const completed=new Promise(resolve=>finish=resolve)
  const cancel=prefetchCaptures({frames:[{id:'a'},{id:'b'},{id:'c'},{id:'d'}],step:1,tiles:['/tiles/{frame}/12/1/2.png?v=7','/tiles/{frame}/12/1/2.png?v=7'],delayMs:0,fetchTile:async(url,opts)=>{
   urls.push(url);options.push(opts);maxActive=Math.max(maxActive,++active)
   await new Promise(resolve=>setTimeout(resolve,5));active--
-  return new Response(new Uint8Array([1]))
+  const response=new Response(new Uint8Array([1]));if(urls.length===3)finish();return response
  }})
- await new Promise(resolve=>setTimeout(resolve,60));cancel()
+ await completed;cancel()
  assert.deepEqual(urls,['/tiles/c/12/1/2.png?v=7','/tiles/a/12/1/2.png?v=7','/tiles/d/12/1/2.png?v=7'])
  assert.equal(maxActive,1);assert.ok(options.every(o=>o.cache==='force-cache'&&o.priority==='low'))
 })

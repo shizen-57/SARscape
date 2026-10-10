@@ -13,6 +13,30 @@ def text(value):
     if isinstance(value, bytes): return value.decode('utf-8')
     return str(value)
 
+def source_quality(h, path, window, shape):
+    """Read declared source flags; specification 1.5.0 predates validDataMask."""
+    mask=h[f'{path}/mask']
+    if mask.shape!=shape: raise ValueError('Mismatched quality mask')
+    flags=mask[window].astype(np.uint32); code=flags&255
+    accepted=((code%100)//10>0)&(code%10>0)&(code<100)&(((flags>>8)&65535)==0)
+    return accepted
+
+def quality_mask(h, path, polarization, window, shape):
+    accepted=source_quality(h,path,window,shape)
+    valid_path=f'{path}/{polarization}/validDataMask'
+    if valid_path in h:
+        valid=h[valid_path]
+        if valid.shape!=shape: raise ValueError('Mismatched quality mask')
+        return accepted&(valid[window]==3), 'validDataMask and encoded source mask'
+    identification=h['/science/LSAR/identification']
+    version=text(identification['productSpecificationVersion'][()]) if 'productSpecificationVersion' in identification else ''
+    if version!='1.5.0': raise ValueError('Missing validDataMask for an unrecognized product specification')
+    return accepted, 'Specification 1.5.0 encoded source mask; validDataMask is absent'
+
+def screen_samples(arrays, base, correlation):
+    along,slant,av,sv,peak=arrays
+    return base & np.isfinite(along)&np.isfinite(slant)&np.isfinite(av)&np.isfinite(sv)&np.isfinite(peak)&(av>=0)&(sv>=0)&(peak>=correlation)&(peak<=1)
+
 def process(source, output, scenario_id, frequency='A', polarization='HH', layer='layer1', correlation=0.3):
     config=json.loads((ROOT/'database/scenarios.json').read_text())
     scenario=next(s for s in config['scenarios'] if s['id']==scenario_id)
@@ -52,12 +76,8 @@ def process(source, output, scenario_id, frequency='A', polarization='HH', layer
                 if attr in dataset.attrs: values[values==dataset.attrs[attr]]=np.nan
             arrays.append(values)
         along,slant,av,sv,peak=arrays
-        valid_mask=h[f'{path}/{polarization}/validDataMask']; mask=h[f'{path}/mask']
-        if valid_mask.shape!=shape or mask.shape!=shape: raise ValueError('Mismatched quality mask')
-        valid=valid_mask[window]; flags=mask[window].astype(np.uint32)
-        code=flags&255
-        accepted=(valid==3)&((code%100)//10>0)&(code%10>0)&(code<100)&(((flags>>8)&65535)==0)
-        accepted &= np.isfinite(along)&np.isfinite(slant)&np.isfinite(av)&np.isfinite(sv)&np.isfinite(peak)&(av>=0)&(sv>=0)&(peak>=correlation)&(peak<=1)
+        base,mask_schema=quality_mask(h,path,polarization,window,shape)
+        accepted=screen_samples(arrays,base,correlation)
         if not np.any(accepted): raise ValueError('No samples passed the declared quality mask in this glacier extent')
         # Offsets already have metre units. Rates and 1-sigma uncertainty divide by pair duration.
         bands=[along/days,slant/days,np.sqrt(np.maximum(av,0))/days,np.sqrt(np.maximum(sv,0))/days,peak]
@@ -81,6 +101,8 @@ def process(source, output, scenario_id, frequency='A', polarization='HH', layer
             while chunk:=raw.read(8*1024*1024): digest.update(chunk)
         metadata={'scenario':scenario_id,'sourceFilename':pathlib.Path(source).name,'sha256':digest.hexdigest(),'mission':'NISAR','product':'GOFF','frequency':frequency,'polarization':polarization,'layer':layer,'referenceDate':reference,'secondaryDate':secondary,'pairDays':days,'epsg':epsg,'postingMetres':[dx,abs(dy)],'units':'m/day','acceptedSamples':int(accepted.sum()),'totalSamples':int(accepted.size),'returnedSamples':len(features),'correlationThreshold':correlation,'createdAt':dt.datetime.now(dt.timezone.utc).isoformat(),'horizontalVelocity':False,'validation':'Derived radar-coordinate components; no independent glacier validation or stable-ground bias correction applied.','qualityMask':'Both validDataMask bits, non-water valid reference/secondary subswaths, zero known anomaly flags, finite offsets/nonnegative variances, declared correlation threshold.','schemaSource':'https://github.com/isce-framework/isce3/blob/develop/python/packages/nisar/products/insar/GOFF_writer.py'}
         metadata['displayPreview']=preview
+        metadata['maskSchema']=mask_schema
+        metadata['qualityMask']='Non-water valid reference/secondary subswaths, zero known anomaly flags, finite offsets/nonnegative variances, declared correlation threshold. '+mask_schema
         (output/'provenance.json').write_text(json.dumps(metadata,indent=2,allow_nan=False))
         return metadata
 

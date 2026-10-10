@@ -1,7 +1,14 @@
-import {DatabaseSync} from 'node:sqlite'
+import {createRequire} from 'node:module'
 import {mkdirSync,readFileSync} from 'node:fs'
 import {resolve,join} from 'node:path'
 import {fileURLToPath} from 'node:url'
+const require=createRequire(import.meta.url)
+let DatabaseSync
+try{({DatabaseSync}=require('node:sqlite'))}
+catch(error){
+ if(error.code!=='ERR_UNKNOWN_BUILTIN_MODULE')throw error
+ DatabaseSync=require('better-sqlite3')
+}
 export function createSqliteCache(root) {
  mkdirSync(root,{recursive:true})
  const db=new DatabaseSync(join(resolve(root),'sarscape.sqlite'))

@@ -2,7 +2,7 @@
 export function createCogReader(fetchUpstream=fetch){
  const pending=new Map()
  const chunks=new Map();let cacheBytes=0,active=0;const waiting=[]
- const limited=async work=>{if(active>=12)await new Promise(resolve=>waiting.push(resolve));active++;try{return await work()}finally{active--;waiting.shift()?.()}}
+ const limited=async work=>{if(active>=12)await new Promise(resolve=>waiting.push(resolve));else active++;try{return await work()}finally{const next=waiting.shift();if(next)next();else active--}}
  const readChunk=async(url,start,end)=>{
   const key=`${url}:${start}-${end}`
   if(chunks.has(key))return chunks.get(key)
@@ -21,13 +21,15 @@ export function createCogReader(fetchUpstream=fetch){
    const match=/^bytes=(\d+)-(\d+)$/.exec(range??'')
    if(!match||Number(match[2])<Number(match[1])||Number(match[2])-Number(match[1])>=16*1024*1024)return new Response('A bounded byte range is required',{status:416})
   }
-  const key=`${frame.id}:${method}:${range??''}`
+  const key=`${frame.sourceSceneId??frame.id}:${method}:${range??''}`
   if(!pending.has(key))pending.set(key,(async()=>{
    for(let attempt=0;attempt<2;attempt++){
     try{
      if(method==='GET'){
       const [,startText,endText]=/^bytes=(\d+)-(\d+)$/.exec(range),start=Number(startText),end=Number(endText),parts=[]
-      for(let offset=start;offset<=end;offset+=65536)parts.push([offset,Math.min(offset+65535,end)])
+      // 1 MiB chunks avoid hundreds of round trips for a native study crop.
+      // Each chunk is still bounded, verified, cached and concurrency-limited.
+      for(let offset=start;offset<=end;offset+=1048576)parts.push([offset,Math.min(offset+1048575,end)])
       const results=await Promise.all(parts.map(([s,e])=>readChunk(frame.url,s,e)))
       const bytes=new Uint8Array(end-start+1);let offset=0
       for(const result of results){bytes.set(result.bytes,offset);offset+=result.bytes.length}

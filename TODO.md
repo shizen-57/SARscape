@@ -1,42 +1,44 @@
-# SARscape backlog
+# SARscape status
 
-## Current focus — glacier movement
+## Implemented local features
 
-- [x] Separate frontend, backend, and database.
-- [x] Reuse MapLibre terrain and established UI/geospatial modules.
-- [x] Show genuine dated Sentinel-2 captures, comparison, playback, source details, saved views, and provenance.
-- [x] Remove synthetic motion endpoints from the application.
-- [x] Repair local COG delivery, verify complete byte ranges, deduplicate tile work, and persist cached images.
-- [x] Prepare each study capture once and use resolution-matched COG overviews to speed distant map views.
-- [x] Discover actual ASF NISAR GOFF granules.
-- [x] Implement GOFF file import, durable job status, coordinate/unit/pair validation, quality screening, component-rate products, uncertainty, and map inspection.
-- [x] Test timeline race conditions, cache behavior, API validation, GOFF schema/masks/uncertainty, and production build.
-- [ ] Import and process an authenticated real production GOFF granule; no science file has been supplied yet.
-- [ ] Independently validate radar components, quality screening, uncertainty, and stable-ground bias correction.
-- [x] Verify actual dated-image changes, draggable/keyboard change lens, first/latest comparison, blink playback, swipe, and mobile layout in an isolated browser.
-- [x] Add explicit Explore previews and original-source detail requested on demand.
-- [x] Restart the final native-crop cache revision; frontend, backend, and imagery worker reported ready in the sandbox.
-- [x] Recheck final remote imagery, source-detail mode, lens, swipe, blink, and mobile layout with the isolated browser; detail loaded in about 6.3 seconds in the final run without failed image tiles.
-- [x] Implement 16-bit NISAR display previews with a maximum 512-cell dimension, recorded scale/offset and observed rounding error, missing-data preservation, and unchanged original science products.
-- [x] Add retry processing for interrupted/failed jobs using their existing uploaded file.
-- [ ] Validate preview aggregation and precision against an actual glacier GOFF granule and a task-specific scientific error budget.
-- [x] Complete independent visual finish review; disposition ship for the existing desktop/mobile interface, with no material fixes. This does not certify scientific validation.
-- [x] Record the final design system in DESIGN.md and .impeccable/design.json after the scoped independent review.
-- [ ] Deploy and verify a dedicated raster/science backend if online delivery is required.
+- [x] Node 20-compatible SQLite and automatic project-Python renderer startup.
+- [x] Separate frontend, backend and database; production build/start.
+- [x] Actual annual Sentinel-2 sequences for all five locations, 2018–2026.
+- [x] Aletsch's 2018–2025 aerial mosaic versions and optional undated reference.
+- [x] Seeking/playback, persistent viewport preparation, crossfades, blink, synchronized lens/swipe.
+- [x] Bounded downloads, retries, complete ranges, renewable access, native/overview crops and disk/browser caches.
+- [x] Start Explore playback after two captures; prioritize visible tiles, cancel abandoned downloads and reuse cached overview context.
+- [x] Recover unexpected backend exits automatically and drain tile requests on development source reloads.
+- [x] Search, map tools, details, sources, adjustments, provenance and complete saved views.
+- [x] Supplied GOFF study: three layers, source cells, uncertainty, masks, measured-pair interpolation and 22 report pages.
+- [x] Presentation centerpiece: four chapters, cached 80-second guide, component-space playback, real-cell inspection, confidence controls, fullscreen, source QA and figure/evidence exports.
+- [x] Inspect actual HDF5 channels before selecting settings; durable processing, retry and upload reuse.
+- [x] GOFF rate/sigma products, original float32 exports and quantified int16 previews.
+- [x] GCOV power/dB processing, masks, receive-only exclusions, candidate screening and map samples.
+- [x] Matching GCOV capture comparisons with aligned paired-pixel dB changes and exports.
+- [x] Sundarbans annual NDWI and Rondônia annual NDVI: distributions, coverage, thresholds, change overlays and exports.
+- [x] Prepare all 18 actual environmental products; verify exported pixels/statistics.
+- [x] Automated API/cache/timeline/playback/saved-view/science checks and TypeScript/Vite build.
 
-## Next features — deferred by user
+Wetlands and forest change are included following the user's latest scope expansion. Panels display measured signals and interpretation limits.
 
-- [ ] Wetlands/flooding in Bangladesh, starting with the Sundarbans: GCOV comparisons with tidal context and validated interpretation.
-- [ ] Forest and land-cover change: GCOV signal changes with independent evidence for disturbance.
+## Remaining validation and external dependencies
 
-## Reminder
+- [ ] Exercise the latest desktop/mobile interface, keyboard/pointer controls, cache cancellation, saved views, radar imports and overlays. No browser surface is available; prior visual checks predate these changes.
+- [ ] Measure playback frame rate/texture uploads on the user's GPU/browser. Caching and continuous animation are implemented; measured smoothness is unverified.
+- [ ] Independently identify glacier outlines/stable ground, assess bias/outliers and validate the supplied GOFF motion interpretation.
+- [ ] Evaluate aggregated/quantized radar previews against a scientific error budget; original products remain available.
+- [ ] Import authentic matching GCOV captures and validate signals. Current GCOV checks use isolated fixtures.
+- [ ] Establish tidal stage/inundation evidence before describing Sundarbans candidates as flooding.
+- [ ] Establish land-cover/field evidence before describing Rondônia changes as forest loss or biomass.
+- [ ] Acquire finer dated aerial imagery for Nepal/Alaska if required; Sentinel-2 provides 10 m pixels.
+- [ ] Deploy and exercise a persistent raster/science backend if online delivery is required.
 
-The user requested a reminder on October 10, 2026 at 10:00 AM Asia/Dhaka to revisit the deferred features. Glacier movement remains the current focus.
+See [FEATURE_AUDIT.md](FEATURE_AUDIT.md) for changes and verification evidence.
 
-## Imagery performance and clarity
 
-- [x] Cache official Swiss aerial tiles locally and preload visible preview tiles for nearby timeline years with bounded background work.
-- [x] Improve Sentinel-2 exploration previews to 20–160 m and mark the capture coverage boundary.
-- [x] Add high-resolution Swiss aerial mosaic versions for Aletsch, with year-level provenance and source selection.
-- [x] Add globe overview and display-only image adjustment controls.
-- [ ] Acquire equivalent dated high-resolution imagery for Nepal and Alaska; the Swiss aerial source covers Aletsch only.
+- [x] Make glacier change visible immediately with real 2018/2026 endpoint comparison and a cached annual image replay.
+- [x] Separate annual optical appearance from 12-day NISAR component replay; one active clock and one canonical home for each setting.
+- [x] Consolidate source/details/export actions and remove duplicate floating presentation/analysis controls.
+- [ ] Rehearse both presentation modes on the actual browser/projector; connected UI verification was unavailable in the coding session.
