@@ -6,7 +6,7 @@ from urllib.parse import urlsplit
 
 
 class RangeReader(io.RawIOBase):
-    def __init__(self, session, url, size, budget, block_size=256 * 1024):
+    def __init__(self, session, url, size, budget, block_size=1024 * 1024):
         super().__init__()
         parsed = urlsplit(url)
         if parsed.scheme != 'https' or parsed.hostname != 'nisar.asf.earthdatacloud.nasa.gov' or parsed.query or parsed.fragment:

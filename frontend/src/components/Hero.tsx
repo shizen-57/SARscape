@@ -10,6 +10,7 @@ const SOURCES=[
  {icon:Layers2,name:'World Imagery',agency:'Esri',text:'High-detail reference imagery for every glacier and for this globe. It is undated, so it shows the landscape rather than yearly change.',stats:['Global','Undated']}
 ]
 const REGION_NOTES:Record<string,{fact:string;data:string}>={
+ manchar:{fact:'Follow water spreading across the Manchar Lake floodplain during the 2022 Pakistan floods.',data:'Sentinel-2 · four captures · June–November 2022'},
  aletsch:{fact:'The largest glacier in the Alps, about 20 km long, at the heart of the Jungfrau–Aletsch World Heritage site.',data:'Swiss aerial mosaics · 2018–2025'},
  langtang:{fact:'A debris-covered valley glacier in Langtang National Park, north of Kathmandu.',data:'Reference imagery · undated'},
  columbia:{fact:'A tidewater glacier in Prince William Sound and one of the most rapidly changing glaciers in the world.',data:'Reference imagery · undated'}
@@ -55,7 +56,7 @@ export default function Hero({onEnter}:{onEnter:(scenarioId:string)=>void}){
    <nav className="hero-links" id="hero-links" aria-label="Introduction">
     <a href="#" aria-current="page" onClick={jump('')}>Overview</a>
     <a href="#land-sources" onClick={jump('land-sources')}>Instruments</a>
-    <a href="#land-regions" onClick={jump('land-regions')}>Glaciers</a>
+    <a href="#land-regions" onClick={jump('land-regions')}>Study areas</a>
     <a href="#land-how" onClick={jump('land-how')}>How it works</a>
     <a className="hero-enroll" href="#explore" onClick={enter()}>Open map</a>
    </nav>

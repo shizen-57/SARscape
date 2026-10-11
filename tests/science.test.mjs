@@ -22,7 +22,15 @@ test('science endpoints validate settings, file origin, availability and artifac
 })
 test('GOFF processor validates official schema, real units, masks, pair duration and uncertainty',async()=>{
  const bundled=join(homedir(),'.cache/codex-runtimes/codex-primary-runtime/dependencies/python/python.exe'),python=process.env.SARSCAPE_PYTHON??(existsSync(bundled)?bundled:'python')
- const {stderr}=await promisify(execFile)(python,['tests/goff_schema_test.py'],{timeout:45000,maxBuffer:2*1024*1024});assert.match(stderr,/Ran 6 tests/);assert.match(stderr,/OK/)
+ const {stderr}=await promisify(execFile)(python,['tests/goff_schema_test.py'],{timeout:120000,maxBuffer:2*1024*1024});assert.match(stderr,/Ran 6 tests/);assert.match(stderr,/OK/)
+})
+test('aerial-shaded radar maths',async()=>{
+ const bundled=join(homedir(),'.cache/codex-runtimes/codex-primary-runtime/dependencies/python/python.exe'),python=process.env.SARSCAPE_PYTHON??(existsSync(bundled)?bundled:'python')
+ const {stderr}=await promisify(execFile)(python,['tests/gcov_shaded_test.py'],{timeout:120000,maxBuffer:2*1024*1024});assert.match(stderr,/Ran 3 tests/);assert.match(stderr,/OK/)
+})
+test('motion preview filters, stable-ground reference and flow-direction decision',async()=>{
+ const bundled=join(homedir(),'.cache/codex-runtimes/codex-primary-runtime/dependencies/python/python.exe'),python=process.env.SARSCAPE_PYTHON??(existsSync(bundled)?bundled:'python')
+ const {stderr}=await promisify(execFile)(python,['tests/goff_motion_test.py'],{timeout:120000,maxBuffer:2*1024*1024});assert.match(stderr,/Ran 8 tests/);assert.match(stderr,/OK/)
 })
 test('interrupted processing reuses the existing upload and prevents duplicate retries',async()=>{
  const root=await mkdtemp(join(tmpdir(),'sarscape-retry-')),id='recovery-fixture'

@@ -178,7 +178,7 @@
 .rail-button svg{color:var(--muted)}
 .rail-button[aria-expanded=true]{background:var(--accent-soft);border-color:rgba(121,220,232,.45);color:#fff}
 .rail-button[aria-expanded=true] svg{color:var(--accent)}
-.tool-panel{width:300px;max-height:100%;overflow-y:auto;padding:14px 18px 18px;border-radius:20px;background:var(--glass);border:1px solid var(--line);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);box-shadow:0 14px 40px rgba(0,0,0,.5);animation:panel-in .22s cubic-bezier(.16,1,.3,1)}
+.tool-panel{width:min(300px,calc(100vw - 96px));max-height:min(68vh,100%);overflow-y:auto;padding:12px 15px 15px;border-radius:18px;background:var(--glass);border:1px solid var(--line);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);box-shadow:0 14px 40px rgba(0,0,0,.5);animation:panel-in .22s cubic-bezier(.16,1,.3,1)}
 .tool-panel-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
 .tool-panel-head h2{font-size:16px}
 .tool-panel .observation-summary{padding-top:4px}

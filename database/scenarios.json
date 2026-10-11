@@ -31,10 +31,10 @@
       "product": "GOFF",
       "explanation": "Pixel offsets from paired radar observations can help estimate glacier motion. This demonstration illustrates speed; it is not measured NISAR velocity.",
       "extent": [
-        8.02,
-        46.39,
-        8.1,
-        46.51
+        7.875,
+        46.355,
+        8.15,
+        46.605
       ],
       "path": [
         [
@@ -186,6 +186,38 @@
         -146.153,
         61.552
       ]
+    },
+    {
+      "id": "manchar",
+      "name": "Manchar Lake Flood",
+      "country": "Sindh, Pakistan",
+      "center": [
+        67.69,
+        26.49
+      ],
+      "zoom": 10.8,
+      "bearing": 0,
+      "pitch": 35,
+      "kind": "flood",
+      "title": "Watch the floodplain change",
+      "subtitle": "Real satellite captures of the 2022 flood.",
+      "unit": "",
+      "metric": "Observed surface appearance",
+      "product": "Sentinel-2 L2A",
+      "explanation": "Natural-colour satellite observations reveal water spreading across the floodplain. These images do not measure water depth. Historical 2022 imagery is Sentinel-2, not NISAR.",
+      "extent": [
+        67.48,
+        26.29,
+        67.9,
+        26.73
+      ],
+      "imageryExtent": [
+        67.48,
+        26.29,
+        67.9,
+        26.73
+      ],
+      "path": []
     }
   ]
 }

@@ -93,6 +93,15 @@ class RangeReaderTests(unittest.TestCase):
         self.assertEqual(reader.read(8), bytes(range(8)))
         self.assertEqual(len(session.calls), 1)
 
+    def test_megabyte_blocks_reduce_serial_range_requests(self):
+        data = bytes(range(256)) * 8192
+        session = FakeSession(data)
+        reader = RangeReader(session, SOURCE_URL, len(data), len(data))
+        self.addCleanup(reader.close)
+        self.assertEqual(reader.read(len(data)), data)
+        self.assertEqual(reader.requests, 2)
+        self.assertEqual(reader.transferred, len(data))
+
     def test_http_200_is_rejected_before_consuming_body(self):
         reader, session = self.reader(overrides=[{'status': 200}])
         with self.assertRaisesRegex(ValueError, 'HTTP 200'):

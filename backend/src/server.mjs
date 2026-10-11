@@ -5,11 +5,14 @@ import {createSqliteCache} from './cache.mjs'
 import {hostedImageryTile,localImageryTile} from './imagery.mjs'
 import {createTileCache} from './tiles.mjs'
 import {createScienceService} from './science.mjs'
+import {createSurfaceService} from './surfaces.mjs'
+import {createAssistant} from './assistant.mjs'
 import {homedir} from 'node:os'
 import {join} from 'node:path'
 import {existsSync} from 'node:fs'
 import {serveStatic} from '@hono/node-server/serve-static'
 const root=fileURLToPath(new URL('../../',import.meta.url)),bundled=join(homedir(),'.cache/codex-runtimes/codex-primary-runtime/dependencies/python/python.exe')
+try{process.loadEnvFile(join(fileURLToPath(new URL('../../',import.meta.url)),'.env'))}catch{/* optional */}
 const science=createScienceService({root,python:process.env.SARSCAPE_PYTHON??(existsSync(bundled)?bundled:'python')})
 const cache=createSqliteCache(fileURLToPath(new URL('../../database/',import.meta.url)))
 const renderTile=createTileCache(cache,async(frame,z,x,y,id)=>{
@@ -18,7 +21,7 @@ const renderTile=createTileCache(cache,async(frame,z,x,y,id)=>{
   return hostedImageryTile(frame,z,x,y,process.env.SARSCAPE_RASTER_SERVICE)
  }
 })
-const app=createApi({cache,renderTile,science})
+const app=createApi({cache,renderTile,science,surfaces:createSurfaceService({root}),assistant:createAssistant({science})})
 if(existsSync(join(root,'frontend/dist/index.html'))){
  app.use('/assets/*',async(c,next)=>{await next();if(c.res.ok)c.header('Cache-Control','public,max-age=31536000,immutable')})
  app.get('/*',serveStatic({root:'./frontend/dist'}))

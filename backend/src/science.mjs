@@ -1,4 +1,5 @@
 import {mkdir,readdir,readFile,writeFile,rename,unlink,open,stat} from 'node:fs/promises'
+import config from '../../database/scenarios.json' with {type:'json'}
 import {join} from 'node:path'
 import {randomUUID} from 'node:crypto'
 import {spawn} from 'node:child_process'
@@ -9,7 +10,16 @@ export function createScienceService({root,python}){
   let manifest
   try{manifest=JSON.parse(await readFile(join(gcov,'manifest.json'),'utf8'))}catch(error){if(error.code==='ENOENT')return [];throw error}
   if(!Array.isArray(manifest.observations))throw new Error('Invalid GCOV observation manifest')
-  return manifest.observations.filter(observation=>observation?.scenario===scenario&&observation.product==='GCOV'&&typeof observation.id==='string'&&/^[A-Za-z0-9][A-Za-z0-9_-]{0,255}$/.test(observation.id)&&typeof observation.acquisitionDate==='string'&&observation.displayPreview?.file==='gcov-context.png'&&Array.isArray(observation.displayPreview.coordinates)&&observation.displayPreview.coordinates.length===4&&observation.displayPreview.coordinates.every(point=>Array.isArray(point)&&point.length===2&&point.every(Number.isFinite)&&Math.abs(point[0])<=180&&Math.abs(point[1])<=90)).sort((a,b)=>a.acquisitionDate.localeCompare(b.acquisitionDate))
+  return manifest.observations.filter(observation=>observation?.scenario===scenario&&observation.product==='GCOV'&&typeof observation.id==='string'&&/^[A-Za-z0-9][A-Za-z0-9_-]{0,255}$/.test(observation.id)&&typeof observation.acquisitionDate==='string'&&currentExtent(scenario,observation.studyAreaExtent)&&observation.displayPreview?.file==='gcov-context.png'&&Array.isArray(observation.displayPreview.coordinates)&&observation.displayPreview.coordinates.length===4&&observation.displayPreview.coordinates.every(point=>Array.isArray(point)&&point.length===2&&point.every(Number.isFinite)&&Math.abs(point[0])<=180&&Math.abs(point[1])<=90)).sort((a,b)=>a.acquisitionDate.localeCompare(b.acquisitionDate))
+ }
+ // A narrower prepared crop remains valid when the viewing area expands.
+ // Its own georeferencing defines coverage; never imply data fills the new box.
+ const extents=Object.fromEntries(config.scenarios.map(s=>[s.id,s.extent]))
+ const currentExtent=(scenario,extent)=>{
+  const target=extents[scenario]
+  if(!target)return false
+  if(!extent)return true
+  return Array.isArray(extent)&&extent.length===4&&extent.every(Number.isFinite)&&extent[0]<extent[2]&&extent[1]<extent[3]&&Math.max(target[0],extent[0])<Math.min(target[2],extent[2])&&Math.max(target[1],extent[1])<Math.min(target[3],extent[3])
  }
  const children=new Set(),jobMap=new Map(),retrying=new Set()
  const initialized=(async()=>{
@@ -39,11 +49,11 @@ export function createScienceService({root,python}){
  return {
   async gcovList(scenario){return {available:true,observations:await gcovObservations(scenario)}},
   async gcovArtifact(scenario,id,filename){
-   const files={'backscatter.png':'gcov-context.png','backscatter.tif':'gcov-backscatter.tif','provenance.json':'gcov-provenance.json'}
+   const files={'backscatter.png':'gcov-context.png','color.png':'gcov-color.png','natural.png':'gcov-natural.png','shaded.png':'gcov-shaded.png','backscatter.tif':'gcov-backscatter.tif','provenance.json':'gcov-provenance.json'}
    if(!Object.hasOwn(files,filename)||!(await gcovObservations(scenario)).some(observation=>observation.id===id))return null
    try{return await readFile(join(gcov,id,files[filename]))}catch(error){if(error.code==='ENOENT')return null;throw error}
   },
-  async list(scenario){await initialized;const seen=new Set();return {available:true,source:'Local NISAR GOFF processor',jobs:[...jobMap.values()].filter(j=>j.scenario===scenario).sort((a,b)=>b.createdAt.localeCompare(a.createdAt)).filter(job=>{const p=job.provenance;if(job.status!=='complete'||!p?.sourceGranuleId)return true;const key=JSON.stringify([p.sourceGranuleId,p.frequency,p.polarization,p.layer,p.correlationThreshold]);if(seen.has(key))return false;seen.add(key);return true}).map(({input,...job})=>job)}},
+  async list(scenario){await initialized;const seen=new Set();return {available:true,source:'Local NISAR GOFF processor',jobs:[...jobMap.values()].filter(j=>j.scenario===scenario&&currentExtent(scenario,j.provenance?.qualitySummary?.studyAreaExtent)).sort((a,b)=>b.createdAt.localeCompare(a.createdAt)).filter(job=>{const p=job.provenance;if(job.status!=='complete'||!p?.sourceGranuleId)return true;const key=JSON.stringify([p.sourceGranuleId,p.frequency,p.polarization,p.layer,p.correlationThreshold]);if(seen.has(key))return false;seen.add(key);return true}).map(({input,...job})=>job)}},
   async importFile(scenario,request,options){
    await initialized
    if(queue.length>=3)throw Object.assign(new Error('The processing queue is full. Wait for the current files to finish.'),{status:429})
@@ -62,7 +72,7 @@ export function createScienceService({root,python}){
    }catch(error){await handle.close().catch(()=>{});await unlink(temporary).catch(()=>{});throw error}
    const job={id,scenario,status:'queued',createdAt:new Date().toISOString(),bytes:size,...options};await persist(job);queue.push(job);void pump();return job
   },
-  async artifact(scenario,id,filename){await initialized;const job=jobMap.get(id);if(!job||job.scenario!==scenario||job.status!=='complete'||!['samples.geojson','provenance.json','radar-components.tif','radar-preview.tif'].includes(filename))return null;try{return await readFile(join(products,id,filename))}catch(error){if(error.code==='ENOENT')return null;throw error}},
+  async artifact(scenario,id,filename){await initialized;const job=jobMap.get(id);if(!job||job.scenario!==scenario||job.status!=='complete'||!['samples.geojson','provenance.json','radar-components.tif','radar-preview.tif','motion-preview.json'].includes(filename))return null;try{return await readFile(join(products,id,filename))}catch(error){if(error.code==='ENOENT')return null;throw error}},
   async retry(scenario,id){
    await initialized
    const job=jobMap.get(id)

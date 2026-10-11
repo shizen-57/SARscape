@@ -7,6 +7,7 @@ import mapWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import './styles.css'
 import './observations.css'
+import './surfaces.css'
 const queryClient=new QueryClient()
 setWorkerUrl(mapWorkerUrl)
 ReactDOM.createRoot(document.getElementById('root')!).render(<React.StrictMode><QueryClientProvider client={queryClient}><App /></QueryClientProvider></React.StrictMode>)

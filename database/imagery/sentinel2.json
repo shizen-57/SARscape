@@ -2,7 +2,7 @@
   "source": "Copernicus Sentinel-2 L2A / Element 84 Earth Search",
   "retrievedAt": "2026-10-08T19:51:11.897Z",
   "resolutionMeters": 10,
-  "selection": "One lowest scene-cloud-cover August–September capture per year; scene cloud percentage is not a local glacier cloud mask.",
+  "selection": "One lowest scene-cloud-cover August\u2013September capture per year; scene cloud percentage is not a local glacier cloud mask.",
   "scenarios": {
     "aletsch": [
       {
@@ -345,6 +345,84 @@
         ],
         "resolutionMeters": 10
       }
+    ],
+    "manchar": [
+      {
+        "id": "S2B_42RUQ_20220627_0_L2A",
+        "date": "2022-06-27T06:11:58.111Z",
+        "label": "Before flooding",
+        "cloudCover": 0.570662,
+        "url": "https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/42/R/UQ/2022/6/S2B_42RUQ_20220627_0_L2A/TCI.tif",
+        "metadataUrl": "https://earth-search.aws.element84.com/v1/collections/sentinel-2-l2a/items/S2B_42RUQ_20220627_0_L2A",
+        "collection": "sentinel-2-l2a",
+        "platform": "sentinel-2b",
+        "resolutionMeters": 10,
+        "bbox": [
+          67.23048074836413,
+          26.120223385358038,
+          68.09773093744924,
+          27.119512133309634
+        ]
+      },
+      {
+        "id": "S2A_42RUQ_20220831_0_L2A",
+        "date": "2022-08-31T06:12:05.373Z",
+        "label": "Flood expansion",
+        "cloudCover": 0.079954,
+        "url": "https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/42/R/UQ/2022/8/S2A_42RUQ_20220831_0_L2A/TCI.tif",
+        "metadataUrl": "https://earth-search.aws.element84.com/v1/collections/sentinel-2-l2a/items/S2A_42RUQ_20220831_0_L2A",
+        "collection": "sentinel-2-l2a",
+        "platform": "sentinel-2a",
+        "resolutionMeters": 10,
+        "bbox": [
+          67.22818124666544,
+          26.12019513255115,
+          68.09773093744924,
+          27.119512133309634
+        ]
+      },
+      {
+        "id": "S2A_42RUQ_20220910_0_L2A",
+        "date": "2022-09-10T06:12:03.904Z",
+        "label": "Widespread inundation",
+        "cloudCover": 0.023595,
+        "url": "https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/42/R/UQ/2022/9/S2A_42RUQ_20220910_0_L2A/TCI.tif",
+        "metadataUrl": "https://earth-search.aws.element84.com/v1/collections/sentinel-2-l2a/items/S2A_42RUQ_20220910_0_L2A",
+        "collection": "sentinel-2-l2a",
+        "platform": "sentinel-2a",
+        "resolutionMeters": 10,
+        "bbox": [
+          67.22938096354046,
+          26.120209877439684,
+          68.09773093744924,
+          27.119512133309634
+        ]
+      },
+      {
+        "id": "S2B_42RUQ_20221114_0_L2A",
+        "date": "2022-11-14T06:11:52.667Z",
+        "label": "Later observation",
+        "cloudCover": 0.060862,
+        "url": "https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/42/R/UQ/2022/11/S2B_42RUQ_20221114_0_L2A/TCI.tif",
+        "metadataUrl": "https://earth-search.aws.element84.com/v1/collections/sentinel-2-l2a/items/S2B_42RUQ_20221114_0_L2A",
+        "collection": "sentinel-2-l2a",
+        "platform": "sentinel-2b",
+        "resolutionMeters": 10,
+        "bbox": [
+          67.23908000999185,
+          26.12032871492804,
+          68.09773093744924,
+          27.119512133309634
+        ]
+      }
     ]
+  },
+  "studyMetadata": {
+    "manchar": {
+      "source": "Copernicus Sentinel-2 L2A / Element 84 Earth Search",
+      "retrievedAt": "2026-10-10",
+      "selection": "Four dated natural-colour captures of the 2022 Manchar Lake flood. Scene cloud cover is not a local cloud mask. Playback steps between observations; no daily flood simulation or water-depth measurement.",
+      "eventUrl": "https://science.nasa.gov/earth/earth-observatory/lake-manchar-is-overflowing-150306/"
+    }
   }
 }

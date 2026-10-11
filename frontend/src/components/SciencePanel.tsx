@@ -2,7 +2,7 @@ import {useRef,useState} from 'react'
 import {useQuery,useQueryClient} from '@tanstack/react-query'
 import {ArrowDownToLine,Check,LoaderCircle,Upload} from 'lucide-react'
 import {Button} from './ui'
-export type ScienceJob={id:string;status:string;error?:string;provenance?:{referenceDate:string;secondaryDate:string;pairDays:number;acceptedSamples:number;totalSamples:number;units:string;validation:string;sha256:string;polarization:string;layer:string;displayPreview?:{bands:{maximumQuantizationError:number}[];aggregationFactor:number;shape:number[]}}}
+export type ScienceJob={id:string;status:string;error?:string;provenance?:{trackNumber?:string;orbitPassDirection?:string;referenceDate:string;secondaryDate:string;pairDays:number;acceptedSamples:number;totalSamples:number;units:string;validation:string;sha256:string;polarization:string;layer:string;displayPreview?:{bands:{maximumQuantizationError:number}[];aggregationFactor:number;shape:number[]}}}
 export function useScience(scenario:string){return useQuery<{available:boolean;jobs:ScienceJob[];reason?:string}>({queryKey:['science',scenario],queryFn:async()=>{const r=await fetch(`/api/science/${scenario}`);if(!r.ok)throw new Error('The science backend could not be reached.');return r.json()},refetchInterval:query=>query.state.data?.jobs.some(j=>['queued','processing'].includes(j.status))?2000:false,staleTime:1000})}
 export default function SciencePanel({scenario,onInspect}:{scenario:string;onInspect:(job:ScienceJob)=>void}){
  const science=useScience(scenario),client=useQueryClient(),input=useRef<HTMLInputElement>(null)

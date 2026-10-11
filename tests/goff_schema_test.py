@@ -37,6 +37,9 @@ class SchemaTests(unittest.TestCase):
             decoded=preview.read(1).astype(float)*preview.scales[0]+preview.offsets[0]
             self.assertEqual(decoded[2,2],1);self.assertEqual(preview.read(1)[0,0],-32768)
         self.assertTrue(metadata['displayPreview']['originalPreserved'])
+        # A 4×4 fixture inside the Aletsch outline has no stable ground, so no estimate is offered.
+        motion=json.loads((output/'motion-preview.json').read_text())
+        self.assertEqual(motion['status'],'unavailable');self.assertEqual(metadata['motionPreview']['status'],'unavailable');self.assertFalse(metadata['motionPreview']['validated'])
     def test_rejects_unknown_units_and_reversed_pair(self):
         with h5py.File(self.source,'r+') as h:self.layer(h)['alongTrackOffset'].attrs['units']='pixels'
         with self.assertRaisesRegex(ValueError,'units'):goff.process(self.source,self.root/'bad','aletsch')

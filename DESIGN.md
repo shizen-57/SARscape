@@ -178,6 +178,8 @@ Full-detail tiles load automatically for each zoom; no preview quality toggle is
 
 GOFF import settings, job states, screening counts, radar-component controls, and downloads use the same ordinary control system. Preserve original measurements alongside the optional 16-bit display preview; show its scale, rounding, aggregation, and provenance. Radar components are signed components, not horizontal speed. An adjustable correlation threshold must remain explicitly unvalidated as a glacier-motion cutoff.
 
+The glacier-motion preview layers a soft, outline-clipped heatmap, faint pair-long ribbons, and particles over the terrain, with raw samples available as neutral rings. Colour encodes value: a diverging orange–slate–cyan ramp for signed components, or slate to deep blue for resolved speed. The slate midpoint stays legible on both ice and rock. Size and opacity encode confidence. The panel always leads with a quality badge (“Quality · Low”, “Approximate · not validated”) and a sentence stating whether flow direction is resolved. Particle exaggeration is printed beside the legend. The replay labels only the two acquisitions as observed and every frame between them as interpolated.
+
 ## Do's and Don'ts
 
 ### Do:
@@ -199,7 +201,7 @@ Not canonized: legacy demo velocity ramps and sample-chart styles remain in the 
 
 ### Imagery controls and globe
 
-Keep Image source as an ordinary labelled select. Aletsch offers Swiss aerial mosaics and dated Sentinel-2 images. Describe mosaic years separately from acquisition dates; do not invent annual flights or cloud percentages. Image adjustments uses a collapsed disclosure with labelled highlights, contrast and color sliders, live percentages, and reset. Adjustments are display-only and shared by comparison views. Globe overview uses the existing control stack; remove timeline and observation actions during globe exploration and provide an explicit Return to glacier action.
+Keep Image source as an ordinary labelled select. Aletsch opens on dated Sentinel-2 captures so optical playback starts with actual acquisition changes; SWISSIMAGE remains selectable for high-resolution aerial context. Describe mosaic years separately from acquisition dates; do not invent annual flights or cloud percentages. Image adjustments uses a collapsed disclosure with labelled highlights, contrast and color sliders, live percentages, and reset. Adjustments are display-only and shared by comparison views. Globe overview uses the existing control stack; remove timeline and observation actions during globe exploration and provide an explicit Return to glacier action.
 
 ### Landing hero
 

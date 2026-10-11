@@ -6,6 +6,7 @@ import json
 import os
 import pathlib
 import sys
+import warnings
 from urllib.parse import urlsplit, urlunsplit
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1] / '.python'))
@@ -195,10 +196,70 @@ def process(source, output, scenario_id='aletsch'):
                            'invalidCells': 'transparent', 'displayIsMeasurement': False},
         'createdAt': dt.datetime.now(dt.timezone.utc).isoformat(),
     }
+    provenance['colorPreview'] = color_preview(output, provenance['displayPreview'])
     temporary_provenance = output / 'gcov-provenance.preparing.json'
     temporary_provenance.write_text(json.dumps(provenance, indent=2, allow_nan=False), encoding='utf-8')
     os.replace(temporary_provenance, output / 'gcov-provenance.json')
     return provenance
+
+
+# Dual-pol false colour with one fixed stretch for every date (pooled 2nd–98th percentiles of the
+# Aletsch Sep–Oct 2026 acquisitions), so colour changes between dates reflect backscatter changes.
+COLOR_RANGES = (('R', 'HH gamma0', -16.0, 4.0), ('G', 'HV gamma0', -23.0, -4.0), ('B', 'HH minus HV', 0.5, 17.0))
+
+
+NATURAL_NOTE = ('Natural-like palette from radar only: strong surface scattering (HH minus HV) is painted ice-white, '
+                'strong volume scattering (HV) vegetation-green, the rest rock-brown; brightness follows HH. '
+                'Approximate radar classes, not optical colour.')
+# Soft class thresholds in dB, shared by every date; tuned on the Aletsch Sep–Oct 2026 acquisitions.
+ICE_DB, VEG_DB = (6.0, 12.0), (-13.0, -8.0)
+PALETTE = {'ice': np.array([232, 238, 244.]), 'rock': np.array([122, 112, 98.]), 'vegetation': np.array([66, 96, 54.])}
+
+
+def despeckle(db):
+    """3×3 boxcar mean in linear power, the usual light radar speckle filter."""
+    windows = np.lib.stride_tricks.sliding_window_view(np.pad(10 ** (db / 10), 1, constant_values=np.nan), (3, 3))
+    with np.errstate(all='ignore'), warnings.catch_warnings():
+        warnings.simplefilter('ignore', RuntimeWarning)
+        return 10 * np.log10(np.nanmean(windows, axis=(-2, -1)))
+
+
+def natural_preview(output, hh, hv, valid):
+    hh, hv = despeckle(hh), despeckle(hv)
+    ramp = lambda v, lo, hi: np.clip((np.nan_to_num(v, nan=lo) - lo) / (hi - lo), 0, 1)[..., None]
+    ice, vegetation = ramp(hh - hv, *ICE_DB), ramp(hv, *VEG_DB) * (1 - ramp(hh - hv, *ICE_DB))
+    colour = ice * PALETTE['ice'] + vegetation * PALETTE['vegetation'] + (1 - ice - vegetation) * PALETTE['rock']
+    shade = 0.7 + 0.45 * ramp(hh, -16.0, 4.0)  # radar texture, so slopes and crevasses stay visible
+    rgb = np.clip(colour * shade, 0, 255).astype(np.uint8)
+    temporary = pathlib.Path(output) / 'gcov-natural.preparing.png'
+    Image.fromarray(np.dstack([rgb, np.where(valid, 255, 0).astype(np.uint8)])).save(temporary, format='PNG')
+    os.replace(temporary, pathlib.Path(output) / 'gcov-natural.png')
+
+
+def color_preview(output, display):
+    """Write gcov-color.png on the same EPSG:4326 grid as the grey HH preview."""
+    output = pathlib.Path(output)
+    height, width = display['shape']
+    (w, n), _, (e, s), _ = display['coordinates']
+    destination = rasterio.transform.from_bounds(w, s, e, n, width, height)
+    with rasterio.open(output / 'gcov-backscatter.tif') as tif:
+        hh, hv = (np.full((height, width), np.nan, np.float32) for _ in range(2))
+        for band, target in ((1, hh), (2, hv)):
+            reproject(tif.read(band), target, src_transform=tif.transform, src_crs=tif.crs, src_nodata=np.nan,
+                      dst_transform=destination, dst_crs='EPSG:4326', dst_nodata=np.nan, resampling=Resampling.nearest)
+    valid = np.isfinite(hh) & np.isfinite(hv)
+    scaled = [np.rint(np.clip((np.nan_to_num(v, nan=low) - low) / (high - low), 0, 1) * 255).astype(np.uint8)
+              for v, (_, _, low, high) in zip((hh, hv, hh - hv), COLOR_RANGES)]
+    png = output / 'gcov-color.png'
+    temporary = output / 'gcov-color.preparing.png'
+    Image.fromarray(np.dstack(scaled + [np.where(valid, 255, 0).astype(np.uint8)])).save(temporary, format='PNG')
+    os.replace(temporary, png)
+    natural_preview(output, hh, hv, valid)
+    return {'file': png.name, 'naturalFile': 'gcov-natural.png', 'natural': NATURAL_NOTE, 'composite': 'False colour: R = HH, G = HV, B = HH minus HV (dB)',
+            'channels': [{'channel': c, 'measurement': m, 'rangeDb': [low, high]} for c, m, low, high in COLOR_RANGES],
+            'coordinates': display['coordinates'], 'shape': [height, width], 'resampling': 'nearest',
+            'stretch': 'Fixed across acquisition dates', 'displayIsMeasurement': False,
+            'interpretation': 'Radar colours are not natural colours; changes can reflect snow wetness, moisture, roughness or geometry.'}
 
 
 if __name__ == '__main__':

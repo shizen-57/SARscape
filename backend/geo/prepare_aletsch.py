@@ -23,6 +23,7 @@ SCENARIO = 'aletsch'
 BBOX = next(s['extent'] for s in json.loads((ROOT / 'database/scenarios.json').read_text())['scenarios'] if s['id'] == SCENARIO)
 CATALOG = ROOT / 'data/aletsch-download-catalog.json'
 DATES = ('2026-09-11', '2026-09-23', '2026-10-05')
+RANGE_BLOCK_KIB = 1024
 
 
 def now(): return dt.datetime.now(dt.timezone.utc).isoformat()
@@ -52,6 +53,19 @@ def source_record(item):
     return {'id': filename.removesuffix('.h5'), 'filename': filename, 'url': url,
             'size': int(size or 0), 'product': item.get('kind') or p.get('processingLevel'),
             'start': p.get('startTime'), 'stop': p.get('stopTime'), 'metadata': p}
+
+
+def select_goff_layer(available):
+    available = set(available)
+    for layer in ('layer3', 'layer1', 'layer2'):
+        if layer in available:
+            return layer
+    raise ValueError('GOFF product has no supported HH offset layer')
+
+
+def subset_key(record):
+    policy = ':A:HH:preferred-layer3-regional-v2' if record['product'] == 'GOFF' else ':A:HH:layer1:v1'
+    return str(uuid.uuid5(uuid.NAMESPACE_URL, record['id'] + json.dumps(BBOX) + policy))
 
 
 def discover_sources(start, end):
@@ -133,7 +147,10 @@ def crop(source, destination, record):
             if isinstance(dataset, h5py.Dataset) and dataset.size * dataset.dtype.itemsize <= 1024**2:
                 copy_dataset(identity, identification, name)
         grid_path = 'science/LSAR/' + product + '/grids/frequencyA'
-        if product == 'GOFF': grid_path += '/pixelOffsets/HH/layer1'
+        if product == 'GOFF':
+            offset_group = original[f'{grid_path}/pixelOffsets/HH']
+            selected_layer = select_goff_layer(offset_group.keys())
+            grid_path = f'{grid_path}/pixelOffsets/HH/{selected_layer}'
         grid = original[grid_path]
         x, y = grid['xCoordinates'][:], grid['yCoordinates'][:]
         if len(x) < 2 or len(y) < 2: raise ValueError('The product coordinate grid is empty')
@@ -146,6 +163,16 @@ def crop(source, destination, record):
         rows = np.flatnonzero((y + abs(dy)/2 >= south) & (y - abs(dy)/2 <= north))
         if len(columns) < 2 or len(rows) < 2: raise ValueError('The science product does not cover Aletsch')
         window = np.s_[rows[0]:rows[-1]+1, columns[0]:columns[-1]+1]
+        if product == 'GOFF' and 'science/LSAR/GOFF/metadata/radarGrid' in original:
+            # Viewing-geometry cubes (500 m nodes) with a one-node margin around the study area.
+            cubes = original['science/LSAR/GOFF/metadata/radarGrid']
+            gx, gy = cubes['xCoordinates'][:], cubes['yCoordinates'][:]
+            gc = np.flatnonzero((gx >= west - 500) & (gx <= east + 500)); gr = np.flatnonzero((gy >= south - 500) & (gy <= north + 500))
+            target = subset.require_group('science/LSAR/GOFF/metadata/radarGrid')
+            copy_dataset(cubes, target, 'xCoordinates', np.s_[gc[0]:gc[-1]+1]); copy_dataset(cubes, target, 'yCoordinates', np.s_[gr[0]:gr[-1]+1])
+            copy_dataset(cubes, target, 'heightAboveEllipsoid'); copy_dataset(cubes, target, 'projection')
+            for name in ('alongTrackUnitVectorX', 'alongTrackUnitVectorY', 'losUnitVectorX', 'losUnitVectorY', 'incidenceAngle'):
+                copy_dataset(cubes, target, name, np.s_[:, gr[0]:gr[-1]+1, gc[0]:gc[-1]+1])
         output_grid = subset.require_group(grid_path)
         copy_dataset(grid, output_grid, 'xCoordinates', np.s_[columns[0]:columns[-1]+1])
         copy_dataset(grid, output_grid, 'yCoordinates', np.s_[rows[0]:rows[-1]+1])
@@ -174,7 +201,7 @@ def crop(source, destination, record):
         return {'epsg': crs.to_epsg(), 'shape': [len(rows), len(columns)], 'postingMetres': [dx, abs(dy)]}
 
 
-def subset_file(record, key, session, budget):
+def subset_file(record, key, session, budget, block_size):
     destination = ROOT / 'data/subsets' / (key + '.h5')
     sidecar = destination.with_suffix('.source.json')
     if destination.exists() and sidecar.exists():
@@ -186,7 +213,7 @@ def subset_file(record, key, session, budget):
     destination.parent.mkdir(parents=True, exist_ok=True)
     temporary = destination.with_suffix('.part')
     local = ROOT / 'data' / record['filename']
-    reader = None if local.exists() and local.stat().st_size == record['size'] else RangeReader(session, record['url'], record['size'], budget)
+    reader = None if local.exists() and local.stat().st_size == record['size'] else RangeReader(session, record['url'], record['size'], budget, block_size=block_size)
     try:
         with (nullcontext(local) if reader is None else reader) as source:
             grid = crop(source, temporary, record)
@@ -194,6 +221,7 @@ def subset_file(record, key, session, budget):
             meta = {'sourceGranuleId': record['id'], 'sourceUrl': record['url'], 'sourceBytes': record['size'],
                     'product': record['product'], 'boundingBoxWGS84': BBOX, 'transferredBytes': transferred,
                     'rangeRequests': reader.requests if reader else 0, 'sourceETag': reader.etag if reader else None,
+                    'rangeBlockBytes': reader.block_size if reader else None,
                     'sourceAccess': 'existing-local-file' if reader is None else 'authenticated-https-ranges',
                     'subsetSha256': hashlib.sha256(temporary.read_bytes()).hexdigest(),
                     'subsetBytes': temporary.stat().st_size, 'createdAt': now(), **grid}
@@ -209,28 +237,32 @@ def cached_product(connection, record, key):
     row = connection.execute('SELECT status,provenance_json,output_path,subset_path,subset_sha256 FROM nisar_subsets WHERE id=?', (key,)).fetchone()
     if not row or row[0] != 'complete': return None
     source, output = ROOT / row[3], ROOT / row[2]
-    filenames = ('samples.geojson', 'provenance.json', 'radar-components.tif', 'radar-preview.tif') if record['product'] == 'GOFF' else ('gcov-context.png', 'gcov-backscatter.tif', 'gcov-provenance.json')
+    filenames = ('samples.geojson', 'provenance.json', 'radar-components.tif', 'radar-preview.tif', 'motion-preview.json') if record['product'] == 'GOFF' else ('gcov-context.png', 'gcov-backscatter.tif', 'gcov-provenance.json')
     if not source.exists() or not all((output / name).is_file() and (output / name).stat().st_size > 0 for name in filenames): return None
     if hashlib.sha256(source.read_bytes()).hexdigest() != row[4]: raise ValueError('Cached subset checksum failed')
     return json.loads(row[1])
 
 
-def prepare(connection, record, session, budget):
-    key = str(uuid.uuid5(uuid.NAMESPACE_URL, record['id'] + json.dumps(BBOX) + ':A:HH:layer1:v1'))
+def prepare(connection, record, session, budget, block_size):
+    key = subset_key(record)
     cached = cached_product(connection, record, key)
     if cached:
         print(f"Cached {record['product']} {record['start'][:10]}", flush=True)
         return cached, 0
     print(f"Preparing {record['product']} {record['start'][:10]} regional data…", flush=True)
-    source, subset_meta, transferred = subset_file(record, key, session, budget)
+    source, subset_meta, transferred = subset_file(record, key, session, budget, block_size)
     output = ROOT / 'database/processed' / record['product'].lower() / key
     if record['product'] == 'GOFF':
-        provenance = process_goff(source, output, SCENARIO)
+        processing = source
+        with h5py.File(processing, 'r') as h:
+            layer = select_goff_layer(h['science/LSAR/GOFF/grids/frequencyA/pixelOffsets/HH'].keys())
+        provenance = process_goff(processing, output, SCENARIO, layer=layer)
+        provenance['sourceFilename'] = record['filename']
         provenance['sourceSubset'] = subset_meta
-        provenance['sha256Scope'] = 'regional subset, not the original whole granule'
+        provenance['sha256Scope'] = 'regional subset; original granule identity, URL, ETag, and byte size are recorded separately'
         write_json(output / 'provenance.json', provenance)
         write_json(ROOT / 'database/jobs' / (key + '.json'), {'id': key, 'scenario': SCENARIO, 'status': 'complete',
-                   'createdAt': now(), 'updatedAt': now(), 'frequency': 'A', 'polarization': 'HH', 'layer': 'layer1',
+                   'createdAt': now(), 'updatedAt': now(), 'frequency': 'A', 'polarization': 'HH', 'layer': layer,
                    'correlation': .3, 'bytes': subset_meta['subsetBytes'], 'provenance': provenance})
     else:
         from gcov import process as process_gcov
@@ -248,25 +280,31 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--refresh', action='store_true', help='Catalogue all Aletsch NISAR products from ASF')
     parser.add_argument('--catalog-only', action='store_true')
-    parser.add_argument('--all-dates', action='store_true', help='Prepare every matching track-072 ascending GOFF/GCOV date')
-    parser.add_argument('--max-mib', type=int, default=128, help='Hard science transfer limit per source')
+    parser.add_argument('--all-dates', action='store_true', help='Prepare every matching GOFF/GCOV date on every track covering Aletsch (072 and 144 ascending, 037 descending) between --since and --until')
+    parser.add_argument('--since', default='2026-07-01')
+    parser.add_argument('--until', default='2026-10-05')
+    parser.add_argument('--run-mib', type=int, default=512, help='Science transfer limit for the whole run; rerun to continue from caches')
+    parser.add_argument('--max-mib', type=int, default=256, help='Hard science transfer limit per source')
+    parser.add_argument('--range-block-kib', type=int, default=RANGE_BLOCK_KIB, help='HTTPS range size in KiB (256–4096)')
     parser.add_argument('--credentials-stdin', action='store_true', help=argparse.SUPPRESS)
     args = parser.parse_args()
     if not 1 <= args.max_mib <= 512: parser.error('max-mib must be between 1 and 512')
+    if not args.max_mib <= args.run_mib <= 16384: parser.error('run-mib must be between max-mib and 16384')
+    if not 256 <= args.range_block_kib <= 4096: parser.error('range-block-kib must be between 256 and 4096')
     with database() as connection:
         records = catalogue(connection, args.refresh)
         print(f'Catalogue saved: {len(records)} NISAR sources in database/sarscape.sqlite', flush=True)
         if args.catalog_only: return
         selected = [r for r in records if r['product'] in ('GOFF', 'GCOV') and r['id'].startswith('NISAR_L2_PR_')
-                    and f"/NISAR_L2_{r['product']}_PROVISIONAL_V1/" in r['url'] and '_072_A_025_' in r['id']
+                    and f"/NISAR_L2_{r['product']}_PROVISIONAL_V1/" in r['url'] and (args.all_dates or '_072_A_025_' in r['id'])
                     and ('_4005_DHDH_' in r['id'] if r['product'] == 'GCOV' else '_4000_SH_' in r['id'])
-                    and (args.all_dates or (r['start'] or '')[:10] in DATES[:2] or (r['product'] == 'GCOV' and (r['start'] or '')[:10] == DATES[2]))]
+                    and (args.all_dates and args.since <= (r['start'] or '')[:10] <= args.until or not args.all_dates and (r['start'] or '')[:10] in DATES[:2] or (r['product'] == 'GCOV' and (r['start'] or '')[:10] == DATES[2]))]
         if not selected: raise ValueError('No matching Aletsch GOFF/GCOV sources were found')
         selected.sort(key=lambda r: (r['product'], r['start']))
         session, transferred, observations = None, 0, []
         try:
             for record in selected:
-                key = str(uuid.uuid5(uuid.NAMESPACE_URL, record['id'] + json.dumps(BBOX) + ':A:HH:layer1:v1'))
+                key = subset_key(record)
                 local = ROOT / 'data' / record['filename']
                 already_processed = cached_product(connection, record, key) is not None
                 subset = ROOT / 'data/subsets' / (key + '.h5')
@@ -274,17 +312,24 @@ def main():
                 local_complete = local.exists() and local.stat().st_size == record['size']
                 if not session and not already_processed and not local_complete and not already_cropped:
                     session = login(args.credentials_stdin)
-                if transferred >= 512 * 1024**2: raise ValueError('Run reached its 512 MiB science transfer limit')
-                provenance, fetched = prepare(connection, record, session, min(args.max_mib * 1024**2, 512 * 1024**2 - transferred))
+                if transferred >= args.run_mib * 1024**2: raise ValueError(f'Run reached its {args.run_mib} MiB science transfer limit; rerun to continue')
+                provenance, fetched = prepare(connection, record, session, min(args.max_mib * 1024**2, args.run_mib * 1024**2 - transferred), args.range_block_kib * 1024)
                 transferred += fetched
                 if record['product'] == 'GCOV':
                     observations.append(provenance)
                     manifest = ROOT / 'database/processed/gcov/manifest.json'
                     previous = json.loads(manifest.read_text()).get('observations', []) if manifest.exists() else []
-                    merged = {item['id']: item for item in previous + observations}
+                    # Observations prepared for an earlier study box are superseded, not merged.
+                    merged = {item['id']: item for item in [o for o in previous if o.get('studyAreaExtent') == BBOX] + observations}
                     write_json(manifest, {'observations': sorted(merged.values(), key=lambda item: item.get('acquisitionDate', ''))})
         finally:
             if session: session.close()
+        if any(r['product'] == 'GCOV' for r in selected):
+            # Needs every prepared GCOV date, so it runs once here; a failed aerial fetch must not undo the radar data.
+            try:
+                from gcov_shaded import main as shade_gcov
+                shade_gcov()
+            except (SystemExit, Exception) as error: print(f'Aerial-shaded radar skipped: {error}', flush=True)
         print(f'Ready: {len(selected)} products; {transferred / 1024**2:.1f} MiB transferred this run. Start the project to view them.', flush=True)
 
 

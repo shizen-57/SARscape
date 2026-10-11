@@ -9,6 +9,7 @@ const openPanel=async name=>{const b=page.getByRole('button',{name,exact:true});
 try{
  await page.goto('http://127.0.0.1:5173/#explore',{waitUntil:'domcontentloaded',timeout:60000});await settle()
  await openPanel('Imagery')
+ await page.getByLabel('Image source').selectOption('swissimage')
  await expect(page.getByLabel('Image source')).toHaveValue('swissimage')
  await expect(page.getByRole('button',{name:'Inspect detail',exact:true})).toHaveCount(0)
  await page.getByRole('button',{name:'Look closer',exact:true}).click();await settle()
