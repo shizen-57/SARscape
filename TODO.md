@@ -3,7 +3,8 @@
 ## Current focus — glacier movement
 
 - [x] Add explainable scientific surface summaries: matched-cell speed differences, mapped inventory area differences, signed elevation-change rates, full periods, coverage and uncertainty limitations. Verified offline; runtime acceptance remains pending.
-- [ ] Next change-view stage: link selected locations to paired measurements and their quality in the 3D map, then verify interactive behavior when running is authorized.
+- [x] Link selected map locations to persistent paired measurements, reported errors, transparent gaps, and inventory outlines; offline regression tests pass. Runtime acceptance still needs a dedicated interaction review.
+- [x] Add a direct Aletsch measurement-view entry in the help panel and a scientifically bounded video demonstration guide.
 
 - [x] Separate frontend, backend, and database.
 - [x] Reuse MapLibre terrain and established UI/geospatial modules.
