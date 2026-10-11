@@ -6,7 +6,7 @@ Aletsch now opens with measured, continuous velocity rasters on 3D terrain. Velo
 
 A 3D glacier observation workspace for **Dancing with the SARs**. Explore full-detail aerial mosaics and reference imagery, compare dated mosaic versions with a synchronized camera, and process NISAR GOFF science files through a separate backend. The application does not ship synthetic glacier measurements.
 
-Preparing a walkthrough or project video? Start from the **How to use SARscape** help panel, which opens the Aletsch measurement view, and follow the scientifically bounded [video demo guide](docs/VIDEO_DEMO_GUIDE.md).
+Preparing a project video? Choose **Demo tour** in the top bar for an eight-chapter, presenter-led walkthrough, then follow the scientifically bounded [video demo guide](docs/VIDEO_DEMO_GUIDE.md). The tour arranges the app for recording; it does not record a video.
 
 ## Project layout
 

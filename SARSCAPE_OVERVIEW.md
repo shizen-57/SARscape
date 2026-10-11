@@ -18,7 +18,7 @@ SARscape helps users explore glacier observations on a 3D terrain map, compare d
 - Explainable measurement summaries: paired-interval speed differences on common measured cells, published inventory area differences, signed height-change rates, and explicit coverage/error limitations.
 - Saved optical views and observation metadata export.
 - Loading, retry, provenance, and data explanation interfaces.
-- A help-panel shortcut that opens the Aletsch scientific surface view, with a video demonstration script that keeps product sources and interpretation limits explicit.
+- An eight-chapter, presenter-led demo tour that stages the globe, optical imagery, flood comparison, glacier measurements, NISAR workflows, exploration tools and source limitations; it guides a human recording without generating video.
 - Optional assistant with server-side credentials and bounded tool access. Its availability depends on configuration.
 
 Playback changes observed imagery or derived layers. Terrain is currently fixed; the application does not reconstruct historical glacier geometry or animate measured absolute glacier height.

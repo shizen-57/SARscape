@@ -4,7 +4,7 @@
 
 - [x] Add explainable scientific surface summaries: matched-cell speed differences, mapped inventory area differences, signed elevation-change rates, full periods, coverage and uncertainty limitations. Verified offline; runtime acceptance remains pending.
 - [x] Link selected map locations to persistent paired measurements, reported errors, transparent gaps, and inventory outlines; offline regression tests pass. Runtime acceptance still needs a dedicated interaction review.
-- [x] Add a direct Aletsch measurement-view entry in the help panel and a scientifically bounded video demonstration guide.
+- [x] Add a presenter-led Demo tour that stages imagery, change comparison, glacier measurements, NISAR workflows, display tools and source limits; add a matching recording guide (tour only, no video capture).
 
 - [x] Separate frontend, backend, and database.
 - [x] Reuse MapLibre terrain and established UI/geospatial modules.
