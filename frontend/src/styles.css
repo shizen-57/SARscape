@@ -261,3 +261,8 @@
   .hero.is-diving .land-globe{transform:translate(0,-50vh) scale(2.1)}
 }
 @media (max-width:560px){.land-region{grid-template-columns:1fr}.land-shot{aspect-ratio:16/10}}
+/* Keep the hero wordmark's descender visible and give the globe more of the first viewport. */
+.hero-title .hero-mask{padding-bottom:.22em;margin-bottom:-.22em}
+.land-globe{--globe:min(160vw,170vh);top:calc(100vh - var(--globe) * .36)}
+@supports (height:100dvh){.land-globe{--globe:min(160vw,170dvh);top:calc(100dvh - var(--globe) * .36)}}
+@media(max-width:760px){.land-globe{--globe:min(150vw,165vh);top:calc(100vh - var(--globe) * .46)}@supports (height:100dvh){.land-globe{--globe:min(150vw,165dvh);top:calc(100dvh - var(--globe) * .46)}}}
