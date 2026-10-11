@@ -27,6 +27,38 @@ Velocity preprocessing excludes missing cells, source-interpolated values, nonfi
 
 ## Application components
 
+### Explainable change summaries (11 October 2026)
+
+The scientific surface panel now explains the selected measurement rather than
+requiring users to interpret colors alone. Speed-change mode identifies A and B
+by their full measurement intervals and reports the median of per-cell B−A
+differences only at locations accepted in both grids. It also shows the two
+speeds on that same common set, the middle half of cell differences, matched
+cell counts, and the percentage of each interval's accepted cells retained.
+These percentages describe retained measurements, not glacier-area coverage.
+
+Summary cells are equally weighted, so results are not area-weighted whole-glacier
+estimates. The middle-half range describes spatial variation, not statistical
+uncertainty. Reported source errors are summarized separately with their available
+cell counts. They are not propagated into a confidence interval: correlation,
+systematic effects and seasonal differences remain unresolved. No significant
+acceleration, melt or hazard-probability claim is produced. Incompatible grids,
+sources, masks or units do not produce a numerical comparison; no common data
+does not become zero change. Selecting the same interval is labeled explicitly.
+
+Mapped-extent mode compares the selected inventory's published total area with
+the first inventory used by the map. It permits gains as well as losses and does
+not infer volume loss or an annual retreat rate. Elevation mode summarizes the
+signed measured height-change field, explicitly retaining the unavailable
+uncertainty and fixed-geometry limitations. Single-interval velocity summaries
+also report descriptive speed and source-error statistics. Calculations are
+memoized by their measurement inputs and do not run again for opacity changes.
+
+This stage was implemented without starting the application or services. Offline
+tests check numerical edge cases and render the actual explanation component
+without a browser or server. Interactive layout, playback, source switching and
+map inspection still need runtime acceptance when running is authorized.
+
 - `backend/src/surfaces.mjs`: scenario validation and artifact allowlist.
 - `GET /api/surfaces/:scenario`: capabilities, periods and provenance.
 - `GET /api/surfaces/:scenario/:file`: only manifest-listed raster/inspection products and published outlines.

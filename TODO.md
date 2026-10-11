@@ -2,6 +2,9 @@
 
 ## Current focus — glacier movement
 
+- [x] Add explainable scientific surface summaries: matched-cell speed differences, mapped inventory area differences, signed elevation-change rates, full periods, coverage and uncertainty limitations. Verified offline; runtime acceptance remains pending.
+- [ ] Next change-view stage: link selected locations to paired measurements and their quality in the 3D map, then verify interactive behavior when running is authorized.
+
 - [x] Separate frontend, backend, and database.
 - [x] Reuse MapLibre terrain and established UI/geospatial modules.
 - [x] Show genuine dated Sentinel-2 captures, comparison, playback, source details, saved views, and provenance.
