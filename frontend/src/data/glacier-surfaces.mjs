@@ -18,6 +18,26 @@ export function surfaceCell(grid,lon,lat){
  const index=row*cols+col
  return {index,speed:grid.speed[index],error:grid.error?.[index],vx:grid.vx?.[index],vy:grid.vy?.[index]}
 }
+export function inspectSurfacePoint(scene,lon,lat){
+ const outline=scene.outlines.features[scene.outlineIndex]
+ const inside=outline?insideOutline([lon,lat],outline.geometry):false
+ const cell=scene.grid?surfaceCell(scene.grid,lon,lat):null
+ const result={longitude:lon,latitude:lat,insideOutline:inside,outlineYear:outline?.properties.year??null,index:cell?.index??null}
+ if(scene.mode==='extent')return {...result,areaKm2:inside?outline?.properties.areaKm2??null:null}
+ if(!cell)return {...result,status:'outside-grid'}
+ if(scene.mode==='elevation'){
+  const value=scene.grid?.elevationChange?.[cell.index]
+  return {...result,status:Number.isFinite(value)?'measured':'missing',elevationChange:Number.isFinite(value)?value:null}
+ }
+ const speed=Number.isFinite(cell.speed)&&cell.speed>=0?cell.speed:null
+ const error=Number.isFinite(cell.error)&&cell.error>=0?cell.error:null
+ if(scene.mode==='velocity')return {...result,status:speed===null?'missing':'measured',speed,error}
+ const baseCell=scene.baselineGrid?surfaceCell(scene.baselineGrid,lon,lat):null
+ const baselineSpeed=Number.isFinite(baseCell?.speed)&&baseCell.speed>=0?baseCell.speed:null
+ const baselineError=Number.isFinite(baseCell?.error)&&baseCell.error>=0?baseCell.error:null
+ const difference=speed!==null&&baselineSpeed!==null?speed-baselineSpeed:null
+ return {...result,status:difference===null?'missing':'measured',speed,error,baselineSpeed,baselineError,difference}
+}
 export function pointInRing(point,ring){
  let inside=false;const [x,y]=point
  for(let i=0,j=ring.length-1;i<ring.length;j=i++){

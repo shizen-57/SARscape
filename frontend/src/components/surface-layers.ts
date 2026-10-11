@@ -1,5 +1,7 @@
 import * as maplibregl from 'maplibre-gl'
 import {CHANGE_STOPS,differenceGrid,insideOutline,mercator,surfaceCell,surfaceColor,type SurfaceScene,type GlacierOutline} from '../data/glacier-surfaces.mjs'
+const changeImageCache=new WeakMap<object,WeakMap<object,string>>()
+const mapImageUrls=new WeakMap<maplibregl.Map,string>()
 
 function canvas(scene:SurfaceScene){const c=document.createElement('canvas');[c.height,c.width]=scene.manifest.shape;return c}
 function pixel(scene:SurfaceScene,lon:number,lat:number){const [x,y]=mercator(lon,lat),[w,s,e,n]=scene.manifest.bounds3857,[rows,cols]=scene.manifest.shape;return [(x-w)/(e-w)*cols,(n-y)/(n-s)*rows]}
@@ -9,6 +11,7 @@ function outlinePath(ctx:CanvasRenderingContext2D,scene:SurfaceScene,outline:Gla
 }
 export function surfaceImage(scene:SurfaceScene):string{
  if((scene.mode==='velocity'||scene.mode==='elevation')&&scene.frame)return `/api/surfaces/${scene.scenario}/${scene.frame.image}`
+ if(scene.mode==='change'&&scene.grid&&scene.baselineGrid){const cached=changeImageCache.get(scene.grid)?.get(scene.baselineGrid);if(cached)return cached}
  const c=canvas(scene),ctx=c.getContext('2d')!
  if(scene.mode==='extent'){
   const current=scene.outlines.features[scene.outlineIndex],first=scene.outlines.features[0]
@@ -20,18 +23,28 @@ export function surfaceImage(scene:SurfaceScene):string{
   const values=differenceGrid(scene.grid,scene.baselineGrid)
   if(values){const image=ctx.createImageData(c.width,c.height);values.forEach((v,i)=>{if(v!==null)image.data.set([...surfaceColor(v,[-150,150],CHANGE_STOPS),230],i*4)});ctx.putImageData(image,0,0)}
  }
- return c.toDataURL('image/png')
+ const result=c.toDataURL('image/png')
+ if(scene.mode==='change'&&scene.grid&&scene.baselineGrid){let baselines=changeImageCache.get(scene.grid);if(!baselines){baselines=new WeakMap();changeImageCache.set(scene.grid,baselines)}baselines.set(scene.baselineGrid,result)}
+ return result
 }
 
-export function removeSurface(map:maplibregl.Map){for(const id of ['glacier-surface','glacier-outline-history','glacier-outline-current'])if(map.getLayer(id))map.removeLayer(id);for(const id of ['glacier-surface','glacier-outlines'])if(map.getSource(id))map.removeSource(id)}
+export function removeSurface(map:maplibregl.Map){for(const id of ['glacier-surface','glacier-outline-history','glacier-outline-current'])if(map.getLayer(id))map.removeLayer(id);for(const id of ['glacier-surface','glacier-outlines'])if(map.getSource(id))map.removeSource(id);mapImageUrls.delete(map)}
 export function addSurface(map:maplibregl.Map,scene:SurfaceScene,hidden=false){
- removeSurface(map)
- map.addSource('glacier-surface',{type:'image',url:surfaceImage(scene),coordinates:scene.manifest.coordinates})
- map.addLayer({id:'glacier-surface',type:'raster',source:'glacier-surface',layout:{visibility:hidden?'none':'visible'},paint:{'raster-opacity':scene.opacity,'raster-resampling':'linear','raster-fade-duration':0}})
- map.addSource('glacier-outlines',{type:'geojson',data:scene.outlines})
+ const image=surfaceImage(scene),imageSource=map.getSource('glacier-surface') as maplibregl.ImageSource|undefined
+ if(imageSource){if(mapImageUrls.get(map)!==image){imageSource.updateImage({url:image,coordinates:scene.manifest.coordinates});mapImageUrls.set(map,image)}}
+ else{map.addSource('glacier-surface',{type:'image',url:image,coordinates:scene.manifest.coordinates});mapImageUrls.set(map,image)}
+ if(!map.getLayer('glacier-surface'))map.addLayer({id:'glacier-surface',type:'raster',source:'glacier-surface',layout:{visibility:hidden?'none':'visible'},paint:{'raster-opacity':scene.opacity,'raster-resampling':'linear','raster-fade-duration':0}})
+ else{map.setLayoutProperty('glacier-surface','visibility',hidden?'none':'visible');map.setPaintProperty('glacier-surface','raster-opacity',scene.opacity)}
+ const outlines=map.getSource('glacier-outlines') as maplibregl.GeoJSONSource|undefined
+ if(outlines)outlines.setData(scene.outlines)
+ else map.addSource('glacier-outlines',{type:'geojson',data:scene.outlines})
  const year=scene.outlines.features[scene.outlineIndex].properties.year
- if(scene.mode==='extent')map.addLayer({id:'glacier-outline-history',type:'line',source:'glacier-outlines',filter:['==',['get','year'],scene.outlines.features[0].properties.year],layout:{visibility:hidden?'none':'visible'},paint:{'line-color':'#f29a60','line-width':1.5,'line-dasharray':[4,3],'line-opacity':.9}})
- map.addLayer({id:'glacier-outline-current',type:'line',source:'glacier-outlines',filter:['==',['get','year'],year],layout:{visibility:hidden?'none':'visible'},paint:{'line-color':scene.mode==='extent'?'#8adbed':'#cedeed','line-width':1.2,'line-opacity':.6}})
+ if(scene.mode==='extent'){
+  if(!map.getLayer('glacier-outline-history'))map.addLayer({id:'glacier-outline-history',type:'line',source:'glacier-outlines',filter:['==',['get','year'],scene.outlines.features[0].properties.year],layout:{visibility:hidden?'none':'visible'},paint:{'line-color':'#f29a60','line-width':1.5,'line-dasharray':[4,3],'line-opacity':.9}})
+  else map.setLayoutProperty('glacier-outline-history','visibility',hidden?'none':'visible')
+ }else if(map.getLayer('glacier-outline-history'))map.removeLayer('glacier-outline-history')
+ if(!map.getLayer('glacier-outline-current'))map.addLayer({id:'glacier-outline-current',type:'line',source:'glacier-outlines',filter:['==',['get','year'],year],layout:{visibility:hidden?'none':'visible'},paint:{'line-color':scene.mode==='extent'?'#8adbed':'#cedeed','line-width':1.2,'line-opacity':.6}})
+ else{map.setFilter('glacier-outline-current',['==',['get','year'],year]);map.setLayoutProperty('glacier-outline-current','visibility',hidden?'none':'visible');map.setPaintProperty('glacier-outline-current','line-color',scene.mode==='extent'?'#8adbed':'#cedeed')}
 }
 export function surfacePopup(scene:SurfaceScene,point:maplibregl.LngLat){
  const inside=insideOutline([point.lng,point.lat],scene.outlines.features[scene.outlineIndex].geometry)

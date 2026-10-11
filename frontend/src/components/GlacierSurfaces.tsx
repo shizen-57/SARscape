@@ -4,13 +4,13 @@ import {useQuery} from '@tanstack/react-query'
 import {ExternalLink,LoaderCircle,Pause,Play,ChevronLeft,ChevronRight,ChevronDown,ChevronUp} from 'lucide-react'
 import {Button} from './ui'
 import GlacierChangeSummary from './GlacierChangeSummary'
-import {VELOCITY_STOPS,CHANGE_STOPS,type SurfaceScene,type SurfaceManifest,type SurfaceGrid,type SurfaceMode,type GlacierOutline} from '../data/glacier-surfaces.mjs'
+import {VELOCITY_STOPS,CHANGE_STOPS,inspectSurfacePoint,type SurfaceScene,type SurfaceManifest,type SurfaceGrid,type SurfaceMode,type GlacierOutline} from '../data/glacier-surfaces.mjs'
 import type {FeatureCollection,Polygon,MultiPolygon} from 'geojson'
 
 const load=async<T,>(url:string,signal:AbortSignal):Promise<T>=>{const r=await fetch(url,{signal});if(!r.ok)throw new Error('Could not load the measured glacier surface.');return r.json()}
 const ramp=(stops:typeof VELOCITY_STOPS)=>`linear-gradient(90deg,${stops.map(([v,c])=>`rgb(${c.join(',')}) ${v*100}%`).join(',')})`
 const date=(v:string)=>new Date(v).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric',timeZone:'UTC'})
-export default function GlacierSurfaces({scenario,onScene,onOverview,speed=1}:{speed?:number;scenario:string;onScene:(scene:SurfaceScene|null)=>void;onOverview:()=>void}){
+export default function GlacierSurfaces({scenario,onScene,onOverview,speed=1,location,onClearLocation,backgroundOptions,backgroundValue,onBackgroundChange,backgroundLabel}:{speed?:number;scenario:string;onScene:(scene:SurfaceScene|null)=>void;onOverview:()=>void;location:[number,number]|null;onClearLocation:()=>void;backgroundOptions:{id:string;label:string}[];backgroundValue:string;onBackgroundChange:(id:string)=>void;backgroundLabel:string}){
  const [mode,setMode]=useState<SurfaceMode>('velocity'),[step,setStep]=useState(0),[base,setBase]=useState(0),[opacity,setOpacity]=useState(.85),[playing,setPlaying]=useState(false),[collapsed,setCollapsed]=useState(false)
  const [host,setHost]=useState<Element|null>(null)
  useEffect(()=>setHost(document.querySelector('.map-workspace')),[])
@@ -29,6 +29,7 @@ export default function GlacierSurfaces({scenario,onScene,onOverview,speed=1}:{s
  const selectMode=(next:SurfaceMode)=>{setMode(next);setStep(next==='change'?Math.max(0,Math.min(1,(data?.frames.filter(f=>f.kind==='velocity').length??0)-1)):0);setPlaying(false)}
  const choose=(v:number)=>{setStep(v);setPlaying(false)}
  const selectedOutline=outlines.data?.features[Math.min(step,(outlines.data?.features.length??1)-1)]
+ const selected=ready&&location&&data?inspectSurfacePoint({scenario,mode,manifest:data,frame,grid:mode==='extent'?undefined:grid.data,baseline:mode==='change'?baseline:undefined,baselineGrid:mode==='change'?previous.data:undefined,outlines:outlines.data!,outlineIndex:mode==='extent'?Math.min(step,count-1):mode==='elevation'?0:outlines.data!.features.length-1,opacity},location[0],location[1]):null
  const error=manifest.isError||(!!data?.available&&(outlines.isError||(mode!=='extent'&&grid.isError)||(mode==='change'&&previous.isError)))
  const pending=!error&&(manifest.isPending||(!!data?.available&&(outlines.isPending||(!!frame&&mode!=='extent'&&grid.isPending)||(!!baseline&&mode==='change'&&previous.isPending))))
  return <>
@@ -55,13 +56,25 @@ export default function GlacierSurfaces({scenario,onScene,onOverview,speed=1}:{s
      {frame&&<p className="surface-quality">{Math.round(frame.coverage*1000)/10}% of the {frame.maskYear} mask has measurements · {mode==='elevation'?'100 m source grid · uncertainty raster not connected':'120 m source grid · error ≤100 m/year · source-interpolated pixels excluded'}.</p>}
      {mode==='change'&&<label>Baseline interval<select aria-label="Velocity baseline interval" value={Math.min(base,Math.max(0,frames.length-1))} onChange={e=>{setBase(+e.target.value);setPlaying(false)}}>{frames.map((f,i)=><option key={f.id} value={i}>{f.label}</option>)}</select></label>}
     </>}
+    <label className="surface-background">Map texture<select aria-label="Map texture and acquisition" value={backgroundValue} onChange={e=>onBackgroundChange(e.target.value)}>{backgroundOptions.map(option=><option key={option.id} value={option.id}>{option.label}</option>)}</select></label>
+    <p className="surface-background-note">{backgroundLabel}. This background supplies visual context; it is not the date or measurement represented by the scientific layer.</p>
+    {selected&&<section className="surface-location-readout" aria-label="Selected glacier measurement location" aria-live="polite">
+     <div className="surface-location-heading"><strong>Selected map location</strong><Button variant="ghost" size="small" onClick={onClearLocation} aria-label="Clear selected map location">Clear</Button></div>
+     <p className="surface-location-coordinates">{Math.abs(selected.latitude).toFixed(5)}° {selected.latitude<0?'S':'N'} · {Math.abs(selected.longitude).toFixed(5)}° {selected.longitude<0?'W':'E'} · {selected.insideOutline?`inside mapped ${selected.outlineYear} outline`:`outside mapped ${selected.outlineYear} outline`}</p>
+     {mode==='extent'?<p>{selected.insideOutline?`${selected.areaKm2?.toFixed(2)} km² total mapped area in the selected inventory.`:'This location is outside the selected mapped glacier footprint.'} Area is for the whole inventory polygon, not this point.</p>:selected.status==='outside-grid'?<p>No prepared scientific grid covers this location.</p>:selected.status==='missing'?<p>The location falls in a transparent gap; no accepted measurement is supplied at this point. Missing values are never filled.</p>:mode==='change'?<dl className="surface-location-values">
+      <div><dt>Baseline · {baseline?.label}</dt><dd>{selected.baselineSpeed!.toFixed(1)} m/year <span>± {selected.baselineError?.toFixed(1)??'unavailable'} reported error</span></dd></div>
+      <div><dt>Selected · {frame?.label}</dt><dd>{selected.speed!.toFixed(1)} m/year <span>± {selected.error?.toFixed(1)??'unavailable'} reported error</span></dd></div>
+      <div><dt>Difference · B − A</dt><dd>{selected.difference!>0?'+':''}{selected.difference!.toFixed(1)} m/year</dd></div>
+     </dl>:mode==='elevation'?<p>Measured mean height-change rate: <strong>{selected.elevationChange!>0?'+':''}{selected.elevationChange!.toFixed(2)} m/year</strong> over 2000–2020. No uncertainty value is connected.</p>:<p>Measured interval-mean speed: <strong>{selected.speed!.toFixed(1)} m/year</strong> · reported source error ± {selected.error?.toFixed(1)??'unavailable'} m/year. This error omits some systematic effects.</p>}
+     {mode==='change'&&selected.status==='measured'&&(baseline?.id===frame?.id?<p>Both A and B use the same measured interval, so the difference is zero by definition.</p>:<p>Cell errors are reported separately and do not establish confidence or significance for the difference.</p>)}
+    </section>}
+    {!location&&<p className="surface-inspect-hint">Click a location on the map to inspect its measurements. The selected point will stay as you move through dates.</p>}
     <label className="surface-opacity">Surface opacity<input type="range" aria-label="Surface opacity" min="0.15" max="1" step="0.05" value={opacity} onChange={e=>setOpacity(+e.target.value)}/></label>
     <button className="surface-overview" onClick={onOverview}>View the whole glacier ↗</button>
-    <p className="surface-inspect-hint">Click the surface to inspect measurements.</p>
     <details className="surface-provenance"><summary>Sources & scientific limits</summary>
      <p>{mode==='extent'?'GLAMOS Swiss Glacier Inventories: measured mapped outlines at inventory/acquisition years, CC BY 4.0. Changing area reflects mapping differences as well as retreat.':frame?.interpretation}</p>
      <p>Glacier mask: {mode==='elevation'?'GLAMOS 1973, including formerly glaciated terrain':'GLAMOS SGI2016, Aletsch acquisition year 2017'}. This is a historical mask. Gaps stay transparent; measurements are not extrapolated outside accepted cells.</p>
-     <p>Texture: SWISSIMAGE mosaic versions (local flight dates vary). Terrain: fixed Mapterhorn elevation. The background does not acquire the velocity interval's date.</p>
+     <p>Map texture: {backgroundLabel}. Its date is independent of the measured interval. Terrain: fixed Mapterhorn elevation.</p>
      <p>{data.elevation.reason}</p>
      <a href={mode==='extent'?selectedOutline?.properties.sourceUrl:frame?.sourceUrl} target="_blank" rel="noreferrer">Original scientific dataset <ExternalLink size={12}/></a>
      <a href="https://its-live.jpl.nasa.gov/" target="_blank" rel="noreferrer">NASA ITS_LIVE documentation <ExternalLink size={12}/></a>

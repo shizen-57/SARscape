@@ -17,7 +17,7 @@ import {gcovImage,type GcovStyle} from '../data/gcov-style'
 import type {MotionPreview,MotionScene} from '../data/motion-preview.mjs'
 import {addMotion,motionCellAt,motionPopup,moveParticles,removeMotion,showMotion,type MotionLayers} from './motion-layers'
 import type {SurfaceScene} from '../data/glacier-surfaces.mjs'
-import {addSurface,removeSurface,surfacePopup} from './surface-layers'
+import {addSurface,removeSurface} from './surface-layers'
 export type MapControls={focus:(bounds:[[number,number],[number,number]])=>void;zoomIn:()=>void;zoomOut:()=>void;reset:()=>void;globe:()=>void;north:()=>void;camera:()=>{center:[number,number];zoom:number;pitch:number;bearing:number};restore:(camera:{center:[number,number];zoom:number;pitch:number;bearing:number})=>void}
 export type GcovContext={id:string;scenario:string;acquisitionDate:string;identification?:{trackNumber?:string;orbitPassDirection?:string};displayPreview:{coordinates:[[number,number],[number,number],[number,number],[number,number]];rangeDb:[number,number]};colorPreview?:{shaded?:{note:string;imagery:string};natural:string;composite:string;channels:{channel:string;measurement:string;rangeDb:[number,number]}[];interpretation:string}}
 function radarPaint(scale:number,progress:number):NonNullable<maplibregl.CircleLayerSpecification['paint']>{return {
@@ -28,7 +28,7 @@ function radarPaint(scale:number,progress:number):NonNullable<maplibregl.CircleL
 }}
 // With a motion preview, raw samples become neutral rings so they never compete with its colour scale.
 const RAW_RINGS:NonNullable<maplibregl.CircleLayerSpecification['paint']>={'circle-radius':['interpolate',['linear'],['zoom'],9,1.5,14,3.5],'circle-color':'rgba(0,0,0,0)','circle-stroke-width':1,'circle-stroke-color':'#e8edf2','circle-stroke-opacity':0.75}
-type Props={onGlobeChange:(active:boolean)=>void;adjustments:{brightness:number;contrast:number;saturation:number};scenario:Scenario;frames:ImageryFrame[];step:number;baseline:number;compare:boolean;compareMode:'lens'|'swipe';lens:{x:number;y:number};split:number;boundary:boolean;terrain:boolean;satellite:boolean;retryFrame:number;gcovContext?:GcovContext;gcovStyle:GcovStyle;radarObservation?:ScienceJob;component:'alongTrack'|'slantRange';radarMode:RadarDisplayMode;radarProgress:number;motion?:MotionPreview|null;motionScene?:MotionScene|null;motionLayers:MotionLayers;surface?:SurfaceScene|null;onRadarSummary:(summary:RadarDisplaySummary|null)=>void;camera?:ReturnType<MapControls['camera']>|null;onReady:(c:MapControls)=>void;onStatus:(s:string)=>void;onFrameState:(state:'loading'|'ready'|'error')=>void;onDisplayed:(scenarioId:string,a:string,b:string)=>void}
+type Props={onGlobeChange:(active:boolean)=>void;adjustments:{brightness:number;contrast:number;saturation:number};scenario:Scenario;frames:ImageryFrame[];step:number;baseline:number;compare:boolean;compareMode:'lens'|'swipe';lens:{x:number;y:number};split:number;boundary:boolean;terrain:boolean;satellite:boolean;retryFrame:number;gcovContext?:GcovContext;gcovStyle:GcovStyle;radarObservation?:ScienceJob;component:'alongTrack'|'slantRange';radarMode:RadarDisplayMode;radarProgress:number;motion?:MotionPreview|null;motionScene?:MotionScene|null;motionLayers:MotionLayers;surface?:SurfaceScene|null;surfaceLocation:[number,number]|null;onSurfaceLocation:(point:[number,number])=>void;onRadarSummary:(summary:RadarDisplaySummary|null)=>void;camera?:ReturnType<MapControls['camera']>|null;onReady:(c:MapControls)=>void;onStatus:(s:string)=>void;onFrameState:(state:'loading'|'ready'|'error')=>void;onDisplayed:(scenarioId:string,a:string,b:string)=>void}
 function style(satellite:boolean):StyleSpecification{return {version:8,sources:{context:{type:'raster',tiles:['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],tileSize:256,attribution:'Context imagery © Esri and contributors'},streets:{type:'raster',tiles:['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],tileSize:256,attribution:'© OpenStreetMap contributors'},elevation:{type:'raster-dem',url:'https://tiles.mapterhorn.com/tilejson.json',tileSize:512,encoding:'terrarium',attribution:'Terrain © <a href="https://mapterhorn.com/">Mapterhorn</a>'}},layers:[{id:'background',type:'background',paint:{'background-color':'#05080d'}},{id:'context',type:'raster',source:'context',layout:{visibility:satellite?'visible':'none'}},{id:'streets',type:'raster',source:'streets',layout:{visibility:satellite?'none':'visible'}}],terrain:{source:'elevation',exaggeration:1.15}}}
 export default function TerrainMap(p:Props){
  const firstEl=useRef<HTMLDivElement>(null),secondEl=useRef<HTMLDivElement>(null),primary=useRef<maplibregl.Map|null>(null),secondary=useRef<maplibregl.Map|null>(null),latest=useRef(p)
@@ -221,12 +221,24 @@ export default function TerrainMap(p:Props){
   if(!ready||!map)return
   if(!scene){removeSurface(map);return}
   addSurface(map,scene,globe)
-  const popup=new maplibregl.Popup({closeButton:true,maxWidth:'310px',className:'radar-map-popup'})
-  popups.current.add(popup)
-  const click=(event:maplibregl.MapMouseEvent)=>popup.setLngLat(event.lngLat).setDOMContent(surfacePopup(scene,event.lngLat)).addTo(map)
+ },[p.surface,ready,globe])
+ useEffect(()=>{
+  const map=primary.current
+  if(!ready||!map)return
+  const click=(event:maplibregl.MapMouseEvent)=>{if(latest.current.surface)latest.current.onSurfaceLocation([event.lngLat.lng,event.lngLat.lat])}
   map.on('click',click)
-  return()=>{map.off('click',click);popup.remove();popups.current.delete(popup);removeSurface(map)}
- },[p.surface,ready])
+  return()=>{map.off('click',click)}
+ },[ready])
+ useEffect(()=>{
+  const map=primary.current
+  if(!ready||!map||!p.surface){if(map){if(map.getLayer('surface-selected-point'))map.removeLayer('surface-selected-point');if(map.getSource('surface-selected-point'))map.removeSource('surface-selected-point')}return}
+  const featureCollection:FeatureCollection<Point>={type:'FeatureCollection',features:p.surfaceLocation?[{type:'Feature',properties:{},geometry:{type:'Point',coordinates:p.surfaceLocation}}]:[]}
+  const existing=map.getSource('surface-selected-point') as maplibregl.GeoJSONSource|undefined
+  if(existing)existing.setData(featureCollection)
+  else map.addSource('surface-selected-point',{type:'geojson',data:featureCollection})
+  if(!map.getLayer('surface-selected-point'))map.addLayer({id:'surface-selected-point',type:'circle',source:'surface-selected-point',paint:{'circle-radius':['interpolate',['linear'],['zoom'],8,5,14,8],'circle-color':'#06131a','circle-stroke-color':'#d7fbff','circle-stroke-width':2.5,'circle-opacity':.96,'circle-stroke-opacity':1}})
+  setVisibility(map,'surface-selected-point',!globe)
+ },[p.surfaceLocation,p.surface,ready,globe])
  useEffect(()=>{for(const map of [ready?primary.current:null,secondReady?secondary.current:null])if(map){
   setVisibility(map,'gcov-context',!globe)
   setVisibility(map,'radar-samples',!globe&&p.motionLayers.raw)

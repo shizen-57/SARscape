@@ -2,7 +2,8 @@
 
 Glacier movement remains the focus. This plan builds on the existing 3D terrain,
 timelines and scientific artifacts without inventing glacier geometry or hazard
-probabilities. Work pauses after each stage for the user's decision to proceed.
+probabilities. The stages are implemented in sequence. No application runtime,
+backend service or browser preview is started during offline validation.
 
 ## Stage 1 — explain the available measurements
 
@@ -24,25 +25,29 @@ require runtime acceptance; no runtime speed or scientific-validation claim is m
 
 ## Stage 2 — connect explanations to selected map locations
 
-Next, pending user approval: improve the existing spatial inspector with paired
-values, per-location missing-data and error explanations, explicit A/B periods,
-and consistent comparison direction. Preserve selection where appropriate through
-timeline changes and make the readout accessible without hiding key evidence in
-a transient popup. Do not derive significance or 3D velocity from unsupported data.
+Implemented: map clicks set a persistent, marked location; the inspector follows
+that point through mode and date changes. It reports paired A/B interval values,
+the B − A direction, per-cell reported errors, transparent or uncovered cells,
+inventory inclusion and whole-inventory area caveats. It distinguishes self-
+comparisons and does not turn reported errors into confidence or significance.
+The map click listener stays mounted while timeline layers update.
 
 ## Stage 3 — clarify the visual comparison and evidence
 
-Pending user approval: strengthen the connection between baseline, selected date,
-fixed legends and the terrain view. Make the distinction between measured layers
-and background texture obvious. Consider a provenance-rich comparison export.
-Any additional imagery must retain real acquisition metadata and source detail.
+Implemented: the map texture selector labels the selected optical mosaic/capture
+or individual dated NISAR GCOV radar display. Its acquisition is called out in the
+panel and map footnote as visual context, independent of scientific measurement
+dates. Timeline playback now updates existing raster and outline sources in place;
+repeated speed-difference images are cached by their source grids. Scientific
+sources, mask year, original dataset links, and raster downloads remain visible.
 
 ## Stage 4 — validation and acceptance
 
-Pending user approval: run appropriate offline regression checks and document
-remaining scientific validation. Runtime map/layout/playback checks and measured
-performance require separate authorization to run the application; the standing
-instruction currently prohibits application, service and browser-preview startup.
+Offline verification: 14 glacier surface and change-summary tests pass, including
+location pairings, missing cells, boundaries, and summary interpretation. The
+frontend TypeScript checking and production asset building pass. Runtime map/layout/playback behavior
+and measured performance remain unverified because application and service startup
+is prohibited by the standing instruction.
 
 Absolute glacier geometry changes require compatible dated elevation models.
 Validated hazard probabilities require suitable training labels, independent
