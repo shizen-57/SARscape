@@ -29,7 +29,8 @@ function radarPaint(scale:number,progress:number):NonNullable<maplibregl.CircleL
 // With a motion preview, raw samples become neutral rings so they never compete with its colour scale.
 const RAW_RINGS:NonNullable<maplibregl.CircleLayerSpecification['paint']>={'circle-radius':['interpolate',['linear'],['zoom'],9,1.5,14,3.5],'circle-color':'rgba(0,0,0,0)','circle-stroke-width':1,'circle-stroke-color':'#e8edf2','circle-stroke-opacity':0.75}
 type Props={onGlobeChange:(active:boolean)=>void;adjustments:{brightness:number;contrast:number;saturation:number};scenario:Scenario;frames:ImageryFrame[];step:number;baseline:number;compare:boolean;compareMode:'lens'|'swipe';lens:{x:number;y:number};split:number;boundary:boolean;terrain:boolean;satellite:boolean;retryFrame:number;gcovContext?:GcovContext;gcovStyle:GcovStyle;radarObservation?:ScienceJob;component:'alongTrack'|'slantRange';radarMode:RadarDisplayMode;radarProgress:number;motion?:MotionPreview|null;motionScene?:MotionScene|null;motionLayers:MotionLayers;surface?:SurfaceScene|null;surfaceLocation:[number,number]|null;onSurfaceLocation:(point:[number,number])=>void;onRadarSummary:(summary:RadarDisplaySummary|null)=>void;camera?:ReturnType<MapControls['camera']>|null;onReady:(c:MapControls)=>void;onStatus:(s:string)=>void;onFrameState:(state:'loading'|'ready'|'error')=>void;onDisplayed:(scenarioId:string,a:string,b:string)=>void}
-function style(satellite:boolean):StyleSpecification{return {version:8,sources:{context:{type:'raster',tiles:['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],tileSize:256,attribution:'Context imagery © Esri and contributors'},streets:{type:'raster',tiles:['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],tileSize:256,attribution:'© OpenStreetMap contributors'},elevation:{type:'raster-dem',url:'https://tiles.mapterhorn.com/tilejson.json',tileSize:512,encoding:'terrarium',attribution:'Terrain © <a href="https://mapterhorn.com/">Mapterhorn</a>'}},layers:[{id:'background',type:'background',paint:{'background-color':'#05080d'}},{id:'context',type:'raster',source:'context',layout:{visibility:satellite?'visible':'none'}},{id:'streets',type:'raster',source:'streets',layout:{visibility:satellite?'none':'visible'}}],terrain:{source:'elevation',exaggeration:1.15}}}
+const terrainRelief=(scenario:Scenario)=>scenario.kind==='flood'?2:1.15
+function style(exaggeration:number):StyleSpecification{return {version:8,sources:{context:{type:'raster',tiles:['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],tileSize:256,attribution:'Optical terrain context © Esri and contributors'},elevation:{type:'raster-dem',url:'https://tiles.mapterhorn.com/tilejson.json',tileSize:512,encoding:'terrarium',attribution:'Terrain © <a href="https://mapterhorn.com/">Mapterhorn</a>'}},layers:[{id:'background',type:'background',paint:{'background-color':'#05080d'}},{id:'context',type:'raster',source:'context'}],terrain:{source:'elevation',exaggeration}}}
 export default function TerrainMap(p:Props){
  const firstEl=useRef<HTMLDivElement>(null),secondEl=useRef<HTMLDivElement>(null),primary=useRef<maplibregl.Map|null>(null),secondary=useRef<maplibregl.Map|null>(null),latest=useRef(p)
  latest.current=p
@@ -72,7 +73,7 @@ export default function TerrainMap(p:Props){
   if(!firstEl.current)return
   setReady(false);setFailure('')
   let map:maplibregl.Map
-  try{map=new maplibregl.Map({container:firstEl.current,style:style(latest.current.satellite),center:latest.current.scenario.center,zoom:latest.current.scenario.zoom,pitch:latest.current.terrain?latest.current.scenario.pitch:0,bearing:latest.current.scenario.bearing,maxPitch:75,attributionControl:{compact:true},transformRequest:trackTile})}catch{setFailure('The 3D map could not start. Enable hardware acceleration and retry.');return}
+  try{map=new maplibregl.Map({container:firstEl.current,style:style(terrainRelief(latest.current.scenario)),center:latest.current.scenario.center,zoom:latest.current.scenario.zoom,pitch:latest.current.terrain?latest.current.scenario.pitch:0,bearing:latest.current.scenario.bearing,maxPitch:75,attributionControl:{compact:true},transformRequest:trackTile})}catch{setFailure('The 3D map could not start. Enable hardware acceleration and retry.');return}
   primary.current=map
   map.addControl(new maplibregl.ScaleControl({maxWidth:100,unit:'metric'}),'bottom-left')
   const timeout=setTimeout(()=>setFailure('The landscape is taking too long to load. Check your connection and retry.'),30000)
@@ -88,7 +89,7 @@ export default function TerrainMap(p:Props){
  },[retry])
  useEffect(()=>{
   if(!p.compare||!ready||!secondEl.current){setSecondReady(false);return}
-  const base=primary.current!,map=new maplibregl.Map({container:secondEl.current,style:style(p.satellite),center:base.getCenter(),zoom:base.getZoom(),pitch:base.getPitch(),bearing:base.getBearing(),interactive:false,attributionControl:false,maxPitch:75})
+  const base=primary.current!,map=new maplibregl.Map({container:secondEl.current,style:style(terrainRelief(p.scenario)),center:base.getCenter(),zoom:base.getZoom(),pitch:base.getPitch(),bearing:base.getBearing(),interactive:false,attributionControl:false,maxPitch:75})
   secondary.current=map;map.on('load',()=>{map.jumpTo({center:base.getCenter(),zoom:base.getZoom(),pitch:base.getPitch(),bearing:base.getBearing()});setSecondReady(true)})
   return()=>{map.remove();secondary.current=null;setSecondReady(false)}
  },[p.compare,ready])
@@ -109,11 +110,8 @@ export default function TerrainMap(p:Props){
   return()=>{warmer.cancel();frameReady.current=false;cancel()}
  },[p.frames,p.step,p.baseline,p.compare,p.scenario.id,p.gcovContext,ready,secondReady,retry,p.retryFrame])
  useEffect(()=>{for(const map of [ready?primary.current:null,secondReady?secondary.current:null])if(map){
-  map.setTerrain(p.terrain&&!globe?{source:'elevation',exaggeration:1.15}:null)
- }},[p.terrain,ready,secondReady,globe])
- useEffect(()=>{for(const map of [ready?primary.current:null,secondReady?secondary.current:null])if(map){
-  setVisibility(map,'context',p.satellite);setVisibility(map,'streets',!p.satellite)
- }},[p.satellite,ready,secondReady])
+  map.setTerrain(p.terrain&&!globe?{source:'elevation',exaggeration:terrainRelief(p.scenario)}:null)
+ }},[p.terrain,p.scenario.kind,ready,secondReady,globe])
  useEffect(()=>{for(const map of [ready?primary.current:null,secondReady?secondary.current:null])if(map){
   if(!map.getSource('region')){map.addSource('region',{type:'geojson',data:{type:'FeatureCollection',features:[]}});map.addLayer({id:'boundary',type:'line',source:'region',paint:{'line-color':'#fff','line-width':1.5,'line-dasharray':[4,4]}})}
   setExtent(map.getSource('region') as maplibregl.GeoJSONSource,p.scenario.extent)
@@ -128,7 +126,7 @@ export default function TerrainMap(p:Props){
   const bbox=p.frames[p.step]?.bbox??[iw,is,ie,inn],cw=Math.max(iw,bbox[0]),cs=Math.max(is,bbox[1]),ce=Math.min(ie,bbox[2]),cn=Math.min(inn,bbox[3])
   setExtent(map.getSource('capture-coverage') as maplibregl.GeoJSONSource,[cw,cs,ce,cn])
  }},[p.scenario,p.frames,p.step,ready,secondReady])
- useEffect(()=>{for(const map of [ready?primary.current:null,secondReady?secondary.current:null])if(map)setVisibility(map,'capture-edge',p.satellite&&!globe&&!p.gcovContext)},[p.satellite,p.gcovContext,ready,secondReady,globe])
+ useEffect(()=>{for(const map of [ready?primary.current:null,secondReady?secondary.current:null])if(map)setVisibility(map,'capture-edge',!globe&&!p.gcovContext)},[p.gcovContext,ready,secondReady,globe])
  useEffect(()=>{primary.current?.easeTo({pitch:p.terrain?(p.camera?.pitch??p.scenario.pitch):0,duration:600})},[p.terrain])
  useEffect(()=>{
   if(!ready)return

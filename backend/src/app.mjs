@@ -66,8 +66,7 @@ export function createApi({cache,fetchUpstream=fetch,renderTile=()=>{throw new E
  })
  app.get('/api/imagery/:id',c=>{
   if(c.req.query('source')==='reference'){
-   if(!config.scenarios.some(s=>s.id===c.req.param('id')))return c.json({error:'Unknown glacier'},404)
-   return c.json({source:'Esri World Imagery reference mosaic',selection:'Highest available reference imagery for this location. Acquisition dates and ground resolution vary and are not verified here. This layer cannot establish yearly change.',frames:[{id:'reference',date:'Undated',datePrecision:'undated',cloudCover:null,resolutionMeters:null,platform:'Esri World Imagery',bbox:[-180,-85,180,85],url:'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer',tileTemplate:'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',metadataUrl:'https://services.arcgisonline.com/arcgis/rest/services/World_Imagery/MapServer',attribution:'Reference imagery © Esri and contributors · acquisition dates vary'}]})
+   return c.json({error:'Undated reference imagery is not part of the observation timeline. Choose a dated Sentinel-2 capture or a year-labelled SWISSIMAGE mosaic.'},410)
   }
   if(c.req.query('source')==='swissimage'){
    if(c.req.param('id')!=='aletsch')return c.json({error:'Swiss aerial imagery is available for Aletsch only'},400)
@@ -78,9 +77,10 @@ export function createApi({cache,fetchUpstream=fetch,renderTile=()=>{throw new E
     return {id:year,date:year,datePrecision:'mosaic-year',cloudCover:null,url:tileTemplate,tileTemplate:`/api/imagery/aerial/${year}/{z}/{x}/{y}.jpeg`,metadataUrl,platform:'SWISSIMAGE aerial mosaic',resolutionMeters:0.25,bbox:[5.140242,45.398181,11.47757,48.230651],attribution:'SWISSIMAGE © <a href="https://www.swisstopo.admin.ch/">swisstopo</a> · mosaic year; acquisition dates vary'}
    })})
   }
-  const frames=imageryManifest.scenarios[c.req.param('id')];if(!frames)return c.json({error:'Unknown glacier'},404)
+  const frames=imageryManifest.scenarios[c.req.param('id')];if(!frames)return c.json({error:'Unknown study area'},404)
+  const datedFrames=frames.filter(frame=>frame.datePrecision==='mosaic-year'?/^\d{4}$/.test(frame.date):frame.datePrecision!=='undated'&&/^\d{4}-\d{2}-\d{2}T/.test(frame.date??'')&&Number.isFinite(Date.parse(frame.date)))
   c.header('Cache-Control','public,max-age=3600')
-  return c.json({source:imageryManifest.source,selection:imageryManifest.selection,retrievedAt:imageryManifest.retrievedAt,...imageryManifest.studyMetadata?.[c.req.param('id')],frames})
+  return c.json({source:imageryManifest.source,selection:imageryManifest.selection,retrievedAt:imageryManifest.retrievedAt,...imageryManifest.studyMetadata?.[c.req.param('id')],frames:datedFrames})
  })
  app.get('/api/imagery/aerial/:year/:z/:x/:y',async c=>{
   const year=Number(c.req.param('year')),z=Number(c.req.param('z')),x=Number(c.req.param('x')),y=Number(c.req.param('y').replace('.jpeg',''))
@@ -107,12 +107,16 @@ export function createApi({cache,fetchUpstream=fetch,renderTile=()=>{throw new E
  })
  app.get('/api/catalog/:id',async c=>{
   const scenario=config.scenarios.find(s=>s.id===c.req.param('id'));if(!scenario)return c.json({error:'Unknown glacier'},404)
-  const result=await memo(`catalog-v1-${scenario.id}`,3600000,async()=>{
-   const params=new URLSearchParams({dataset:'NISAR',bbox:scenario.extent.join(','),processingLevel:'GOFF',end:new Date().toISOString(),maxResults:'12',output:'geojson'})
+  const product=c.req.query('product')??'GOFF';if(!['GOFF','GCOV','SENTINEL1_GRD'].includes(product))return c.json({error:'Unsupported archive product'},400)
+  if(product==='SENTINEL1_GRD'&&scenario.kind!=='flood')return c.json({error:'Sentinel-1 event search is only configured for flood study areas'},400)
+  const result=await memo(`catalog-v2-${scenario.id}-${product}`,3600000,async()=>{
+   const sentinel1=product==='SENTINEL1_GRD',params=new URLSearchParams({dataset:sentinel1?'SENTINEL-1':'NISAR',bbox:scenario.extent.join(','),processingLevel:sentinel1?'GRD_HD':product,end:sentinel1?'2022-12-31T23:59:59Z':new Date().toISOString(),maxResults:'250',output:'geojson'})
+   if(sentinel1)params.set('start','2022-06-01T00:00:00Z')
    const response=await fetchUpstream('https://api.daac.asf.alaska.edu/services/search/param?'+params,{signal:AbortSignal.timeout(18000)})
    if(!response.ok)throw new Error(`ASF returned ${response.status}`)
    const data=await response.json();if(!Array.isArray(data.features))throw new Error('Unexpected ASF response')
-   return {source:'ASF NISAR Search API',retrievedAt:new Date().toISOString(),records:data.features.map((f,i)=>{const p=f.properties??{},url=String(p.url??''),fileId=String(p.fileID??p.sceneName??`Record ${i+1}`),pol=p.mainBandPolarization??p.polarization,pola=Array.isArray(pol)?pol.join(', '):String(pol??'See granule metadata');return {id:fileId,date:String(p.startTime??''),stopDate:String(p.stopTime??''),product:String(p.processingLevel??'GOFF'),polarization:pola,maturity:String(p.dataMaturity??p.maturity??(url.includes('PROVISIONAL')?'PROVISIONAL':'Check granule metadata')),url:/^https:\/\//.test(url)?url:'https://search.asf.alaska.edu/',bytes:typeof p.bytes==='number'?p.bytes:typeof p.bytes?.h5==='number'?p.bytes.h5:null}})}
+   const records=data.features.map((f,i)=>{const p=f.properties??{},url=String(p.url??''),fileId=String(p.fileID??p.sceneName??`Record ${i+1}`),pol=p.mainBandPolarization??p.polarization,pola=Array.isArray(pol)?pol.join(', '):String(pol??'See granule metadata'),start=Date.parse(p.startTime??''),stop=Date.parse(p.stopTime??'');if(!Number.isFinite(start)||!Number.isFinite(stop)||stop<start)return null;return {id:fileId,date:new Date(start).toISOString(),stopDate:new Date(stop).toISOString(),product:String(p.processingLevel??product),polarization:pola,maturity:String(p.dataMaturity??p.maturity??(url.includes('PROVISIONAL')?'PROVISIONAL':'Check granule metadata')),url:/^https:\/\//.test(url)?url:'https://search.asf.alaska.edu/',bytes:typeof p.bytes==='number'?p.bytes:typeof p.bytes?.h5==='number'?p.bytes.h5:null}}).filter(Boolean)
+   return {source:sentinel1?'ASF Sentinel-1 Search API':'ASF NISAR Search API',product,retrievedAt:new Date().toISOString(),records}
   })
   c.header('Cache-Control','public, max-age=600');c.header('X-Cache',result.hit?'HIT':'MISS');return c.json(result.value)
  })
