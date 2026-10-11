@@ -7,6 +7,7 @@ import rasterio
 from rasterio.transform import from_origin
 from pyproj import CRS, Transformer
 from preview import write_preview
+from goff_motion import build as build_motion, sample_geometry
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 def text(value):
@@ -76,7 +77,11 @@ def process(source, output, scenario_id, frequency='A', polarization='HH', layer
                 if attr in dataset.attrs: values[values==dataset.attrs[attr]]=np.nan
             arrays.append(values)
         along,slant,av,sv,peak=arrays
+        specification=text(identification['productSpecificationVersion'][()]) if 'productSpecificationVersion' in identification else None
         base,mask_schema=quality_mask(h,path,polarization,window,shape)
+        quality_datasets=[f'{path}/mask']+([f'{path}/{polarization}/validDataMask'] if f'{path}/{polarization}/validDataMask' in h else [])
+        source_mask_samples=int(base.sum())
+        finite_samples=int(screen_samples(arrays,base,0).sum())
         accepted=screen_samples(arrays,base,correlation)
         if not np.any(accepted): raise ValueError('No samples passed the declared quality mask in this glacier extent')
         # Offsets already have metre units. Rates and 1-sigma uncertainty divide by pair duration.
@@ -96,13 +101,24 @@ def process(source, output, scenario_id, frequency='A', polarization='HH', layer
         lon,lat=Transformer.from_crs(crs,4326,always_xy=True).transform(x[columns[0]+xx],y[rows[0]+yy])
         features=[{'type':'Feature','geometry':{'type':'Point','coordinates':[float(lon[i]),float(lat[i])]},'properties':{name:float(values[yy[i],xx[i]]) for name,values in zip(['alongTrack','slantRange','alongTrackSigma','slantRangeSigma','correlation'],bands)}} for i in range(len(xx))]
         (output/'samples.geojson').write_text(json.dumps({'type':'FeatureCollection','features':features},allow_nan=False))
+        # Estimated preview only; the measured bands above are written unchanged.
+        geometry=sample_geometry(h.get('/science/LSAR/GOFF/metadata/radarGrid'),x[columns],y[rows],epsg)
+        motion=build_motion(bands[0],bands[1],bands[4],x[columns],y[rows],epsg,scenario_id,correlation,days,geometry)
+        motion.update(referenceDate=reference,secondaryDate=secondary,frequency=frequency,polarization=polarization,layer=layer)
+        (output/'motion-preview.json').write_text(json.dumps(motion,allow_nan=False))
         digest=hashlib.sha256()
         with open(source,'rb') as raw:
             while chunk:=raw.read(8*1024*1024): digest.update(chunk)
-        metadata={'scenario':scenario_id,'sourceFilename':pathlib.Path(source).name,'sha256':digest.hexdigest(),'mission':'NISAR','product':'GOFF','frequency':frequency,'polarization':polarization,'layer':layer,'referenceDate':reference,'secondaryDate':secondary,'pairDays':days,'epsg':epsg,'postingMetres':[dx,abs(dy)],'units':'m/day','acceptedSamples':int(accepted.sum()),'totalSamples':int(accepted.size),'returnedSamples':len(features),'correlationThreshold':correlation,'createdAt':dt.datetime.now(dt.timezone.utc).isoformat(),'horizontalVelocity':False,'validation':'Derived radar-coordinate components; no independent glacier validation or stable-ground bias correction applied.','qualityMask':'Both validDataMask bits, non-water valid reference/secondary subswaths, zero known anomaly flags, finite offsets/nonnegative variances, declared correlation threshold.','schemaSource':'https://github.com/isce-framework/isce3/blob/develop/python/packages/nisar/products/insar/GOFF_writer.py'}
+        metadata={'scenario':scenario_id,'sourceFilename':pathlib.Path(source).name,'sha256':digest.hexdigest(),'mission':'NISAR','product':'GOFF','frequency':frequency,'polarization':polarization,'layer':layer,'referenceDate':reference,'secondaryDate':secondary,'pairDays':days,'epsg':epsg,'postingMetres':[dx,abs(dy)],'units':'m/day','acceptedSamples':int(accepted.sum()),'totalSamples':int(accepted.size),'returnedSamples':len(features),'correlationThreshold':correlation,'createdAt':dt.datetime.now(dt.timezone.utc).isoformat(),'horizontalVelocity':False,'validation':'Derived radar-coordinate components; no independent glacier validation or stable-ground bias correction applied.','qualityMask':quality_description+', finite offsets/nonnegative variances, declared correlation threshold.','schemaSource':'https://github.com/isce-framework/isce3/blob/develop/python/packages/nisar/products/insar/GOFF_writer.py'}
+        metadata['productSpecificationVersion']=specification
+        for key,target in [('trackNumber','trackNumber'),('orbitPassDirection','orbitPassDirection'),('granuleId','sourceGranuleId'),('productVersion','productVersion'),('compositeReleaseId','compositeReleaseId')]:
+            if key in identification: metadata[target]=text(identification[key][()])
+        metadata['qualityMaskDatasets']=quality_datasets
+        metadata['qualitySummary']={'studyAreaExtent':scenario['extent'],'sourceMaskAccepted':source_mask_samples,'finiteDataAccepted':finite_samples,'acceptedFraction':float(accepted.sum()/accepted.size),'glacierOutlineApplied':False}
         metadata['displayPreview']=preview
         metadata['maskSchema']=mask_schema
         metadata['qualityMask']='Non-water valid reference/secondary subswaths, zero known anomaly flags, finite offsets/nonnegative variances, declared correlation threshold. '+mask_schema
+        metadata['motionPreview']={'file':'motion-preview.json','status':motion['status'],'qualityGrade':motion.get('quality',{}).get('grade'),'flowDirectionResolved':motion.get('quality',{}).get('flowDirectionResolved',False),'glacierOutlineApplied':'outline' in motion,'geometryAvailable':geometry is not None,'validated':False}
         (output/'provenance.json').write_text(json.dumps(metadata,indent=2,allow_nan=False))
         return metadata
 

@@ -17,6 +17,10 @@ test-results/
 playwright-report/
 __pycache__/
 *.pyc
+data/subsets/
+# Source granules, QA downloads and generated previews stay local; only the compact catalogue is versioned.
+data/*
+!data/aletsch-download-catalog.json
 tmp/
 .openai/hosting.json
 

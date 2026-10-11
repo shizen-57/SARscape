@@ -20,6 +20,12 @@ The current scope covers all existing glacier/radar features plus Sundarbans wet
 3. Import authentic GCOV captures and validate their backscatter comparisons against independent thematic evidence.
 4. Add tidal/inundation evidence for flooding interpretation and land-cover/field evidence for forest-loss or biomass interpretation.
 5. If online delivery is required, deploy persistent raster/science services and exercise the deployed workflow. A lightweight Worker cannot replace Python/HDF5 processing.
+6. Completed locally: the user supplied a matching production Aletsch GOFF file for September 23–October 5, 2026. The production import API code, queue, processor, and artifact APIs were exercised in-process using frequency A, HH, layer1, and correlation 0.3. Verify the saved job in the UI after starting or restarting the local backend.
+7. Completed software checks against the actual file: specification 1.5.0 combined source mask without polarization validDataMask, dates, 80 m posting, metre/variance units, raster orientation, five output bands, sample coordinates, preview precision, and original-source SHA-256. Ten checks passed. Only 1,112 of 13,272 study-area cells passed screening; low correlation and large component rates still need spatial outlier review and scientific validation. No glacier outline has been applied.
+8. Estimate and correct bias using independently identified stable ground. Compare glacier results to independent observations and document interpretation limits. Screening thresholds need evidence before being presented as validated criteria.
+9. Validate real capture sequences visually across all three glaciers. Exclude cloud-obscured scenes where appropriate, account for seasonal snow, and retain exact acquisition dates rather than implying evenly spaced measurements.
+10. Verify the interface on desktop, mobile, keyboard input, rapid timeline seeking, comparison, restoration, import, processing failure, and export. Complete the independent design finish review and record the resulting design system.
+11. If the submission must be hosted, deploy the raster renderer and scientific backend with persistent object storage and durable jobs, connect the frontend to them, then exercise the entire workflow at the deployed URL. A lightweight Worker cannot replace the HDF5 processor.
 
 ## Acceptance boundaries
 

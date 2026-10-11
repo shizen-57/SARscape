@@ -19,6 +19,8 @@
   "imagery:cache": "node scripts/cache-observations.mjs",
   "science:study": "node scripts/prepare-study.mjs",
   "science:presentation": "node scripts/prepare-presentation.mjs",
+  "data:aletsch": "node scripts/prepare-aletsch.mjs",
+  "data:surfaces": "node scripts/prepare-glacier-surfaces.mjs",
   "build": "node scripts/build.mjs",
   "test": "node --test tests"
  },

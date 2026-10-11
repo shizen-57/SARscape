@@ -31,10 +31,10 @@
       "product": "GOFF",
       "explanation": "Actual optical observations show surface appearance. The supplied GOFF pair provides raw signed radar offsets and formal uncertainty; stable-ground bias correction and independent ice-motion validation remain necessary.",
       "extent": [
-        8.02,
-        46.39,
-        8.1,
-        46.51
+        7.875,
+        46.355,
+        8.15,
+        46.605
       ],
       "path": [
         [

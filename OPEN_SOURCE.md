@@ -20,6 +20,8 @@ The application uses established rendering, UI and geospatial modules. Product-s
 ## Data services
 Esri World Imagery supplies the satellite basemap, OpenStreetMap supplies the street basemap, and Mapterhorn supplies elevation. All visible attribution stays on the map. These are independent services, not NISAR science layers. No remote image is downloaded merely to work around chat rendering restrictions.
 
+The motion preview masks GOFF results with the Grosser Aletschgletscher outline (SGI ID B36-26) from the [Swiss Glacier Inventory 2016](https://doi.glamos.ch/data/inventory/inventory_sgi2016_r2020.html), published by GLAMOS under CC BY 4.0. Cite Linsbauer et al. (2021), Frontiers in Earth Science 9, 704189, doi:10.3389/feart.2021.704189. Only the extracted polygon (`database/outlines/aletsch-sgi2016.geojson`) is versioned; its properties record the source URL, archive SHA-256, licence, and citation, and the interface shows the attribution.
+
 The approximate Aletsch demonstration centerline was checked against [OpenStreetMap glacier way 42742456](https://www.openstreetmap.org/way/42742456), retrieved through the public Nominatim API. This does not turn the synthetic layer into a scientific glacier inventory.
 
 ## Science integration boundary

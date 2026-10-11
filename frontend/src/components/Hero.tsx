@@ -10,6 +10,7 @@ const SOURCES=[
  {icon:Layers2,name:'Sentinel-2',agency:'Copernicus',text:'Dated satellite captures for glaciers, wetlands and forests. Play annual observations, compare two dates, and follow changing ice margins at 10 m source resolution.',stats:['Dated captures','10 m pixels']},
 ]
 const REGION_NOTES:Record<string,{fact:string;data:string}>={
+ manchar:{fact:'Follow water spreading across the Manchar Lake floodplain during the 2022 Pakistan floods.',data:'Sentinel-2 · four captures · June–November 2022'},
  aletsch:{fact:'The largest glacier in the Alps, about 20 km long, at the heart of the Jungfrau–Aletsch World Heritage site.',data:'Swiss aerial mosaics · 2018–2025'},
  langtang:{fact:'A debris-covered valley glacier in Langtang National Park, north of Kathmandu.',data:'Dated Sentinel-2 captures · yearly playback'},
  sundarbans:{fact:'Dry-season water signals through the mangroves; tide and flooding conditions need independent evidence.',data:'Annual Sentinel-2 · NDWI · 2018–2026'},

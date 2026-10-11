@@ -4,7 +4,7 @@ import config from '../../database/scenarios.json' with {type:'json'}
 import {imageryManifest,imageryFrame,imagerySelection} from './imagery.mjs'
 import {createCogReader} from './cog.mjs'
 import {createAerialReader} from './aerial.mjs'
-export function createApi({cache,fetchUpstream=fetch,renderTile=()=>{throw new Error('Configure a raster renderer')},science,analysis,renderIndex,study}={}) {
+export function createApi({cache,fetchUpstream=fetch,renderTile=()=>{throw new Error('Configure a raster renderer')},science,analysis,renderIndex,study,surfaces,assistant}={}) {
  const app=new Hono(),memory=new Map(),pending=new Map()
  const store=cache??{get:async key=>{const entry=memory.get(key);return entry&&entry.expires>Date.now()?entry.value:null},set:async(key,value,ttl)=>{if(memory.size>=32)memory.delete(memory.keys().next().value);memory.set(key,{value,expires:Date.now()+ttl})}}
  const memo=async(key,ttl,create)=>{const cached=await store.get(key);if(cached)return {value:cached,hit:true};if(pending.has(key))return {value:await pending.get(key),hit:true};const job=create().then(async value=>{await store.set(key,value,ttl);return value}).finally(()=>pending.delete(key));pending.set(key,job);return {value:await job,hit:false}}
@@ -53,9 +53,31 @@ export function createApi({cache,fetchUpstream=fetch,renderTile=()=>{throw new E
   if(!bytes)return c.json({error:'Study artifact unavailable. Run npm run science:study with the supplied files in the project root.'},404)
   return c.body(bytes,200,{'Content-Type':name.endsWith('.pdf')?'application/pdf':name.endsWith('.png')?'image/png':name.endsWith('.tif')?'image/tiff':name.endsWith('.geojson')?'application/geo+json':'application/json','Cache-Control':'no-cache'})
  })
+ app.get('/api/surfaces/:id',async c=>{
+  if(!config.scenarios.some(s=>s.id===c.req.param('id')))return c.json({error:'Unknown glacier'},404)
+  return c.json(surfaces?await surfaces.list(c.req.param('id')):{available:false,frames:[]})
+ })
+ app.get('/api/surfaces/:id/:file',async c=>{
+  const bytes=await surfaces?.artifact(c.req.param('id'),c.req.param('file'))
+  if(!bytes)return c.json({error:'Surface artifact not found'},404)
+  const file=c.req.param('file')
+  return c.body(bytes,200,{'Content-Type':file.endsWith('.png')?'image/png':file.endsWith('.tif')?'image/tiff':file.endsWith('.geojson')?'application/geo+json':'application/json','Cache-Control':'private,max-age=3600'})
+ })
  app.get('/api/science/:id',async c=>{
   if(!config.scenarios.some(s=>s.id===c.req.param('id')))return c.json({error:'Unknown location'},404)
   return c.json(science?await science.list(c.req.param('id')):{available:false,jobs:[],reason:'Science processing requires the local backend or a dedicated processing service.'})
+ })
+ app.get('/api/science/:id/gcov',async c=>{
+  if(!config.scenarios.some(s=>s.id===c.req.param('id')))return c.json({error:'Unknown study area'},404)
+  return c.json(science?.gcovList?await science.gcovList(c.req.param('id')):{available:false,observations:[]})
+ })
+ app.get('/api/science/:id/gcov/:observation/:file',async c=>{
+  if(!config.scenarios.some(s=>s.id===c.req.param('id')))return c.json({error:'Unknown study area'},404)
+  const file=c.req.param('file'),types={'backscatter.png':'image/png','color.png':'image/png','natural.png':'image/png','shaded.png':'image/png','backscatter.tif':'image/tiff','provenance.json':'application/json'}
+  if(!Object.hasOwn(types,file))return c.json({error:'Unknown GCOV artifact'},404)
+  const bytes=await science?.gcovArtifact?.(c.req.param('id'),c.req.param('observation'),file)
+  if(!bytes)return c.json({error:'GCOV artifact not found'},404)
+  return c.body(bytes,200,{'Content-Type':types[file],'Cache-Control':'private,max-age=3600'})
  })
  app.post('/api/science/:id/import',async c=>{
   if(!science)return c.json({error:'A dedicated science backend is required'},503)
@@ -107,7 +129,7 @@ export function createApi({cache,fetchUpstream=fetch,renderTile=()=>{throw new E
   }
   const frames=imageryManifest.scenarios[c.req.param('id')];if(!frames)return c.json({error:'Unknown location'},404)
   c.header('Cache-Control','public,max-age=3600')
-  return c.json({source:imageryManifest.source,selection:imagerySelection(c.req.param('id')),retrievedAt:imageryManifest.retrievedAt,frames:frames.map(frame=>({...frame,id:frame.sourceSceneId??frame.id,registrationId:frame.id,datePrecision:'acquisition'}))})
+  return c.json({source:imageryManifest.source,selection:imagerySelection(c.req.param('id')),retrievedAt:imageryManifest.retrievedAt,...imageryManifest.studyMetadata?.[c.req.param('id')],frames:frames.map(frame=>({...frame,id:frame.sourceSceneId??frame.id,registrationId:frame.id,datePrecision:'acquisition'}))})
  })
  app.get('/api/imagery/aerial/:year/:z/:x/:y',async c=>{
   const year=Number(c.req.param('year')),z=Number(c.req.param('z')),x=Number(c.req.param('x')),y=Number(c.req.param('y').replace('.jpeg',''))
@@ -139,6 +161,16 @@ export function createApi({cache,fetchUpstream=fetch,renderTile=()=>{throw new E
    return {source:'ASF NISAR Search API',retrievedAt:new Date().toISOString(),records:data.features.map((f,i)=>{const p=f.properties??{},url=String(p.url??''),fileId=String(p.fileID??p.sceneName??`Record ${i+1}`),pol=p.mainBandPolarization??p.polarization,pola=Array.isArray(pol)?pol.join(', '):String(pol??'See granule metadata');return {id:fileId,date:String(p.startTime??''),stopDate:String(p.stopTime??''),product:String(p.processingLevel??scenario.product),polarization:pola,maturity:String(p.dataMaturity??p.maturity??(url.includes('PROVISIONAL')?'PROVISIONAL':'Check granule metadata')),url:/^https:\/\//.test(url)?url:'https://search.asf.alaska.edu/',bytes:typeof p.bytes==='number'?p.bytes:typeof p.bytes?.h5==='number'?p.bytes.h5:null}})}
   })
   c.header('Cache-Control','public, max-age=600');c.header('X-Cache',result.hit?'HIT':'MISS');return c.json(result.value)
+ })
+ app.get('/api/assistant/status',c=>c.json({available:Boolean(assistant?.configured())}))
+ app.post('/api/assistant/chat',async c=>{
+  if(!assistant)return c.json({error:'The assistant is not available on this deployment.'},503)
+  const origin=c.req.header('origin')
+  if(origin&&!['http://127.0.0.1:5173','http://localhost:5173','http://127.0.0.1:8787'].includes(origin))return c.json({error:'Untrusted origin'},403)
+  if(Number(c.req.header('content-length')??0)>64*1024)return c.json({error:'Message too large'},413)
+  let body;try{body=await c.req.json()}catch{return c.json({error:'Invalid request'},400)}
+  if(!config.scenarios.some(s=>s.id===body?.scenario))return c.json({error:'Unknown glacier'},404)
+  try{return c.json(await assistant.chat(body))}catch(error){console.error('Assistant failed:',error.message);return c.json({error:error.status?error.message:'The assistant failed. Please retry.'},error.status??502)}
  })
  app.notFound(c=>c.json({error:'Not found'},404))
  app.onError((error,c)=>{console.error('Backend request failed:',c.req.method,c.req.path,error.message,error.cause?.code??error.cause?.cause?.code??'');return c.json({error:c.req.path.startsWith('/api/catalog')?'Could not retrieve the ASF catalog. Try again or open Vertex.':'Could not prepare this map layer. Please retry.'},502)})
