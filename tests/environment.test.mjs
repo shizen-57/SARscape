@@ -38,7 +38,7 @@ test('science inspection, actual-channel selection and cached reprocessing work 
  const root=await mkdtemp(join(tmpdir(),'sarscape-inspect-'));let service
  try{
   await mkdir(join(root,'backend/geo'),{recursive:true});await mkdir(join(root,'database'),{recursive:true})
-  for(const file of ['goff.py','gcov.py','gcov_compare.py','inspect_nisar.py','preview.py','science.py','process_lifecycle.py'])await copyFile(join(process.cwd(),'backend/geo',file),join(root,'backend/geo',file))
+  for(const file of ['goff.py','goff_motion.py','gcov.py','gcov_compare.py','inspect_nisar.py','preview.py','science.py','process_lifecycle.py'])await copyFile(join(process.cwd(),'backend/geo',file),join(root,'backend/geo',file))
   await copyFile('database/scenarios.json',join(root,'database/scenarios.json'))
   const file=join(root,'fixture.h5');await exec(python,['tests/gcov_schema_test.py','--fixture',file])
   service=createScienceService({root,python})

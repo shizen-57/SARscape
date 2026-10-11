@@ -1,7 +1,7 @@
 import {useState} from 'react'
 import {ArrowDownToLine,ChevronDown,ChevronUp,Focus,Radar,X} from 'lucide-react'
 import {Button} from './ui'
-import type {ScienceJob} from './SciencePanel'
+import type {GoffJob} from './SciencePanel'
 import type {MotionPreview,MotionScene} from '../data/motion-preview.mjs'
 import {MOTION_STOPS} from '../data/motion-preview.mjs'
 import type {MotionLayers} from './motion-layers'
@@ -12,7 +12,7 @@ export type RadarDisplaySummary={scale:number|null;count:number;error?:string}
 const ramp=(mode:'flow'|'components')=>`linear-gradient(90deg,${MOTION_STOPS[mode].map(([at,c])=>`rgb(${c.join(',')}) ${mode==='flow'?at*100:(at+1)*50}%`).join(',')})`
 const fixed=(v:number|null|undefined,digits=2)=>typeof v==='number'&&Number.isFinite(v)?v.toFixed(digits):'—'
 const dateOnly=(v:string)=>v.slice(0,10)
-export default function RadarControls({job,component,mode,summary,onComponent,onMode,onHide,preview,scene,layers,onLayers,scenario,progress,enhanced,onEnhanced,onFocus,onBroader}:{job:ScienceJob;component:RadarComponent;mode:RadarDisplayMode;summary:RadarDisplaySummary|null;onComponent:(v:RadarComponent)=>void;onMode:(v:RadarDisplayMode)=>void;onHide:()=>void;preview:MotionPreview|null;scene:MotionScene|null;layers:MotionLayers;onLayers:(v:MotionLayers)=>void;scenario:string;progress:number;enhanced:boolean;onEnhanced:(v:boolean)=>void;onFocus:()=>void;onBroader?:()=>void}){
+export default function RadarControls({job,component,mode,summary,onComponent,onMode,onHide,preview,scene,layers,onLayers,scenario,progress,enhanced,onEnhanced,onFocus,onBroader}:{job:GoffJob;component:RadarComponent;mode:RadarDisplayMode;summary:RadarDisplaySummary|null;onComponent:(v:RadarComponent)=>void;onMode:(v:RadarDisplayMode)=>void;onHide:()=>void;preview:MotionPreview|null;scene:MotionScene|null;layers:MotionLayers;onLayers:(v:MotionLayers)=>void;scenario:string;progress:number;enhanced:boolean;onEnhanced:(v:boolean)=>void;onFocus:()=>void;onBroader?:()=>void}){
  const [collapsed,setCollapsed]=useState(false)
  const days=job.provenance?.pairDays??0,unit=mode==='pair'?'m':'m/day',factor=mode==='pair'?days:1
  const scale=summary?.scale,format=(v:number)=>v.toLocaleString(undefined,{maximumFractionDigits:1})

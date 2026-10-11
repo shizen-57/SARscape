@@ -16,6 +16,7 @@ def text(value):
 
 def source_quality(h, path, window, shape):
     """Read declared source flags; specification 1.5.0 predates validDataMask."""
+    if f'{path}/mask' not in h: raise ValueError('The required GOFF source mask is missing')
     mask=h[f'{path}/mask']
     if mask.shape!=shape: raise ValueError('Mismatched quality mask')
     flags=mask[window].astype(np.uint32); code=flags&255
@@ -31,7 +32,7 @@ def quality_mask(h, path, polarization, window, shape):
         return accepted&(valid[window]==3), 'validDataMask and encoded source mask'
     identification=h['/science/LSAR/identification']
     version=text(identification['productSpecificationVersion'][()]) if 'productSpecificationVersion' in identification else ''
-    if version!='1.5.0': raise ValueError('Missing validDataMask for an unrecognized product specification')
+    if version!='1.5.0': raise ValueError(f'Missing validDataMask for unsupported GOFF specification: {version or "unspecified"} (unrecognized product specification)')
     return accepted, 'Specification 1.5.0 encoded source mask; validDataMask is absent'
 
 def screen_samples(arrays, base, correlation):
@@ -79,6 +80,7 @@ def process(source, output, scenario_id, frequency='A', polarization='HH', layer
         along,slant,av,sv,peak=arrays
         specification=text(identification['productSpecificationVersion'][()]) if 'productSpecificationVersion' in identification else None
         base,mask_schema=quality_mask(h,path,polarization,window,shape)
+        quality_description=mask_schema
         quality_datasets=[f'{path}/mask']+([f'{path}/{polarization}/validDataMask'] if f'{path}/{polarization}/validDataMask' in h else [])
         source_mask_samples=int(base.sum())
         finite_samples=int(screen_samples(arrays,base,0).sum())

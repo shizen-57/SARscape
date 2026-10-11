@@ -1,13 +1,13 @@
 import {useState,type ReactNode} from 'react'
 import {ArrowRight,ChevronDown,ChevronUp,Database,Layers2,LoaderCircle,Pause,Play,Radar} from 'lucide-react'
 import {Button} from './ui'
-import type {ScienceJob} from './SciencePanel'
+import type {ScienceJob,GoffJob} from './SciencePanel'
 import {completedRadarJobs,radarDateMilliseconds} from '../data/radar-display.mjs'
 import {pairFrame} from '../data/motion-preview.mjs'
 
 export type ObservationSource='optical'|'radar'|'surface'
 const dateLabel=(date:string,includeYear=false)=>new Intl.DateTimeFormat('en-GB',{day:'numeric',month:'short',...(includeYear?{year:'numeric' as const}:{}),timeZone:'UTC'}).format(new Date(radarDateMilliseconds(date)))
-export default function ObservationTimeline({source,onSource,jobs,selected,onSelect,pending,error,aerial,dated=false,glacier=true,onOpenData,progress,playing,onPlay,onScrub,speed,onSpeed,children}:{source:ObservationSource;onSource:(s:ObservationSource)=>void;jobs:ScienceJob[];selected:ScienceJob|null;onSelect:(j:ScienceJob)=>void;pending:boolean;error:boolean;aerial:boolean;dated?:boolean;glacier?:boolean;onOpenData:()=>void;progress:number;playing:boolean;onPlay:()=>void;onScrub:(v:number)=>void;speed:number;onSpeed:(v:number)=>void;children:ReactNode}){
+export default function ObservationTimeline({source,onSource,jobs,selected,onSelect,pending,error,aerial,dated=false,glacier=true,onOpenData,progress,playing,onPlay,onScrub,speed,onSpeed,children}:{source:ObservationSource;onSource:(s:ObservationSource)=>void;jobs:ScienceJob[];selected:GoffJob|null;onSelect:(j:GoffJob)=>void;pending:boolean;error:boolean;aerial:boolean;dated?:boolean;glacier?:boolean;onOpenData:()=>void;progress:number;playing:boolean;onPlay:()=>void;onScrub:(v:number)=>void;speed:number;onSpeed:(v:number)=>void;children:ReactNode}){
  const [compact,setCompact]=useState(false)
  const completed=completedRadarJobs(jobs),years=[...new Set(completed.map(j=>j.provenance.referenceDate.slice(0,4)))]
  const selectedYear=selected?.provenance?.referenceDate.slice(0,4)??years[0]

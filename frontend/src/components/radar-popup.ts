@@ -1,8 +1,8 @@
-import type {ScienceJob} from './SciencePanel'
+import type {GoffJob} from './SciencePanel'
 import type {RadarComponent,RadarDisplayMode} from './RadarControls'
 import {RADAR_COLORS,radarDisplayValue} from '../data/radar-display.mjs'
 
-export function radarPopup(values:Record<string,unknown>,observation:ScienceJob,component:RadarComponent,mode:RadarDisplayMode,scale:number){
+export function radarPopup(values:Record<string,unknown>,observation:GoffJob,component:RadarComponent,mode:RadarDisplayMode,scale:number){
  const days=observation.provenance?.pairDays??0,value=radarDisplayValue(values[component],mode,days)??0
  const root=document.createElement('div');root.className='radar-popup radar-visual-popup'
  const add=(parent:HTMLElement,tag:string,text:string,className='')=>{const el=document.createElement(tag);el.textContent=text;el.className=className;parent.append(el);return el}
