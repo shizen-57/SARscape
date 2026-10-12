@@ -57,3 +57,11 @@ test('every particle path maps to a coloured scene cell',async()=>{
  assert.ok(scene.paths.length>0)
  for(const {index,seed} of scene.paths){assert.equal(scene.cells[index],seed);assert.match(motionColor(scene.values[index],scene.scale,scene.mode),/^rgb\(\d+,\d+,\d+\)$/)}
 })
+test('the flow legend widens for a fast glacier and keeps the slow-glacier floor',async()=>{
+ const {motionScene,niceCeil}=await import('../frontend/src/data/motion-preview.mjs')
+ const field=speed=>{const cells=[];for(let r=0;r<4;r++)for(let c=0;c<4;c++)cells.push([r,c,null,null,speed*(1+c/10),0]);return preview('flow',cells)}
+ assert.equal(motionScene(field(0.3),'alongTrack').scale,300/365.25)
+ assert.equal(motionScene(field(3),'alongTrack').scale,5)
+ assert.equal(motionScene(field(3),'alongTrack',2).scale,2.5)
+ assert.deepEqual([0.82,1,1.1,3.1,5,6,20].map(niceCeil),[1,1,2,5,5,10,20])
+})

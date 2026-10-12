@@ -15,16 +15,24 @@ from rasterio.transform import from_origin
 from shapely.geometry import box, mapping, shape
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
-OUTLINES = {'aletsch': ROOT / 'database/outlines/aletsch-sgi2016.geojson'}
+OUTLINES = {'aletsch': ROOT / 'database/outlines/aletsch-sgi2016.geojson', 'columbia': ROOT / 'database/outlines/columbia-rgi6.geojson'}
 # Published Great Aletsch surface speeds peak near 200 m/a (~0.55 m/day); 1.5 m/day is a generous
 # plausibility bound for 12-day offsets, not a validated cutoff. Larger values fill the ±64-pixel
 # search window and behave like false correlation peaks.
 PLAUSIBLE_RATE = 1.5
+# Fast tidewater ice needs a wider bound. Columbia Glacier flows at metres per day, and the layer3 search window
+# (±64 radar pixels, about ±16 m/day over 12 days) is still the hard ceiling for what GOFF can track.
+PLAUSIBLE_BY_SCENARIO = {'columbia': 12.0}
 WINDOW = 5                  # 5×5 cells = 400 m at 80 m posting
 MEDIAN_TEST, MEDIAN_EPSILON, MIN_NEIGHBOURS = 2.0, 0.1, 4
 MIN_SUPPORT = 6             # supporting cells needed for a displayed (smoothed) value
 STABLE_MIN = 50             # stable-ground cells needed to estimate the common offset
 SIGNAL_RATIO, MIN_COVERAGE = 2.0, 0.2
+# A glacier with a fast trunk and a slow basin should still count as flowing, so the decision does not use the median of all glacier
+# cells. It uses the *excess* share: the fraction of glacier cells moving faster than SIGNAL_RATIO × the stable-rock noise floor, minus the
+# same fraction measured on stable rock (the empirical false-positive rate). The excess must be a practical effect (MIN_EXCESS) and a
+# one-sided two-proportion test over independent 5×5-cell blocks must reject chance (MIN_Z). Both limits are choices, stated in the output.
+MIN_EXCESS, MIN_Z = 0.10, 5.0
 STRONG_CORRELATION = 0.6
 REFERENCE_HEIGHT = 2500.0   # metres; unit vectors change <0.002 between 1500 and 3500 m here
 GEOMETRY = ('alongTrackUnitVectorX', 'alongTrackUnitVectorY', 'losUnitVectorX', 'losUnitVectorY', 'incidenceAngle')
@@ -124,13 +132,17 @@ def build(along, slant, correlation, x, y, epsg, scenario, threshold, pair_days,
         return {**base, 'status': 'unavailable', 'reason': 'No published glacier outline is configured for this study area.'}
     dx, dy = float(x[1] - x[0]), float(y[0] - y[1])
     transform = from_origin(float(x[0] - dx / 2), float(y[0] + dy / 2), dx, dy)
-    feature = json.loads(pathlib.Path(outline_path).read_text(encoding='utf-8'))['features'][0]
+    features = json.loads(pathlib.Path(outline_path).read_text(encoding='utf-8'))['features']
+    feature = features[0]   # the target glacier; any further features are other ice that also moves
     to_grid = Transformer.from_crs(4326, epsg, always_xy=True)
-    outline = shapely.transform(shape(feature['geometry']), lambda c: np.column_stack(to_grid.transform(c[:, 0], c[:, 1])))
+    to_metres = lambda f: shapely.transform(shape(f['geometry']), lambda c: np.column_stack(to_grid.transform(c[:, 0], c[:, 1])))
+    outline = to_metres(feature)
+    other_ice = [to_metres(f) for f in features[1:]]
     shape_ = along.shape
     # Cell centres inside the outline shrunk by half a cell: no mixed rock/ice margin cells.
     inside = rasterize([(outline.buffer(-dx / 2), 1)], out_shape=shape_, transform=transform, fill=0).astype(bool)
-    stable = ~rasterize([(outline.buffer(2 * dx), 1)], out_shape=shape_, transform=transform, fill=0).astype(bool)
+    # Stable ground is more than two cells from the target and from every other glacier in the file.
+    stable = ~rasterize([(g.buffer(2 * dx), 1) for g in [outline, *other_ice]], out_shape=shape_, transform=transform, fill=0).astype(bool)
     accepted = np.isfinite(along) & np.isfinite(slant) & np.isfinite(correlation)
     offset = stable_offset(along[accepted & stable], slant[accepted & stable])
     to_lonlat = Transformer.from_crs(epsg, 4326, always_xy=True)
@@ -146,12 +158,13 @@ def build(along, slant, correlation, x, y, epsg, scenario, threshold, pair_days,
     base.update(grid={'epsg': epsg, 'shape': list(shape_), 'postingMetres': [dx, dy], 'corners': corners, 'lonLatAffine': affine,
                       'outlinePixels': mapping(shapely.transform(clipped, to_pixels))['coordinates'] if not clipped.is_empty else []},
                 outline={'geometry': mapping(shapely.transform(clipped, lambda c: np.column_stack(to_lonlat.transform(c[:, 0], c[:, 1])))),
-                         **{k: properties[k] for k in ('name', 'sgiId', 'outlineYear', 'source', 'sourceUrl', 'license', 'citation', 'limitation') if k in properties},
+                         **{k: properties[k] for k in ('name', 'sgiId', 'rgiId', 'outlineYear', 'outlineDate', 'source', 'sourceUrl', 'license', 'citation', 'limitation') if k in properties},
                          'mask': 'Cell centres inside the outline shrunk by half a cell; stable ground is more than two cells outside it.'})
     if offset is None:
         return {**base, 'status': 'unavailable', 'reason': f'Fewer than {STABLE_MIN} consistent stable-ground cells; the common radar offset cannot be removed.'}
     rel_along, rel_slant = along - offset['alongTrack'], slant - offset['slantRange']
-    plausible = accepted & (np.abs(rel_along) <= PLAUSIBLE_RATE) & (np.abs(rel_slant) <= PLAUSIBLE_RATE)
+    limit = PLAUSIBLE_BY_SCENARIO.get(scenario, PLAUSIBLE_RATE)
+    plausible = accepted & (np.abs(rel_along) <= limit) & (np.abs(rel_slant) <= limit)
     consistent = median_test(rel_along, plausible) & median_test(rel_slant, plausible)
     smooth_along, support = smooth(rel_along, consistent)
     smooth_slant, _ = smooth(rel_slant, consistent)
@@ -171,21 +184,32 @@ def build(along, slant, correlation, x, y, epsg, scenario, threshold, pair_days,
     ratios = {k: glacier[k] / floors[k] if glacier[k] is not None and floors[k] else None for k in floors}
     coverage = float(shown.sum() / max(1, inside.sum()))
     median_corr = float(np.median(correlation[consistent & inside])) if (consistent & inside).any() else None
-    flow_supported = flow is not None and (ratios['speed'] or 0) >= SIGNAL_RATIO and coverage >= MIN_COVERAGE
+    speed_all = np.hypot(*flow) if flow is not None else None
+    cutoff = SIGNAL_RATIO * floors['speed'] if floors['speed'] else None
+    flow_share = float(np.mean(speed_all[shown] >= cutoff)) if cutoff and shown.any() else 0.0
+    stable_share = float(np.mean(speed_all[stable_shown] >= cutoff)) if cutoff and stable_shown.sum() >= 25 else None
+    n_glacier, n_stable = shown.sum() / WINDOW**2, stable_shown.sum() / WINDOW**2        # independent blocks, not cells
+    excess = flow_share - (stable_share or 0.0)
+    se = float(np.sqrt(max(flow_share, .005) * (1 - flow_share) / max(n_glacier, 1) + max(stable_share or 0, .005) * (1 - (stable_share or 0)) / max(n_stable, 1))) if cutoff else None
+    flow_z = float(excess / se) if se else 0.0
+    flow_supported = flow is not None and cutoff is not None and excess >= MIN_EXCESS and flow_z >= MIN_Z and coverage >= MIN_COVERAGE
     signal = max([r for r in ratios.values() if r is not None], default=0)
-    grade = 'good' if signal >= SIGNAL_RATIO and coverage >= .5 and (median_corr or 0) >= STRONG_CORRELATION else 'moderate' if signal >= SIGNAL_RATIO and coverage >= MIN_COVERAGE else 'low'
+    grade = 'good' if flow_supported and excess >= .4 and coverage >= .5 and (median_corr or 0) >= STRONG_CORRELATION else 'moderate' if flow_supported else 'low'
     reasons = []
     if (median_corr or 0) < STRONG_CORRELATION: reasons.append(f'Weak correlation: median {median_corr:.2f} for glacier cells that passed every filter.' if median_corr is not None else 'No glacier cell passed every filter.')
     if coverage < .5: reasons.append(f"Only {'under 1%' if 0 < coverage < .01 else f'{coverage:.0%}'} of the glacier outline has a displayed estimate.")
-    if signal < SIGNAL_RATIO: reasons.append(f'Glacier values are {signal:.1f}× the apparent motion of stable rock processed the same way; at least {SIGNAL_RATIO:.0f}× is required.')
+    if cutoff is None: reasons.append('No viewing geometry or too little stable ground, so a horizontal speed cannot be compared with the noise floor.')
+    elif flow_supported: reasons.append(f'{flow_share:.0%} of displayed glacier cells move faster than {cutoff:.2f} m/day (twice the stable-rock noise floor); stable rock reaches that in {stable_share:.0%} of its cells, an excess of {excess:.0%} (z = {flow_z:.0f}).')
+    else: reasons.append(f'{flow_share:.0%} of displayed glacier cells move faster than {cutoff:.2f} m/day (twice the stable-rock noise floor), against {(stable_share or 0):.0%} on stable rock: an excess of {excess:.0%} (z = {flow_z:.1f}); at least {MIN_EXCESS:.0%} and z = {MIN_Z:g} are required.')
     reasons.append(f"A common offset of {offset['alongTrack']:.2f} m/day along-track and {offset['slantRange']:.2f} m/day slant-range was removed using stable ground.")
     confidence = (support / WINDOW**2) * np.clip((smooth_corr - threshold) / (STRONG_CORRELATION - threshold), 0, 1)
+    if flow_supported: confidence = confidence * np.clip(speed_all / cutoff, 0, 1)    # cells at the noise level fade out
     rr, cc = np.nonzero(shown)
     pick = lambda a, digits=4: [None if not np.isfinite(v) else round(float(v), digits) for v in a[rr, cc]]
     columns = [rr.tolist(), cc.tolist(), pick(smooth_along), pick(smooth_slant), pick(flow[0]) if flow is not None else [None] * len(rr), pick(flow[1]) if flow is not None else [None] * len(rr),
                pick(confidence, 3), support[rr, cc].tolist(), pick(smooth_corr, 3), consistent[rr, cc].tolist(), pick(along), pick(slant), pick(correlation, 3)]
     counts = [('glacier', 'Cells inside the glacier outline', inside), ('source', f'Source quality mask and correlation ≥ {threshold:g}', accepted & inside),
-              ('plausible', f'Within ±{PLAUSIBLE_RATE:g} m/day after the stable-ground offset', plausible & inside), ('consistent', 'Normalized median test (5×5, threshold 2)', consistent & inside),
+              ('plausible', f'Within ±{limit:g} m/day after the stable-ground offset', plausible & inside), ('consistent', 'Normalized median test (5×5, threshold 2)', consistent & inside),
               ('shown', f'Displayed after 400 m median smoothing (≥{MIN_SUPPORT} supporting cells)', shown)]
     geometry_doc = {'available': geometry is not None}
     if geometry is not None:
@@ -201,13 +225,13 @@ def build(along, slant, correlation, x, y, epsg, scenario, threshold, pair_days,
     else:
         geometry_doc['reason'] = 'This file has no radarGrid geometry cubes, so components cannot be converted to ground directions.'
     return {**base, 'status': 'flow' if flow_supported else 'components' if shown.any() else 'unavailable',
-            'reason': 'Estimated horizontal surface flow: glacier motion clearly exceeds the stable-ground noise floor.' if flow_supported else
+            'reason': 'Estimated horizontal surface flow: a clear excess of glacier cells moves faster than the stable-ground noise floor.' if flow_supported else
                       'Flow direction is not resolved: showing measured radar components relative to stable ground, not glacier-flow direction.' if geometry is not None else
                       'No viewing geometry in this file: showing measured radar components relative to stable ground.',
             'geometry': geometry_doc, 'stableGround': {**offset, 'noiseFloor': floors},
-            'quality': {'grade': grade, 'reasons': reasons, 'coverage': coverage, 'medianCorrelation': median_corr, 'glacierMedian': glacier, 'signalToNoise': ratios, 'flowDirectionResolved': bool(flow_supported)},
+            'quality': {'grade': grade, 'reasons': reasons, 'coverage': coverage, 'medianCorrelation': median_corr, 'glacierMedian': glacier, 'signalToNoise': ratios, 'flowDirectionResolved': bool(flow_supported), 'fastShare': round(flow_share, 3), 'stableShare': None if stable_share is None else round(stable_share, 3), 'excessShare': round(excess, 3), 'flowZ': round(flow_z, 1), 'noiseCutoffMetresPerDay': None if cutoff is None else round(cutoff, 3)},
             'filters': [{'id': key, 'label': label, 'cells': int(mask.sum())} for key, label, mask in counts],
-            'method': {'plausibleRateMetresPerDay': PLAUSIBLE_RATE, 'window': WINDOW, 'medianTest': {'threshold': MEDIAN_TEST, 'epsilon': MEDIAN_EPSILON, 'minimumNeighbours': MIN_NEIGHBOURS, 'reference': 'Westerweel & Scarano (2005), Experiments in Fluids 39, 1096–1100'},
-                       'minimumSupport': MIN_SUPPORT, 'signalRatio': SIGNAL_RATIO, 'minimumCoverage': MIN_COVERAGE,
+            'method': {'plausibleRateMetresPerDay': limit, 'window': WINDOW, 'medianTest': {'threshold': MEDIAN_TEST, 'epsilon': MEDIAN_EPSILON, 'minimumNeighbours': MIN_NEIGHBOURS, 'reference': 'Westerweel & Scarano (2005), Experiments in Fluids 39, 1096–1100'},
+                       'minimumSupport': MIN_SUPPORT, 'signalRatio': SIGNAL_RATIO, 'minimumCoverage': MIN_COVERAGE, 'minimumExcessShare': MIN_EXCESS, 'minimumZ': MIN_Z,
                        'confidence': f'Share of the 5×5 neighbourhood that passed every filter × correlation score, scaled from {threshold:g} (0) to {STRONG_CORRELATION:g} (1)'},
             'cells': [list(row) for row in zip(*columns)]}

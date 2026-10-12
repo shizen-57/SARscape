@@ -5,6 +5,7 @@ import {promisify} from 'node:util'
 import {homedir} from 'node:os'
 import {join} from 'node:path'
 import {existsSync} from 'node:fs'
+import {gunzipSync} from 'node:zlib'
 import {createApi} from '../backend/src/app.mjs'
 import {createScienceService} from '../backend/src/science.mjs'
 import {mkdtemp,mkdir,writeFile,rm} from 'node:fs/promises'
@@ -28,9 +29,40 @@ test('aerial-shaded radar maths',async()=>{
  const bundled=join(homedir(),'.cache/codex-runtimes/codex-primary-runtime/dependencies/python/python.exe'),python=process.env.SARSCAPE_PYTHON??(existsSync(bundled)?bundled:'python')
  const {stderr}=await promisify(execFile)(python,['tests/gcov_shaded_test.py'],{timeout:120000,maxBuffer:2*1024*1024});assert.match(stderr,/Ran 3 tests/);assert.match(stderr,/OK/)
 })
+test('radar change analysis and radar-to-colour prediction',async()=>{
+ const bundled=join(homedir(),'.cache/codex-runtimes/codex-primary-runtime/dependencies/python/python.exe'),python=process.env.SARSCAPE_PYTHON??(existsSync(bundled)?bundled:'python')
+ const {stderr}=await promisify(execFile)(python,['tests/gcov_change_test.py'],{timeout:120000,maxBuffer:2*1024*1024});assert.match(stderr,/Ran 10 tests/);assert.match(stderr,/OK/)
+})
+test('ITS_LIVE comparison of NISAR flow',async()=>{
+ const bundled=join(homedir(),'.cache/codex-runtimes/codex-primary-runtime/dependencies/python/python.exe'),python=process.env.SARSCAPE_PYTHON??(existsSync(bundled)?bundled:'python')
+ const {stderr}=await promisify(execFile)(python,['tests/validate_itslive_test.py'],{timeout:120000,maxBuffer:2*1024*1024});assert.match(stderr,/Ran 5 tests/);assert.match(stderr,/OK/)
+})
+test('radar change routes serve only the summary and the maps it lists',async()=>{
+ const maps=new Map([['diff-72A-2026-08-18-2026-08-30.png',Buffer.from('png')]]),summary={scenario:'aletsch',steps:[{file:'diff-72A-2026-08-18-2026-08-30.png'}]}
+ const science={changeSummary:async id=>id==='aletsch'?summary:null,changeArtifact:async(id,file)=>id==='aletsch'&&summary.steps.some(x=>x.file===file)?maps.get(file)??null:null}
+ const app=createApi({science})
+ assert.equal((await app.request('/api/science/unknown/change')).status,404)
+ assert.equal((await app.request('/api/science/langtang/change')).status,404)
+ assert.deepEqual(await (await app.request('/api/science/aletsch/change')).json(),summary)
+ const map=await app.request('/api/science/aletsch/change/diff-72A-2026-08-18-2026-08-30.png');assert.equal(map.status,200);assert.equal(map.headers.get('content-type'),'image/png')
+ assert.equal((await app.request('/api/science/aletsch/change/..%2Fmanifest.json')).status,404)
+ assert.equal((await app.request('/api/science/aletsch/change/other.png')).status,404)
+ assert.equal((await createApi().request('/api/science/aletsch/change')).status,404)
+})
+test('large science JSON is gzipped for clients that accept it and images are left alone',async()=>{
+ const json=Buffer.from(JSON.stringify({cells:Array.from({length:4000},(_,i)=>[i,i%7,0.1234])})),tif=Buffer.alloc(4000,7)
+ const science={list:async()=>({available:true,jobs:[]}),artifact:async(id,job,file)=>file==='motion-preview.json'?json:file==='radar-preview.tif'?tif:null}
+ const app=createApi({science}),gzip={headers:{'Accept-Encoding':'gzip'}}
+ const sent=await app.request('/api/science/columbia/products/job/motion-preview.json',gzip)
+ assert.equal(sent.headers.get('content-encoding'),'gzip')
+ const packed=Buffer.from(await sent.arrayBuffer())
+ assert.ok(packed.length<json.length/2);assert.deepEqual(JSON.parse(gunzipSync(packed)),JSON.parse(json))
+ assert.equal((await app.request('/api/science/columbia/products/job/radar-preview.tif',gzip)).headers.get('content-encoding'),null)
+ assert.equal((await app.request('/api/science/columbia/products/job/motion-preview.json')).headers.get('content-encoding'),null)
+})
 test('motion preview filters, stable-ground reference and flow-direction decision',async()=>{
  const bundled=join(homedir(),'.cache/codex-runtimes/codex-primary-runtime/dependencies/python/python.exe'),python=process.env.SARSCAPE_PYTHON??(existsSync(bundled)?bundled:'python')
- const {stderr}=await promisify(execFile)(python,['tests/goff_motion_test.py'],{timeout:120000,maxBuffer:2*1024*1024});assert.match(stderr,/Ran 8 tests/);assert.match(stderr,/OK/)
+ const {stderr}=await promisify(execFile)(python,['tests/goff_motion_test.py'],{timeout:120000,maxBuffer:2*1024*1024});assert.match(stderr,/Ran 10 tests/);assert.match(stderr,/OK/)
 })
 test('interrupted processing reuses the existing upload and prevents duplicate retries',async()=>{
  const root=await mkdtemp(join(tmpdir(),'sarscape-retry-')),id='recovery-fixture'

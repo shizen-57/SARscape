@@ -69,7 +69,7 @@ export default function Hero({onEnter}:{onEnter:(scenarioId:string)=>void}){
     <div className="hero-col hero-eyebrow"><span className="hero-mask"><span className="hero-line">EARTH IN MOTION</span></span></div>
     <h1 className="hero-col hero-title"><span className="hero-mask"><span className="hero-line">SARscape</span></span></h1>
     <div className="hero-col hero-rule"><span/></div>
-    <p className="hero-col hero-lede">Watch glaciers change through genuine aerial and satellite imagery over 3D terrain, <br/>and trace how NISAR radar can help measure the motion the eye can&rsquo;t see.</p>
+    <p className="hero-col hero-lede">See what NISAR radar reveals on a glacier when optical satellites see only cloud, <br/>in real satellite data over 3D terrain, with the evidence and its limits.</p>
     <div className="hero-col hero-cta">
      <span className="hero-planet hero-planet-l" aria-hidden="true"><img alt="" src={CUTOUT}/></span>
      <span className="hero-planet hero-planet-r" aria-hidden="true"><img alt="" src={CUTOUT}/></span>

@@ -47,9 +47,12 @@ export function createScienceService({root,python}){
   await persist(job);running=false;void pump()
  }
  return {
+  // Seasonal radar-change product (backend/geo/gcov_change.py); maps are only files the summary itself lists.
+  async changeSummary(scenario){try{const summary=JSON.parse(await readFile(join(gcov,'change','change-summary.json'),'utf8'));return summary.scenario===scenario?summary:null}catch(error){if(error.code==='ENOENT')return null;throw error}},
+  async changeArtifact(scenario,filename){const summary=await this.changeSummary(scenario);if(!summary?.steps?.some(step=>step.file===filename)&&!summary?.findings?.some(finding=>finding.clouds?.optical?.file===filename))return null;try{return await readFile(join(gcov,'change',filename))}catch(error){if(error.code==='ENOENT')return null;throw error}},
   async gcovList(scenario){return {available:true,observations:await gcovObservations(scenario)}},
   async gcovArtifact(scenario,id,filename){
-   const files={'backscatter.png':'gcov-context.png','color.png':'gcov-color.png','natural.png':'gcov-natural.png','shaded.png':'gcov-shaded.png','backscatter.tif':'gcov-backscatter.tif','provenance.json':'gcov-provenance.json'}
+   const files={'backscatter.png':'gcov-context.png','color.png':'gcov-color.png','natural.png':'gcov-natural.png','shaded.png':'gcov-shaded.png','terrain.webp':'gcov-terrain.webp','backscatter.tif':'gcov-backscatter.tif','provenance.json':'gcov-provenance.json'}
    if(!Object.hasOwn(files,filename)||!(await gcovObservations(scenario)).some(observation=>observation.id===id))return null
    try{return await readFile(join(gcov,id,files[filename]))}catch(error){if(error.code==='ENOENT')return null;throw error}
   },

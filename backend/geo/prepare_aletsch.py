@@ -340,8 +340,8 @@ def main():
                     observations.append(provenance)
                     manifest = ROOT / 'database/processed/gcov/manifest.json'
                     previous = json.loads(manifest.read_text()).get('observations', []) if manifest.exists() else []
-                    # Keep observations for all study areas; replace only IDs refreshed for this area.
-                    merged = {item['id']: item for item in [o for o in previous if o.get('scenario') != SCENARIO] + observations}
+                    # Keep other study areas and this area's dates on the current box; a narrow run must not hide other dates.
+                    merged = {item['id']: item for item in [o for o in previous if o.get('scenario') != SCENARIO or o.get('studyAreaExtent') == BBOX] + observations}
                     write_json(manifest, {'observations': sorted(merged.values(), key=lambda item: item.get('acquisitionDate', ''))})
         finally:
             if session: session.close()
@@ -350,6 +350,8 @@ def main():
             try:
                 from gcov_shaded import main as shade_gcov
                 shade_gcov()
+                from gcov_change import build as build_change
+                build_change(SCENARIO)
             except (SystemExit, Exception) as error: print(f'Aerial-shaded radar skipped: {error}', flush=True)
         print(f'Ready: {len(selected)} products; {transferred / 1024**2:.1f} MiB transferred this run. Start the project to view them.', flush=True)
 

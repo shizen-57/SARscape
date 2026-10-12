@@ -30,6 +30,8 @@ npm run dev
 
 Development UI: http://127.0.0.1:5173. API: http://127.0.0.1:8787. Raster worker: http://127.0.0.1:8788. Set `SARSCAPE_PYTHON` when your interpreter is not on PATH. The launcher also recognizes the bundled Codex Python runtime on this machine.
 
+**First visit is slow without a warm cache.** The raster worker builds each Sentinel-2 study window the first time a capture is opened, which took 8–48 s per capture in measurements here (45 s for the landing-page thumbnails of a cold Langtang). With the stack running, `npm run warm:imagery` (or `npm run warm:imagery -- columbia --latest`) builds the windows for every capture once. Afterwards the same tiles take about 25 ms. The cache lives in the git-ignored `database/processed/`.
+
 To run the built local application:
 
 ```sh
@@ -120,6 +122,45 @@ GCOV change is radar-backscatter change; it does not establish displacement, mel
 
 The local demonstration was prepared from five products using 83,623,936 bytes (79.75 MiB) of science transfer; the existing September 23–October 5 GOFF file was reused. Compact HDF5 subsets occupy 20.78 MiB, with additional space for processed rasters. The October 10 catalogue refresh returned 215 records across GCOV, GOFF, GSLC, GUNW, RIFG, ROFF, RRSD, RSLC, RUNW, and SME2. These counts describe that query and will change as products become available.
 
+## What NISAR saw: radar change on Aletsch
+
+The **Radar change** tab answers one question: *what did NISAR reveal that a photo could not?* It is built from real GCOV backscatter on 24 dates (8 on each of three tracks: 72 ascending, 144 ascending, 37 descending) between 19 June and 5 October 2026 over the wide Aletsch box. It does not measure melt, thinning or flow.
+
+**Finding (High confidence, one storm).** After the storm of 21 August 2026 (about 22 mm of precipitation and 3.6 cm of fresh snow at Konkordia, 2,750 m), the glacier was radar-darker than usual on **all three tracks** on their first images afterwards: track 144 −0.8 dB on 23 August, track 37 −0.4 dB on 27 August, track 72 −1.2 dB on 30 August, a median of −0.8 dB relative to high bare rock. The three other storms in the record are graded Low and the tab says so. A radar surface that darkens after fresh wet snow is expected physics, but darkening alone is not evidence of melt or mass loss.
+
+**How it is computed** (`backend/geo/gcov_change.py`, output `database/processed/gcov/change/`):
+1. HH backscatter is averaged in linear power into 50 m cells, then converted to dB.
+2. The glacier is the SGI2016 Great Aletsch outline shrunk by 25 m. The reference is **high bare rock**: non-glacier terrain above 2,400 m and more than 100 m from any glacier. Valley meadows and forest also react to rain, so they are not used.
+3. Each date's *anomaly* is the glacier-minus-rock contrast minus that track's own median contrast. Tracks are never mixed, because their viewing geometry differs.
+4. Storms are days with at least 15 mm of precipitation or 2 cm of snow at Konkordia (ERA5 reanalysis through the Open-Meteo archive API, adjusted to point elevation). A storm's *response* is each track's first image within 10 days afterwards.
+5. A finding passes four checks, shown on its card: **tracks agree** (at least two darker than usual), **beats the noise** (median darkening at least twice the typical anomaly on dry dates, here 0.33 dB, so a 0.7 dB threshold), **matches the weather** (darker after a wet storm, brighter again on the next image of most tracks) and **covers the glacier** (at least 60% of glacier cells darkened). Four passes is High, three Moderate, fewer Low.
+6. The difference maps show each glacier cell's change between consecutive dates of one track minus the change of high rock, on a fixed ±4 dB scale (blue darker, orange brighter).
+
+**Supporting pattern.** Over all 24 dates the glacier is radar-darker after wetter days on 3 of 3 tracks (rank correlation with the previous 3 days of precipitation: −0.31, −0.43, −0.52). With eight dates per track no single value is significant; the agreement of the signs is the evidence.
+
+**Through the clouds.** The finding card pairs a real Sentinel-2 L2A scene (21 August 2026, **100% cloud** over the glacier; ESA/Copernicus data through the Element 84 Earth Search catalogue, only the glacier window read from the cloud-optimised GeoTIFF, `backend/geo/cloud_compare.py`) with the NISAR view from two days later, aligned on the same ground, with a draggable divider. It is shown only when a scene with at least 80% cloud exists near the storm.
+
+**Radar terrain colour.** The default radar style predicts a terrain colour for each date. A lookup table learned from the SWISSIMAGE 2025 aerial photo gives the average photo colour of pixels with the same NISAR HH and HV values (50 m) and the same elevation band (Mapterhorn terrain, 100 m bins) on the same track; each date is then coloured by its own radar, so the changes between dates come only from NISAR. The colour skill (1 = perfect, 0 = no better than a single average colour) is about 0.33 with radar and elevation against 0.27 with elevation alone; the app shows both numbers. These are predicted colours, not photographs. Images are saved as WebP (about 0.7 MB per date instead of 2.7 MB).
+
+**Efficient data.** The 24 dates came from partial HTTPS reads of the cropped study box: about 1.0 GiB transferred in total, against roughly 7 GB per full GCOV granule (about 170 GB for all 24).
+
+**Reproduce.**
+```bash
+npm run data:nisar -- --scenario aletsch --all-dates --product GCOV --since 2025-07-30 --until 2026-10-12 --run-mib 12000
+python backend/geo/gcov_shaded.py   # terrain colour and aerial-shaded images (also runs at the end of the data command)
+python backend/geo/gcov_change.py   # change summary, difference maps and cloud comparison
+```
+Earthdata credentials come from `.env` (`EARTHDATA_USERNAME`, `EARTHDATA_PASSWORD`; the file is git-ignored). Both Python steps run automatically at the end of `npm run data:nisar` for Aletsch.
+
+**Limits.**
+- The margin over the noise threshold for the High finding is small (0.8 against 0.7 dB), and the second storm (25 August) fell before some of those images, so some responses combine both storms. The card says so.
+- Eight dates per track over a single summer is a pattern, not a trend. Weather is ERA5 reanalysis (about 25 km cells), not station data.
+- The SGI2016 outline is from 2017; the terminus and margins have since retreated.
+- Terrain and elevation bands are fixed; there is no layover or shadow mask.
+- Nothing here has been compared with independent field data.
+
+**Sources and licences:** NISAR GCOV (NASA/ISRO via ASF DAAC); [Swiss Glacier Inventory 2016](https://doi.glamos.ch/data/inventory/inventory_sgi2016_r2020.html) (GLAMOS, CC BY 4.0); [Mapterhorn](https://mapterhorn.com/attribution) terrain; [swisstopo SWISSIMAGE](https://www.swisstopo.admin.ch/en/orthoimage-swissimage-10) (open data); ERA5 through [Open-Meteo](https://open-meteo.com/) (CC BY 4.0, contains modified Copernicus Climate Change Service information); Sentinel-2 L2A (Copernicus, via [Earth Search](https://element84.com/earth-search/)).
+
 ## Ask SARscape (AI assistant)
 
 The **Ask SARscape** button in the tool rail opens a chat popup. It works with any OpenAI-compatible provider that supports tool calling (OpenAI, Groq, OpenRouter, DeepSeek, Together, Gemini's compatible endpoint, Ollama). Copy `.env.example` to `.env`, set `AI_API_KEY`, `AI_BASE_URL` and `AI_MODEL`, and restart. The key stays in the backend (`backend/src/assistant.mjs`); the browser never sees it. Without a key the panel shows setup instructions.
@@ -143,7 +184,7 @@ Selecting a NISAR GOFF pair now opens a visual preview over the 3D terrain. It h
 5. **Spatial consistency.** Normalized median test over a 5×5 neighbourhood (threshold 2, ε = 0.1 m/day, at least 4 neighbours; Westerweel & Scarano 2005).
 6. **Display smoothing.** 5×5-cell (400 m) median of surviving cells, shown where at least 6 cells support it. Cells without their own measurement are flagged “estimated from neighbouring cells”.
 7. **Confidence** (opacity and size): the share of the 5×5 window that passed every filter, multiplied by the correlation, scaled from 0.3 (0) to 0.6 (1).
-8. **Noise floor and decision.** The same filters and smoothing are applied to stable rock, which should not move. A horizontal surface-flow direction is shown only when the file contains its own viewing geometry, **and** the glacier median reaches 2× the stable-rock floor, **and** at least 20% of the outline has an estimate. Otherwise the view shows the measured radar components, relative to stable ground, and says that flow direction is not resolved.
+8. **Noise floor and decision.** The same filters and smoothing are applied to stable rock, which should not move. A horizontal surface-flow direction is shown only when the file contains its own viewing geometry, **and** at least 20% of the outline has an estimate, **and** the glacier has a clear *excess* of fast cells. The cutoff is twice the stable-rock noise floor. The share of displayed glacier cells above it, minus the same share on stable rock (the empirical false-positive rate), must be at least 10 percentage points, and a one-sided two-proportion test over independent 5×5-cell blocks must reach z ≥ 5. Both limits are choices. The rule replaced an earlier one that compared the *median* glacier speed with the noise floor, which wrongly rejects a glacier with a fast trunk and a slow basin; it was changed after the Columbia data showed that case, so Columbia's passing result is supported separately by the ITS_LIVE comparison below. Cells near the noise level fade in the display. Otherwise the view shows the measured radar components, relative to stable ground, and says that flow direction is not resolved.
 
 **Geometry conversion (used only when resolved).** GOFF granules contain `/science/LSAR/GOFF/metadata/radarGrid` cubes: `alongTrackUnitVectorX/Y` (horizontal along-track direction) and `losUnitVectorX/Y` (target→sensor, ENU) on 500 m nodes and 20 heights. With zero vertical motion assumed, `along = a·d` and `slant = −l·d`, which solves for east/north motion. Assumptions, all shown in the interface:
 
@@ -156,7 +197,7 @@ For track 072 ascending (left-looking), the heading is 340.4° and incidence is 
 
 **Playback.** Only the two acquisitions are observations. The replay labels the start and end frames “NISAR acquisition · reference/secondary” and every frame between “Interpolated · not observed”, assuming a steady rate. There are no daily measurements.
 
-**Aletsch results for the earlier 8.02–8.10°E box (verdict: components only, quality Low; rerun `npm run data:aletsch` for the expanded box).**
+**Aletsch results (verdict: components only, quality Low on both pairs, under the final rule too).** Only 6% (11 September pair) and 1% (23 September pair) of displayed glacier cells move faster than twice the noise floor, against 13% and 8% on stable rock: the glacier is not distinguishable from noise. The table below is from the earlier 8.02–8.10°E box and is kept as a record.
 
 | Pair | Layer | Geometry | Glacier cells: in outline → source → plausible → consistent → shown | Stable-ground offset (along, slant m/day) | Glacier ÷ stable-rock floor |
 | --- | --- | --- | --- | --- | --- |
@@ -170,12 +211,35 @@ For track 072 ascending (left-looking), the heading is 340.4° and incidence is 
 
 **Glacier outline.** `database/outlines/aletsch-sgi2016.geojson` is the Grosser Aletschgletscher polygon (SGI ID B36-26, 78.49 km², 2017 aerial imagery). It comes from the [Swiss Glacier Inventory 2016](https://doi.glamos.ch/data/inventory/inventory_sgi2016_r2020.html) (GLAMOS, **CC BY 4.0**), simplified by 5 m. Cite as Linsbauer, A., Huss, M., Hodel, E., Bauder, A., Fischer, M., Weidmann, Y., Bärtschi, H. & Schmassmann, E. (2021), *The new Swiss Glacier Inventory SGI2016: From a topographical to a glaciological dataset*, Frontiers in Earth Science 9, 704189, doi:10.3389/feart.2021.704189. Regenerate it with `python backend/geo/aletsch_outline.py` from `data/sgi2016/inventory_sgi2016_r2020.zip` (SHA-256 recorded in the file). The 2017 outline overstates the 2026 ice extent near the retreating terminus and thinning margins.
 
+## NISAR motion on Columbia Glacier (a fast tidewater glacier)
+
+Aletsch is too slow for 12-day offsets at 80 m posting. Columbia Glacier (Alaska) is fast, and the same pipeline resolves its flow on one pair.
+
+**Data.** NISAR L2 GOFF, PROVISIONAL, 14–26 July 2026, layer 3, HH, frequency A: track 87 descending frame 57 and track 92 ascending frame 33. About 262 MiB was read out of two granules of roughly 1.3 GB each (`npm run data:nisar -- --scenario columbia --product GOFF --date 2026-07-14`). The winter 2025–26 pairs are in NASA's BETA collection, which the pipeline excludes. The study box is 147.32–146.40°W, 61.02–61.50°N, the whole glacier plus a margin.
+
+**Outline.** Columbia Glacier (RGI60-01.10689, 774 km², mapped 6 September 2009) from the Randolph Glacier Inventory 6.0 through the GLIMS WFS (`database/outlines/columbia-rgi6.geojson`, written by `backend/geo/columbia_outline.py`; RGI Consortium 2017, doi:10.7265/N5-RGI-60; free to use with citation, so check the NSIDC and GLIMS terms before redistributing the raw inventory). Meares, Yale and First Branch glaciers are stored as *other ice* and excluded from the stable-ground reference, since they also move. The 2009 outline is old: the terminus has retreated by kilometres.
+
+**Result (track 87 descending, grade Moderate, flow resolved).** 55% of the outline has an estimate and the median correlation of accepted cells is 0.52. 22% of displayed glacier cells move faster than 0.40 m/day (twice the noise floor), against 8.6% on stable rock: an excess of 13 points (z = 16). The track 92 ascending pair stays "components, Low": its outline coverage is 18%, below the 20% requirement.
+
+**Independent check against NASA ITS_LIVE** (`backend/geo/validate_itslive.py`, written into the preview's `validation` block and shown in the panel): feature-tracking granules from the public STAC catalogue, read with bounded range requests (a few MiB), chosen for the largest temporal overlap with the NISAR pair among those whose footprint covers the moving area. ITS_LIVE vectors are rotated into true bearings because the polar-stereographic grid axes are about 100° off east/north at this longitude. The comparison uses only ice that ITS_LIVE shows faster than the noise cutoff (here 0.5 m/day), because NISAR cannot measure slower ice. For the final full-glacier product the best match was a Landsat 9 ITS_LIVE granule, 11 July to 12 August 2026 (32 days, covering NISAR's whole 14–26 July pair).
+
+| Where ITS_LIVE shows | Cells | NISAR ÷ ITS_LIVE (median) |
+| --- | ---: | ---: |
+| 0.5–1 m/day | 2,554 | 1.06 |
+| 1–3 m/day | 2,205 | 0.98 |
+| over 3 m/day | 448 | 0.95 |
+| **all ice faster than 0.5 m/day** | **5,207** | **1.00** (median 1.05 against 1.02 m/day; rank correlation 0.86; median absolute difference 0.18 m/day) |
+
+Direction: for 4,980 cells moving faster than the cutoff in both products, the median angle between NISAR and ITS_LIVE is 8.4°, and 94.5% agree within 45°. Below 0.5 m/day (22,798 cells) NISAR reads noise (median 0.20 against 0.10 m/day): the panel says so and treats those cells as unresolved. The two products average different periods with different methods, so this is a consistency check, not a calibration. An earlier run on a smaller study box with a Sentinel-1 ITS_LIVE granule (16–28 July) gave the same picture (ratio 1.03, rank correlation 0.72, 77% within 45°).
+
+**Limits specific to Columbia.** One resolved pair on one track; the other track fails coverage. Summer melt reduces correlation. Direction rests on the same assumptions as Aletsch (horizontal flow, assumed sign convention, nearest radarGrid node), and a single track cannot resolve vertical motion. The Sentinel-2 context imagery for Columbia renders slowly on a cold cache (run `npm run warm:imagery -- columbia` once). The flow legend starts at 300 m/year, which suits an Alpine glacier, and widens to the 95th-percentile speed (here 0–2 m/day before the contrast option) so Columbia's fast trunk is not one saturated colour; the colour range never changes the measurements.
+
 **Remaining limitations.**
 
 - Only one pair has viewing geometry, and its correlation is weak (median 0.36 on accepted glacier cells).
 - The stable-ground offset assumes most rock in the 6 × 13 km box is still. Slope instabilities near the tongue (for example Moosfluh) are not masked.
 - There is no layover/shadow mask.
 - The sign convention is assumed, not confirmed by the specification.
-- Nothing has been compared with independent velocity data such as GNSS stakes or ITS_LIVE.
+- Aletsch has not been compared with independent velocity data (it is below what GOFF can resolve). Columbia's resolved pair has been compared with ITS_LIVE only, not with field measurements.
 
 Primary references: [Earthaccess range session](https://github.com/nsidc/earthaccess/blob/main/earthaccess/api.py), [ASF GCOV guide](https://nisar-docs.asf.alaska.edu/gcov/), [GCOV 1.5.0 writer](https://github.com/isce-framework/isce3/blob/fbc49b0cba725766b02c8cf499dd017925e7da44/python/packages/nisar/products/writers/GcovWriter.py), and [official ASF paged search](https://github.com/asfadmin/Discovery-asf_search/blob/master/asf_search/search/search_generator.py).

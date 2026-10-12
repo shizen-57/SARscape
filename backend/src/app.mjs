@@ -8,6 +8,8 @@ export function createApi({cache,fetchUpstream=fetch,renderTile=()=>{throw new E
  const store=cache??{get:async key=>{const entry=memory.get(key);return entry&&entry.expires>Date.now()?entry.value:null},set:async(key,value,ttl)=>{if(memory.size>=32)memory.delete(memory.keys().next().value);memory.set(key,{value,expires:Date.now()+ttl})}}
  const memo=async(key,ttl,create)=>{const cached=await store.get(key);if(cached)return {value:cached,hit:true};if(pending.has(key))return {value:await pending.get(key),hit:true};const job=create().then(async value=>{await store.set(key,value,ttl);return value}).finally(()=>pending.delete(key));pending.set(key,job);return {value:await job,hit:false}}
  app.use('/api/catalog/*',compress())
+ // The Columbia motion preview is 7.4 MB of JSON (2 MB compressed); images are skipped by the compressible-type check.
+ app.use('/api/science/*',compress())
  app.use('/api/*',async(c,next)=>{const start=performance.now();await next();c.header('Server-Timing',`api;dur=${(performance.now()-start).toFixed(1)}`);c.header('X-Content-Type-Options','nosniff')})
  app.get('/api/health',c=>c.json({status:'ok',service:'sarscape-backend',realOpticalImagery:true,scienceProcessing:Boolean(science)}))
  const readCog=createCogReader(fetchUpstream)
@@ -31,13 +33,23 @@ export function createApi({cache,fetchUpstream=fetch,renderTile=()=>{throw new E
   if(!config.scenarios.some(s=>s.id===c.req.param('id')))return c.json({error:'Unknown glacier'},404)
   return c.json(science?await science.list(c.req.param('id')):{available:false,jobs:[],reason:'Science processing requires the local backend or a dedicated processing service.'})
  })
+ app.get('/api/science/:id/change',async c=>{
+  if(!config.scenarios.some(s=>s.id===c.req.param('id')))return c.json({error:'Unknown study area'},404)
+  const summary=await science?.changeSummary?.(c.req.param('id'))
+  return summary?c.json(summary,200,{'Cache-Control':'private,max-age=300'}):c.json({error:'No radar change summary prepared for this area'},404)
+ })
+ app.get('/api/science/:id/change/:file',async c=>{
+  const bytes=await science?.changeArtifact?.(c.req.param('id'),c.req.param('file'))
+  if(!bytes)return c.json({error:'Change map not found'},404)
+  return c.body(bytes,200,{'Content-Type':c.req.param('file').endsWith('.webp')?'image/webp':'image/png','Cache-Control':'private,max-age=3600'})
+ })
  app.get('/api/science/:id/gcov',async c=>{
   if(!config.scenarios.some(s=>s.id===c.req.param('id')))return c.json({error:'Unknown study area'},404)
   return c.json(science?.gcovList?await science.gcovList(c.req.param('id')):{available:false,observations:[]})
  })
  app.get('/api/science/:id/gcov/:observation/:file',async c=>{
   if(!config.scenarios.some(s=>s.id===c.req.param('id')))return c.json({error:'Unknown study area'},404)
-  const file=c.req.param('file'),types={'backscatter.png':'image/png','color.png':'image/png','natural.png':'image/png','shaded.png':'image/png','backscatter.tif':'image/tiff','provenance.json':'application/json'}
+  const file=c.req.param('file'),types={'backscatter.png':'image/png','color.png':'image/png','natural.png':'image/png','shaded.png':'image/png','terrain.webp':'image/webp','backscatter.tif':'image/tiff','provenance.json':'application/json'}
   if(!Object.hasOwn(types,file))return c.json({error:'Unknown GCOV artifact'},404)
   const bytes=await science?.gcovArtifact?.(c.req.param('id'),c.req.param('observation'),file)
   if(!bytes)return c.json({error:'GCOV artifact not found'},404)

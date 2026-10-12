@@ -86,6 +86,21 @@ class BuildTests(unittest.TestCase):
         counts = {f['id']: f['cells'] for f in result['filters']}
         self.assertLess(counts['plausible'], counts['source']); self.assertFalse(result['validated'])
 
+    def test_a_fast_trunk_with_a_slow_basin_still_counts_as_flow(self):
+        rng = np.random.default_rng(5); cols = np.mgrid[0:60, 0:60][1]
+        trunk = self.ice & (cols >= 31)                                    # about half of the ice moves, the rest is still
+        east, north = np.where(trunk, .1, 0.), np.where(trunk, -.6, 0.)
+        along = AT_X * east + AT_Y * north - 12.8 + rng.normal(0, .03, east.shape)
+        slant = -(LOS_X * east + LOS_Y * north) + 2.1 + rng.normal(0, .015, east.shape)
+        result = self.build(along, slant, np.full(east.shape, .55), self.geometry)
+        quality = result['quality']
+        self.assertEqual(result['status'], 'flow'); self.assertTrue(quality['flowDirectionResolved'])
+        self.assertTrue(.35 < quality['fastShare'] < .65 and quality['stableShare'] < .1)    # a large share of the glacier, not all of it
+        self.assertGreaterEqual(quality['excessShare'], .3); self.assertGreaterEqual(quality['flowZ'], 5)
+        # cells at the noise level fade, while the trunk keeps its confidence
+        cells = [dict(zip(result['cellFields'], c)) for c in result['cells']]
+        self.assertGreater(np.mean([c['confidence'] for c in cells if c['col'] >= 36]), np.mean([c['confidence'] for c in cells if c['col'] <= 26]))
+
     def test_noise_at_the_stable_ground_level_is_not_presented_as_flow(self):
         result = self.build(*self.field(0., 0., .35), self.geometry)
         self.assertEqual(result['status'], 'components'); self.assertEqual(result['quality']['grade'], 'low')
@@ -95,6 +110,20 @@ class BuildTests(unittest.TestCase):
         result = self.build(*self.field(.1, -.5, .03))
         self.assertEqual(result['status'], 'components'); self.assertFalse(result['geometry']['available'])
         self.assertTrue(all(c[result['cellFields'].index('east')] is None for c in result['cells']))
+
+    def test_other_moving_ice_is_not_stable_ground(self):
+        # A neighbouring glacier (second feature) moves; if it counted as rock it would drag the common offset away from -12.8.
+        along, slant, correlation = self.field(.1, -.5, .03)
+        along = along.copy(); along[:, :12] += 6.0                      # a strip west of the target moving at +6 m/day
+        lonlat = Transformer.from_crs(32632, 4326, always_xy=True)
+        corners = [(self.x[0] - 40, self.y[0] + 40), (self.x[11] + 40, self.y[0] + 40), (self.x[11] + 40, self.y[59] - 40), (self.x[0] - 40, self.y[59] - 40), (self.x[0] - 40, self.y[0] + 40)]
+        data = json.loads(self.outline.read_text())
+        data['features'].append({'type': 'Feature', 'properties': {'role': 'other-ice'}, 'geometry': {'type': 'Polygon', 'coordinates': [[list(lonlat.transform(*c)) for c in corners]]}})
+        both = self.outline.with_name('both.geojson'); both.write_text(json.dumps(data))
+        with_neighbour = gm.build(along, slant, correlation, self.x, self.y, 32632, 'synthetic', .3, 12., self.geometry, both)
+        without = gm.build(along, slant, correlation, self.x, self.y, 32632, 'synthetic', .3, 12., self.geometry, self.outline)
+        self.assertAlmostEqual(with_neighbour['stableGround']['alongTrack'], -12.8, delta=.1)   # excluded: offset unaffected
+        self.assertGreater(abs(without['stableGround']['alongTrack'] + 12.8), 0.0)              # sanity: the strip is a real signal
 
     def test_missing_outline_or_stable_ground_makes_the_preview_unavailable(self):
         along, slant, correlation = self.field(.1, -.5, .03)

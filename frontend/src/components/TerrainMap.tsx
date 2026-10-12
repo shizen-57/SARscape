@@ -19,7 +19,7 @@ import {addMotion,motionCellAt,motionPopup,moveParticles,removeMotion,showMotion
 import type {SurfaceScene} from '../data/glacier-surfaces.mjs'
 import {addSurface,removeSurface} from './surface-layers'
 export type MapControls={focus:(bounds:[[number,number],[number,number]])=>void;zoomIn:()=>void;zoomOut:()=>void;reset:()=>void;globe:()=>void;north:()=>void;camera:()=>{center:[number,number];zoom:number;pitch:number;bearing:number};restore:(camera:{center:[number,number];zoom:number;pitch:number;bearing:number})=>void}
-export type GcovContext={id:string;scenario:string;acquisitionDate:string;identification?:{trackNumber?:string;orbitPassDirection?:string};displayPreview:{coordinates:[[number,number],[number,number],[number,number],[number,number]];rangeDb:[number,number]};colorPreview?:{shaded?:{note:string;imagery:string};natural:string;composite:string;channels:{channel:string;measurement:string;rangeDb:[number,number]}[];interpretation:string}}
+export type GcovContext={id:string;scenario:string;acquisitionDate:string;identification?:{trackNumber?:string;orbitPassDirection?:string};displayPreview:{coordinates:[[number,number],[number,number],[number,number],[number,number]];rangeDb:[number,number]};colorPreview?:{terrain?:{note:string;colourSkill?:{radarAndElevation:number;elevationOnly:number}|null};shaded?:{note:string;imagery:string};natural:string;composite:string;channels:{channel:string;measurement:string;rangeDb:[number,number]}[];interpretation:string}}
 function radarPaint(scale:number,progress:number):NonNullable<maplibregl.CircleLayerSpecification['paint']>{return {
  'circle-radius':['interpolate',['linear'],['zoom'],9,['interpolate',['linear'],['*',['get','displayMagnitude'],progress],0,1.5,scale,4],14,['interpolate',['linear'],['*',['get','displayMagnitude'],progress],0,3,scale,9]],
  'circle-opacity':['interpolate',['linear'],['get','correlation'],0,0.35,1,0.95],
@@ -28,7 +28,7 @@ function radarPaint(scale:number,progress:number):NonNullable<maplibregl.CircleL
 }}
 // With a motion preview, raw samples become neutral rings so they never compete with its colour scale.
 const RAW_RINGS:NonNullable<maplibregl.CircleLayerSpecification['paint']>={'circle-radius':['interpolate',['linear'],['zoom'],9,1.5,14,3.5],'circle-color':'rgba(0,0,0,0)','circle-stroke-width':1,'circle-stroke-color':'#e8edf2','circle-stroke-opacity':0.75}
-type Props={onGlobeChange:(active:boolean)=>void;adjustments:{brightness:number;contrast:number;saturation:number};scenario:Scenario;frames:ImageryFrame[];step:number;baseline:number;compare:boolean;compareMode:'lens'|'swipe';lens:{x:number;y:number};split:number;boundary:boolean;terrain:boolean;satellite:boolean;retryFrame:number;gcovContext?:GcovContext;gcovStyle:GcovStyle;radarObservation?:ScienceJob;component:'alongTrack'|'slantRange';radarMode:RadarDisplayMode;radarProgress:number;motion?:MotionPreview|null;motionScene?:MotionScene|null;motionLayers:MotionLayers;surface?:SurfaceScene|null;surfaceLocation:[number,number]|null;onSurfaceLocation:(point:[number,number])=>void;onRadarSummary:(summary:RadarDisplaySummary|null)=>void;camera?:ReturnType<MapControls['camera']>|null;onReady:(c:MapControls)=>void;onStatus:(s:string)=>void;onFrameState:(state:'loading'|'ready'|'error')=>void;onDisplayed:(scenarioId:string,a:string,b:string)=>void}
+type Props={onGlobeChange:(active:boolean)=>void;warmFrames?:boolean;adjustments:{brightness:number;contrast:number;saturation:number};scenario:Scenario;frames:ImageryFrame[];step:number;baseline:number;compare:boolean;compareMode:'lens'|'swipe';lens:{x:number;y:number};split:number;boundary:boolean;terrain:boolean;satellite:boolean;retryFrame:number;gcovContext?:GcovContext;gcovStyle:GcovStyle;changeMap?:{url:string;coordinates:[[number,number],[number,number],[number,number],[number,number]]}|null;radarObservation?:ScienceJob;component:'alongTrack'|'slantRange';radarMode:RadarDisplayMode;radarProgress:number;motion?:MotionPreview|null;motionScene?:MotionScene|null;motionLayers:MotionLayers;surface?:SurfaceScene|null;surfaceLocation:[number,number]|null;onSurfaceLocation:(point:[number,number])=>void;onRadarSummary:(summary:RadarDisplaySummary|null)=>void;camera?:ReturnType<MapControls['camera']>|null;onReady:(c:MapControls)=>void;onStatus:(s:string)=>void;onFrameState:(state:'loading'|'ready'|'error')=>void;onDisplayed:(scenarioId:string,a:string,b:string)=>void}
 const terrainRelief=(scenario:Scenario)=>scenario.kind==='flood'?2:1.15
 function style(exaggeration:number):StyleSpecification{return {version:8,sources:{context:{type:'raster',tiles:['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],tileSize:256,attribution:'Optical terrain context © Esri and contributors'},elevation:{type:'raster-dem',url:'https://tiles.mapterhorn.com/tilejson.json',tileSize:512,encoding:'terrarium',attribution:'Terrain © <a href="https://mapterhorn.com/">Mapterhorn</a>'}},layers:[{id:'background',type:'background',paint:{'background-color':'#05080d'}},{id:'context',type:'raster',source:'context'}],terrain:{source:'elevation',exaggeration}}}
 export default function TerrainMap(p:Props){
@@ -53,9 +53,11 @@ export default function TerrainMap(p:Props){
  }
  const warm=()=>{
   const connection=(navigator as Navigator&{connection?:{saveData?:boolean;effectiveType?:string}}).connection
-  if(globeRef.current||!frameReady.current||document.hidden||connection?.saveData||connection?.effectiveType?.includes('2g')){warmer.cancel();return}
+  if(globeRef.current||!latest.current.warmFrames||!frameReady.current||document.hidden||connection?.saveData||connection?.effectiveType?.includes('2g')){warmer.cancel();return}
   warmer.warm({frames:latest.current.frames,step:latest.current.step,tiles:[...visibleTiles.current]})
  }
+ // Neighbouring captures are only worth downloading while the capture timeline is what the visitor is using.
+ useEffect(()=>{warm()},[p.warmFrames])
  const applyAdjustments=()=>{for(const map of [primary.current,secondary.current])if(map)for(const layer of map.getStyle().layers??[])if(layer.id.startsWith('observation-')){
   map.setLayoutProperty(layer.id,'visibility',globeRef.current||latest.current.gcovContext?'none':'visible')
   map.setPaintProperty(layer.id,'raster-brightness-max',latest.current.adjustments.brightness)
@@ -77,7 +79,7 @@ export default function TerrainMap(p:Props){
   primary.current=map
   map.addControl(new maplibregl.ScaleControl({maxWidth:100,unit:'metric'}),'bottom-left')
   const timeout=setTimeout(()=>setFailure('The landscape is taking too long to load. Check your connection and retry.'),30000)
-  map.on('load',()=>{clearTimeout(timeout);setReady(true);latest.current.onStatus('3D map ready');latest.current.onReady({focus:bounds=>{globeRef.current=false;setGlobe(false);map.setProjection({type:'mercator'});map.easeTo({padding:0,center:[(bounds[0][0]+bounds[1][0])/2,(bounds[0][1]+bounds[1][1])/2],zoom:12.6,pitch:48,bearing:-26,offset:[innerWidth>1000?-90:0,-50],duration:window.matchMedia('(prefers-reduced-motion: reduce)').matches?0:900})},zoomIn:()=>map.zoomIn(),zoomOut:()=>map.zoomOut(),north:()=>map.easeTo({bearing:0}),reset:()=>reset(map),globe:()=>{warmer.cancel();globeRef.current=true;setGlobe(true);map.setTerrain(null);map.setProjection({type:'globe'});map.flyTo({center:latest.current.scenario.center,zoom:1.5,pitch:0,bearing:0,duration:window.matchMedia('(prefers-reduced-motion: reduce)').matches?0:1500})},camera:()=>({center:map.getCenter().toArray() as [number,number],zoom:map.getZoom(),pitch:map.getPitch(),bearing:map.getBearing()}),restore:c=>map.jumpTo(c)})})
+  map.on('load',()=>{clearTimeout(timeout);setReady(true);latest.current.onStatus('3D map ready');latest.current.onReady({focus:bounds=>{globeRef.current=false;setGlobe(false);map.setProjection({type:'mercator'});map.easeTo({padding:0,center:[(bounds[0][0]+bounds[1][0])/2,(bounds[0][1]+bounds[1][1])/2],zoom:Math.min(12.6,(map.cameraForBounds(bounds,{padding:60})?.zoom??13)-.4),pitch:48,bearing:-26,offset:[innerWidth>1000?-90:0,-50],duration:window.matchMedia('(prefers-reduced-motion: reduce)').matches?0:900})},zoomIn:()=>map.zoomIn(),zoomOut:()=>map.zoomOut(),north:()=>map.easeTo({bearing:0}),reset:()=>reset(map),globe:()=>{warmer.cancel();globeRef.current=true;setGlobe(true);map.setTerrain(null);map.setProjection({type:'globe'});map.flyTo({center:latest.current.scenario.center,zoom:1.5,pitch:0,bearing:0,duration:window.matchMedia('(prefers-reduced-motion: reduce)').matches?0:1500})},camera:()=>({center:map.getCenter().toArray() as [number,number],zoom:map.getZoom(),pitch:map.getPitch(),bearing:map.getBearing()}),restore:c=>map.jumpTo(c)})})
   map.on('move',()=>secondary.current?.jumpTo({center:map.getCenter(),zoom:map.getZoom(),bearing:map.getBearing(),pitch:map.getPitch()}))
   map.on('movestart',()=>{warmer.cancel();visibleTiles.current.clear();if(frameReady.current)latest.current.onFrameState('loading')})
   map.on('moveend',()=>warm())
@@ -131,7 +133,7 @@ export default function TerrainMap(p:Props){
  useEffect(()=>{
   if(!ready)return
   for(const map of [primary.current,secondReady?secondary.current:null])if(map){
-   const url=p.gcovContext?`/api/science/${encodeURIComponent(p.scenario.id)}/gcov/${encodeURIComponent(p.gcovContext.id)}/${gcovImage(p.gcovStyle,p.gcovContext)}.png`:''
+   const url=p.gcovContext?`/api/science/${encodeURIComponent(p.scenario.id)}/gcov/${encodeURIComponent(p.gcovContext.id)}/${gcovImage(p.gcovStyle,p.gcovContext)}`:''
    const existing=map.getSource('gcov-context') as maplibregl.ImageSource|undefined
    // Playback swaps the texture in place; the previous date stays visible until the next one loads.
    if(existing&&p.gcovContext&&p.gcovContext.scenario===p.scenario.id){existing.updateImage({url,coordinates:p.gcovContext.displayPreview.coordinates});map.setLayoutProperty('gcov-context','visibility',globe?'none':'visible');continue}
@@ -139,7 +141,7 @@ export default function TerrainMap(p:Props){
    if(map.getSource('gcov-context'))map.removeSource('gcov-context')
    if(p.gcovContext&&p.gcovContext.scenario===p.scenario.id){
     map.addSource('gcov-context',{type:'image',url,coordinates:p.gcovContext.displayPreview.coordinates})
-    map.addLayer({id:'gcov-context',type:'raster',source:'gcov-context',layout:{visibility:globe?'none':'visible'},paint:{'raster-opacity':0.9,'raster-resampling':'nearest','raster-fade-duration':0}},['motion-heat','radar-samples','glacier-surface','glacier-outline-history','glacier-outline-current'].find(id=>map.getLayer(id)))
+    map.addLayer({id:'gcov-context',type:'raster',source:'gcov-context',layout:{visibility:globe?'none':'visible'},paint:{'raster-opacity':0.9,'raster-resampling':'nearest','raster-fade-duration':0}},['radar-change','motion-heat','radar-samples','glacier-surface','glacier-outline-history','glacier-outline-current'].find(id=>map.getLayer(id)))
    }
   }
   applyAdjustments()
@@ -242,5 +244,15 @@ export default function TerrainMap(p:Props){
   setVisibility(map,'radar-samples',!globe&&p.motionLayers.raw)
   for(const id of ['glacier-surface','glacier-outline-history','glacier-outline-current'])setVisibility(map,id,!globe)
  }},[globe,ready,secondReady,p.gcovContext,p.surface,p.motionLayers.raw,radarData,p.motion])
+ useEffect(()=>{
+  // Radar change: one difference image per date pair, swapped in place while stepping or playing.
+  const map=primary.current
+  if(!ready||!map)return
+  const existing=map.getSource('radar-change') as maplibregl.ImageSource|undefined
+  if(!p.changeMap){if(map.getLayer('radar-change'))map.removeLayer('radar-change');if(existing)map.removeSource('radar-change');return}
+  if(existing)existing.updateImage({url:p.changeMap.url,coordinates:p.changeMap.coordinates})
+  else{map.addSource('radar-change',{type:'image',url:p.changeMap.url,coordinates:p.changeMap.coordinates});map.addLayer({id:'radar-change',type:'raster',source:'radar-change',paint:{'raster-opacity':0.85,'raster-resampling':'linear','raster-fade-duration':0}})}
+  map.setLayoutProperty('radar-change','visibility',globe?'none':'visible')
+ },[p.changeMap?.url,ready,globe])
  return <>{globe&&<Button variant="outline" className="globe-return" onClick={()=>primary.current&&reset(primary.current)}>Return to {p.scenario.name}</Button>}<div ref={firstEl} className="map-canvas" role="region" aria-label="Interactive glacier terrain map"/>{p.compare&&<div className="comparison-canvas" style={{clipPath:p.compareMode==='lens'?`circle(min(150px,27vw) at ${p.lens.x}% ${p.lens.y}%)`:`inset(0 0 0 ${p.split}%)`}}><div ref={secondEl} className="map-canvas"/></div>}{!ready&&!failure&&<div className="map-loading"><LoaderCircle className="spin" size={26}/><span>Loading the glacier landscape…</span></div>}{failure&&<div className="map-error" role="alert"><MapPin size={30}/><h3>Let’s get your map back</h3><p>{failure}</p><Button onClick={()=>setRetry(v=>v+1)}><RotateCcw size={15}/>Retry map</Button></div>}</>
 }

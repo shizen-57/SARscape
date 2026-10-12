@@ -27,11 +27,12 @@ the presenter controls the pace and makes the recording separately. Aim for a
 | 3 · Change through time | Show Manchar’s swipe comparison, then press Play to advance through the dated captures. | “The four Sentinel-2 captures show the 2022 floodplain on actual acquisition dates. They are optical images—not NISAR or water-depth measurements.” |
 | 4 · Scientific surface | Return to Aletsch. Scrub ITS_LIVE velocity intervals, choose speed change, and click a measured map cell. | “This continuous surface shows published interval-mean glacier speed. The terrain stays fixed, and cells without accepted measurements remain gaps.” |
 | 5 · NISAR GCOV | Step through real radar acquisition dates and show the date, track and colour legend. | “NISAR radar appearance responds to surface scattering. Changes can reflect snow wetness, moisture or roughness—not necessarily melting.” |
-| 6 · NISAR GOFF | Show a processed pair, components, quality notes and provenance. | “GOFF provides radar components for a date pair. This preview still needs independent glacier validation before it can be called verified glacier speed.” |
-| 7 · Exploration tools | Open **Imagery**. Adjust highlights or colour, save a useful camera view, and export observation provenance. | “Display adjustments change only the view. The original scientific data and image provenance stay intact.” |
-| 8 · Traceability | Open **Data & sources** and show source records, dates and interpretation notes. | “Each view has a source and a boundary on what it can prove. Dated imagery, reference imagery, ITS_LIVE and NISAR remain distinct.” |
+| 6 · What NISAR saw | Open **Radar change**. Read the finding card and its four checks, press Play on the date pairs, then drag the *Through the clouds* slider. | “After the August storm the glacier turned radar-darker on all three satellite tracks, while an optical satellite saw only cloud. The card says how sure we are, and what it does not prove.” |
+| 7 · NISAR GOFF | Show a processed pair, components, quality notes and provenance. | “GOFF provides radar components for a date pair. This preview still needs independent glacier validation before it can be called verified glacier speed.” |
+| 8 · Exploration tools | Open **Imagery**. Adjust highlights or colour, save a useful camera view, and export observation provenance. | “Display adjustments change only the view. The original scientific data and image provenance stay intact.” |
+| 9 · Traceability | Open **Data & sources** and show source records, dates and interpretation notes. | “Each view has a source and a boundary on what it can prove. Dated imagery, reference imagery, ITS_LIVE and NISAR remain distinct.” |
 
-For a shorter cut, keep chapters 1, 2, 4, 6 and 8. For a full project
+For a shorter cut, keep chapters 1, 2, 4, 6 and 9. For a full project
 demonstration, include the dated Manchar comparison, GCOV sequence, image tools,
 and source records as well.
 

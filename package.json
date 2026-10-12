@@ -15,6 +15,7 @@
   "data:aletsch": "node scripts/prepare-aletsch.mjs",
   "data:nisar": "node scripts/prepare-aletsch.mjs",
   "data:surfaces": "node scripts/prepare-glacier-surfaces.mjs",
+  "warm:imagery": "node scripts/warm-imagery.mjs",
   "build": "node scripts/build.mjs",
   "test": "node --test tests/*.test.mjs"
  },
