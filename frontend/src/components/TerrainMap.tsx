@@ -10,6 +10,7 @@ import {requestFrames} from './frame-controller.mjs'
 import {prefetchCaptures} from './imagery-prefetch.mjs'
 import {tileStore,prepareCaptures} from '../data/tile-cache.mjs'
 import {viewportTemplates} from '../data/viewport-tiles.mjs'
+import {setExtent,setVisibility} from './map-updates.mjs'
 import type {FeatureCollection,Point} from 'geojson'
 import type {GoffJob} from './SciencePanel'
 import type {RadarDisplayMode,RadarDisplaySummary} from './RadarControls'
@@ -19,10 +20,10 @@ import {gcovImage,type GcovStyle} from '../data/gcov-style'
 import type {MotionPreview,MotionScene} from '../data/motion-preview.mjs'
 import {addMotion,motionCellAt,motionPopup,moveParticles,removeMotion,showMotion,type MotionLayers} from './motion-layers'
 import type {SurfaceScene} from '../data/glacier-surfaces.mjs'
-import {addSurface,removeSurface,surfacePopup} from './surface-layers'
+import {addSurface,removeSurface} from './surface-layers'
 maplibregl.addProtocol('sarscape',async(request,controller)=>({data:await tileStore.read(request.url.slice('sarscape://'.length),controller.signal)}))
 type RadarComponent='alongTrack'|'slantRange'
-export type GcovContext={id:string;scenario:string;acquisitionDate:string;identification?:{trackNumber?:string;orbitPassDirection?:string};displayPreview:{coordinates:[[number,number],[number,number],[number,number],[number,number]];rangeDb:[number,number]};colorPreview?:{shaded?:{note:string;imagery:string};natural:string;composite:string;channels:{channel:string;measurement:string;rangeDb:[number,number]}[];interpretation:string}}
+export type GcovContext={id:string;scenario:string;acquisitionDate:string;identification?:{trackNumber?:string;orbitPassDirection?:string};displayPreview:{coordinates:[[number,number],[number,number],[number,number],[number,number]];rangeDb:[number,number]};colorPreview?:{terrain?:{note:string;colourSkill?:{radarAndElevation:number;elevationOnly:number}|null};shaded?:{note:string;imagery:string};natural:string;composite:string;channels:{channel:string;measurement:string;rangeDb:[number,number]}[];interpretation:string}}
 function radarPaint(scale:number,progress:number):NonNullable<maplibregl.CircleLayerSpecification['paint']>{return {
  'circle-radius':['interpolate',['linear'],['zoom'],9,['interpolate',['linear'],['*',['get','displayMagnitude'],progress],0,1.5,scale,4],14,['interpolate',['linear'],['*',['get','displayMagnitude'],progress],0,3,scale,9]],
  'circle-opacity':['interpolate',['linear'],['get','correlation'],0,0.35,1,0.95],
@@ -32,11 +33,13 @@ function radarPaint(scale:number,progress:number):NonNullable<maplibregl.CircleL
 // With a motion preview, raw samples become neutral rings so they never compete with its colour scale.
 const RAW_RINGS:NonNullable<maplibregl.CircleLayerSpecification['paint']>={'circle-radius':['interpolate',['linear'],['zoom'],9,1.5,14,3.5],'circle-color':'rgba(0,0,0,0)','circle-stroke-width':1,'circle-stroke-color':'#e8edf2','circle-stroke-opacity':0.75}
 export type MapControls={focus:(bounds:[[number,number],[number,number]])=>void;zoomIn:()=>void;zoomOut:()=>void;reset:()=>void;globe:()=>void;north:()=>void;camera:()=>{center:[number,number];zoom:number;pitch:number;bearing:number};restore:(camera:{center:[number,number];zoom:number;pitch:number;bearing:number})=>void;prepare:(ids:string[]|null,onProgress:(value:{completed:number;total:number})=>void,signal:AbortSignal)=>Promise<void>}
-type Props={radarThreshold:number|null;indexOverlay:{id:string;baselineId?:string;mode:'index'|'change'}|null;onNavigation:()=>void;onGlobeChange:(active:boolean)=>void;adjustments:{brightness:number;contrast:number;saturation:number};scenario:Scenario;frames:ImageryFrame[];step:number;baseline:number;compare:boolean;compareMode:'lens'|'swipe';lens:{x:number;y:number};split:number;boundary:boolean;terrain:boolean;satellite:boolean;retryFrame:number;gcovContext?:GcovContext;gcovStyle:GcovStyle;radarObservation?:GoffJob;radarMode:RadarDisplayMode;radarProgress:number;motion?:MotionPreview|null;motionScene?:MotionScene|null;motionLayers:MotionLayers;surface?:SurfaceScene|null;onRadarSummary:(summary:RadarDisplaySummary|null)=>void;scienceJob?:string;studyOverlay:StudyOverlay|null;blink:boolean;component:'alongTrack'|'slantRange'|'backscatterDb'|'backscatterChange';camera?:ReturnType<MapControls['camera']>|null;onReady:(c:MapControls)=>void;onStatus:(s:string)=>void;onFrameState:(state:'loading'|'ready'|'error')=>void;onDisplayed:(scenarioId:string,a:string,b:string)=>void}
-function style(satellite:boolean):StyleSpecification{return {version:8,sources:{context:{type:'raster',tiles:['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],tileSize:256,attribution:'Context imagery © Esri and contributors'},streets:{type:'raster',tiles:['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],tileSize:256,attribution:'© OpenStreetMap contributors'},elevation:{type:'raster-dem',url:'https://tiles.mapterhorn.com/tilejson.json',tileSize:512,encoding:'terrarium',attribution:'Terrain © <a href="https://mapterhorn.com/">Mapterhorn</a>'}},layers:[{id:'background',type:'background',paint:{'background-color':'#05080d'}},{id:'context',type:'raster',source:'context',layout:{visibility:satellite?'visible':'none'}},{id:'streets',type:'raster',source:'streets',layout:{visibility:satellite?'none':'visible'}}],terrain:{source:'elevation',exaggeration:1.15}}}
+type Props={radarThreshold:number|null;indexOverlay:{id:string;baselineId?:string;mode:'index'|'change'}|null;onNavigation:()=>void;onGlobeChange:(active:boolean)=>void;adjustments:{brightness:number;contrast:number;saturation:number};scenario:Scenario;frames:ImageryFrame[];step:number;baseline:number;compare:boolean;compareMode:'lens'|'swipe';lens:{x:number;y:number};split:number;boundary:boolean;terrain:boolean;satellite:boolean;retryFrame:number;gcovContext?:GcovContext;gcovStyle:GcovStyle;changeMap?:{url:string;coordinates:[[number,number],[number,number],[number,number],[number,number]]}|null;radarObservation?:GoffJob;radarMode:RadarDisplayMode;radarProgress:number;motion?:MotionPreview|null;motionScene?:MotionScene|null;motionLayers:MotionLayers;surface?:SurfaceScene|null;surfaceLocation:[number,number]|null;onSurfaceLocation:(point:[number,number])=>void;onRadarSummary:(summary:RadarDisplaySummary|null)=>void;scienceJob?:string;studyOverlay:StudyOverlay|null;blink:boolean;component:'alongTrack'|'slantRange'|'backscatterDb'|'backscatterChange';camera?:ReturnType<MapControls['camera']>|null;onReady:(c:MapControls)=>void;onStatus:(s:string)=>void;onFrameState:(state:'loading'|'ready'|'error')=>void;onDisplayed:(scenarioId:string,a:string,b:string)=>void}
+const terrainRelief=(scenario:Scenario)=>scenario.kind==='flood'?2:1.15
+function style(exaggeration:number):StyleSpecification{return {version:8,sources:{context:{type:'raster',tiles:['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],tileSize:256,attribution:'Optical terrain context © Esri and contributors'},elevation:{type:'raster-dem',url:'https://tiles.mapterhorn.com/tilejson.json',tileSize:512,encoding:'terrarium',attribution:'Terrain © <a href="https://mapterhorn.com/">Mapterhorn</a>'}},layers:[{id:'background',type:'background',paint:{'background-color':'#05080d'}},{id:'context',type:'raster',source:'context'}],terrain:{source:'elevation',exaggeration}}}
 export default function TerrainMap(p:Props){
  const firstEl=useRef<HTMLDivElement>(null),secondEl=useRef<HTMLDivElement>(null),primary=useRef<maplibregl.Map|null>(null),secondary=useRef<maplibregl.Map|null>(null),latest=useRef(p)
  latest.current=p
+ const popups=useRef(new Set<maplibregl.Popup>())
  const visibleTiles=useRef(new Set<string>()),stopWarm=useRef<(()=>void)|null>(null),frameReady=useRef(false),globeRef=useRef(false),warmKey=useRef(''),tileError=useRef(false)
  useEffect(()=>{stopWarm.current?.();visibleTiles.current.clear()},[p.scenario.id,p.frames])
  const trackTile=(url:string)=>{
@@ -91,6 +94,7 @@ export default function TerrainMap(p:Props){
  }
  const [ready,setReady]=useState(false),[secondReady,setSecondReady]=useState(false),[failure,setFailure]=useState(''),[retry,setRetry]=useState(0)
  const [globe,setGlobe]=useState(false)
+ useEffect(()=>{for(const popup of popups.current)popup.remove()},[globe])
  const [radarData,setRadarData]=useState<{job:string;scenario:string;data:FeatureCollection<Point>}|null>(null)
  const radarScale=useRef<number|null>(null)
  useEffect(()=>{applyAdjustments();latest.current.onGlobeChange(globe)},[p.adjustments,globe])
@@ -99,11 +103,11 @@ export default function TerrainMap(p:Props){
   if(!firstEl.current)return
   setReady(false);setFailure('')
   let map:maplibregl.Map
-  try{map=new maplibregl.Map({container:firstEl.current,style:style(latest.current.satellite),center:latest.current.scenario.center,zoom:Math.max(14.5,latest.current.scenario.zoom),pitch:latest.current.terrain?latest.current.scenario.pitch:0,bearing:latest.current.scenario.bearing,maxPitch:75,attributionControl:{compact:true},transformRequest:trackTile})}catch{setFailure('The 3D map could not start. Enable hardware acceleration and retry.');return}
+  try{map=new maplibregl.Map({container:firstEl.current,style:style(terrainRelief(latest.current.scenario)),center:latest.current.scenario.center,zoom:Math.max(14.5,latest.current.scenario.zoom),pitch:latest.current.terrain?latest.current.scenario.pitch:0,bearing:latest.current.scenario.bearing,maxPitch:75,attributionControl:{compact:true},transformRequest:trackTile})}catch{setFailure('The 3D map could not start. Enable hardware acceleration and retry.');return}
   primary.current=map
   map.addControl(new maplibregl.ScaleControl({maxWidth:100,unit:'metric'}),'bottom-left')
   const timeout=setTimeout(()=>setFailure('The landscape is taking too long to load. Check your connection and retry.'),30000)
-  map.on('load',()=>{clearTimeout(timeout);setReady(true);latest.current.onStatus('3D map ready');latest.current.onReady({focus:bounds=>{globeRef.current=false;setGlobe(false);map.setProjection({type:'mercator'});map.easeTo({padding:0,center:[(bounds[0][0]+bounds[1][0])/2,(bounds[0][1]+bounds[1][1])/2],zoom:12.6,pitch:48,bearing:-26,offset:[innerWidth>1000?-90:0,-50],duration:window.matchMedia('(prefers-reduced-motion: reduce)').matches?0:900})},zoomIn:()=>map.zoomIn(),zoomOut:()=>map.zoomOut(),north:()=>map.easeTo({bearing:0}),reset:()=>reset(map),globe:()=>{stopWarm.current?.();globeRef.current=true;setGlobe(true);map.setTerrain(null);map.setProjection({type:'globe'});map.flyTo({center:latest.current.scenario.center,zoom:1.5,pitch:0,bearing:0,duration:window.matchMedia('(prefers-reduced-motion: reduce)').matches?0:1500})},camera:()=>({center:map.getCenter().toArray() as [number,number],zoom:map.getZoom(),pitch:map.getPitch(),bearing:map.getBearing()}),restore:c=>map.jumpTo(c),prepare:async(ids,onProgress,signal)=>{stopWarm.current?.();const props=latest.current,frame=props.frames[props.step];if(!frame||globeRef.current)throw new Error('Return to the study area before preparing playback.');const calculated=viewportTemplates(map.coveringTiles({tileSize:256,minzoom:8,maxzoom:frame.tileTemplate?20:14,roundZoom:true}),frame,props.scenario,location.origin);try{await prepareCaptures({frames:ids?props.frames.filter(f=>ids.includes(f.id)):props.frames.slice(0,2),tiles:[...new Set((calculated.length?calculated:[...visibleTiles.current]).map(url=>new URL(url,location.origin).href))],onProgress,signal})}finally{warmKey.current='';if(!signal.aborted)warm()}}})})
+  map.on('load',()=>{clearTimeout(timeout);setReady(true);latest.current.onStatus('3D map ready');latest.current.onReady({focus:bounds=>{globeRef.current=false;setGlobe(false);map.setProjection({type:'mercator'});map.easeTo({padding:0,center:[(bounds[0][0]+bounds[1][0])/2,(bounds[0][1]+bounds[1][1])/2],zoom:Math.min(12.6,(map.cameraForBounds(bounds,{padding:60})?.zoom??13)-.4),pitch:48,bearing:-26,offset:[innerWidth>1000?-90:0,-50],duration:window.matchMedia('(prefers-reduced-motion: reduce)').matches?0:900})},zoomIn:()=>map.zoomIn(),zoomOut:()=>map.zoomOut(),north:()=>map.easeTo({bearing:0}),reset:()=>reset(map),globe:()=>{stopWarm.current?.();globeRef.current=true;setGlobe(true);map.setTerrain(null);map.setProjection({type:'globe'});map.flyTo({center:latest.current.scenario.center,zoom:1.5,pitch:0,bearing:0,duration:window.matchMedia('(prefers-reduced-motion: reduce)').matches?0:1500})},camera:()=>({center:map.getCenter().toArray() as [number,number],zoom:map.getZoom(),pitch:map.getPitch(),bearing:map.getBearing()}),restore:c=>map.jumpTo(c),prepare:async(ids,onProgress,signal)=>{stopWarm.current?.();const props=latest.current,frame=props.frames[props.step];if(!frame||globeRef.current)throw new Error('Return to the study area before preparing playback.');const calculated=viewportTemplates(map.coveringTiles({tileSize:256,minzoom:8,maxzoom:frame.tileTemplate?20:14,roundZoom:true}),frame,props.scenario,location.origin);try{await prepareCaptures({frames:ids?props.frames.filter(f=>ids.includes(f.id)):props.frames.slice(0,2),tiles:[...new Set((calculated.length?calculated:[...visibleTiles.current]).map(url=>new URL(url,location.origin).href))],onProgress,signal})}finally{warmKey.current='';if(!signal.aborted)warm()}}})})
   map.on('move',()=>secondary.current?.jumpTo({center:map.getCenter(),zoom:map.getZoom(),bearing:map.getBearing(),pitch:map.getPitch()}))
   map.on('movestart',()=>{latest.current.onNavigation();stopWarm.current?.();warmKey.current='';visibleTiles.current.clear();tileError.current=false;if(frameReady.current)latest.current.onFrameState('loading')})
   map.on('moveend',()=>warm())
@@ -116,7 +120,7 @@ export default function TerrainMap(p:Props){
  },[retry])
  useEffect(()=>{
   if(!p.compare||!ready||!secondEl.current){setSecondReady(false);return}
-  const base=primary.current!,map=new maplibregl.Map({container:secondEl.current,style:style(p.satellite),center:base.getCenter(),zoom:base.getZoom(),pitch:base.getPitch(),bearing:base.getBearing(),interactive:false,attributionControl:false,maxPitch:75,transformRequest:trackTile})
+  const base=primary.current!,map=new maplibregl.Map({container:secondEl.current,style:style(terrainRelief(p.scenario)),center:base.getCenter(),zoom:base.getZoom(),pitch:base.getPitch(),bearing:base.getBearing(),interactive:false,attributionControl:false,maxPitch:75,transformRequest:trackTile})
   secondary.current=map;map.on('load',()=>{map.jumpTo({center:base.getCenter(),zoom:base.getZoom(),pitch:base.getPitch(),bearing:base.getBearing()});setSecondReady(true)})
   map.on('error',observationError);map.on('idle',navigationReady)
   return()=>{map.remove();secondary.current=null;setSecondReady(false)}
@@ -124,6 +128,7 @@ export default function TerrainMap(p:Props){
  useEffect(()=>{if(ready&&primary.current){if(p.camera)primary.current.jumpTo(p.camera);else reset(primary.current)}},[p.scenario,ready,p.camera])
  useEffect(()=>{
   if(!ready||(p.compare&&!secondReady)){latest.current.onFrameState('loading');return}
+  if(p.gcovContext){stopWarm.current?.();frameReady.current=false;latest.current.onFrameState('ready');return}
   const active=[primary.current,...(p.compare?[secondary.current]:[])].filter(Boolean) as maplibregl.Map[]
   if(!active.length||!p.frames[p.step]||!p.frames[p.baseline])return
   if(p.gcovContext){stopWarm.current?.();frameReady.current=false;latest.current.onFrameState('ready');return}
@@ -138,26 +143,28 @@ export default function TerrainMap(p:Props){
   return()=>{stopWarm.current?.();frameReady.current=false;cancel()}
  },[p.frames,p.step,p.baseline,p.compare,p.scenario.id,p.gcovContext,ready,secondReady,retry,p.retryFrame])
  useEffect(()=>{for(const map of [ready?primary.current:null,secondReady?secondary.current:null])if(map){
-  map.setTerrain(p.terrain&&!globe?{source:'elevation',exaggeration:1.15}:null)
-  map.setLayoutProperty('context','visibility',p.satellite?'visible':'none');map.setLayoutProperty('streets','visibility',p.satellite?'none':'visible')
-  const [w,s,e,n]=p.scenario.extent
+  map.setTerrain(p.terrain&&!globe?{source:'elevation',exaggeration:terrainRelief(p.scenario)}:null)
+ }},[p.terrain,p.scenario.kind,ready,secondReady,globe])
+ useEffect(()=>{for(const map of [ready?primary.current:null,secondReady?secondary.current:null])if(map){
   if(!map.getSource('region')){map.addSource('region',{type:'geojson',data:{type:'FeatureCollection',features:[]}});map.addLayer({id:'boundary',type:'line',source:'region',paint:{'line-color':'#fff','line-width':1.5,'line-dasharray':[4,4]}})}
-  ;(map.getSource('region') as maplibregl.GeoJSONSource).setData({type:'Feature',properties:{},geometry:{type:'Polygon',coordinates:[[[w,s],[e,s],[e,n],[w,n],[w,s]]]}})
-  map.setLayoutProperty('boundary','visibility',p.boundary?'visible':'none')
+  setExtent(map.getSource('region') as maplibregl.GeoJSONSource,p.scenario.extent)
+ }},[p.scenario.extent,ready,secondReady])
+ useEffect(()=>{for(const map of [ready?primary.current:null,secondReady?secondary.current:null])if(map)setVisibility(map,'boundary',p.boundary)},[p.boundary,ready,secondReady])
+ useEffect(()=>{for(const map of [ready?primary.current:null,secondReady?secondary.current:null])if(map){
   const [iw,is,ie,inn]=p.scenario.imageryExtent??p.scenario.extent
   if(!map.getSource('capture-coverage')){
    map.addSource('capture-coverage',{type:'geojson',data:{type:'FeatureCollection',features:[]}})
    map.addLayer({id:'capture-edge',type:'line',source:'capture-coverage',paint:{'line-color':'#fff','line-width':2,'line-dasharray':[3,3]}})
   }
   const bbox=p.frames[p.step]?.bbox??[iw,is,ie,inn],cw=Math.max(iw,bbox[0]),cs=Math.max(is,bbox[1]),ce=Math.min(ie,bbox[2]),cn=Math.min(inn,bbox[3])
-  ;(map.getSource('capture-coverage') as maplibregl.GeoJSONSource).setData({type:'Feature',properties:{},geometry:{type:'Polygon',coordinates:[[[cw,cs],[ce,cs],[ce,cn],[cw,cn],[cw,cs]]]}})
-  map.setLayoutProperty('capture-edge','visibility',p.satellite&&!globe&&!p.gcovContext?'visible':'none')
- }},[p.terrain,p.satellite,p.boundary,p.scenario,p.frames,p.step,p.gcovContext,ready,secondReady,globe])
+  setExtent(map.getSource('capture-coverage') as maplibregl.GeoJSONSource,[cw,cs,ce,cn])
+ }},[p.scenario,p.frames,p.step,ready,secondReady])
+ useEffect(()=>{for(const map of [ready?primary.current:null,secondReady?secondary.current:null])if(map)setVisibility(map,'capture-edge',!globe&&!p.gcovContext)},[p.gcovContext,ready,secondReady,globe])
  useEffect(()=>{primary.current?.easeTo({pitch:p.terrain?(p.camera?.pitch??p.scenario.pitch):0,duration:600})},[p.terrain])
  useEffect(()=>{
   if(!ready)return
   for(const map of [primary.current,secondReady?secondary.current:null])if(map){
-   const url=p.gcovContext?`/api/science/${encodeURIComponent(p.scenario.id)}/gcov/${encodeURIComponent(p.gcovContext.id)}/${gcovImage(p.gcovStyle,p.gcovContext)}.png`:''
+   const url=p.gcovContext?`/api/science/${encodeURIComponent(p.scenario.id)}/gcov/${encodeURIComponent(p.gcovContext.id)}/${gcovImage(p.gcovStyle,p.gcovContext)}`:''
    const existing=map.getSource('gcov-context') as maplibregl.ImageSource|undefined
    // Playback swaps the texture in place; the previous date stays visible until the next one loads.
    if(existing&&p.gcovContext&&p.gcovContext.scenario===p.scenario.id){existing.updateImage({url,coordinates:p.gcovContext.displayPreview.coordinates});map.setLayoutProperty('gcov-context','visibility',globe?'none':'visible');continue}
@@ -165,11 +172,11 @@ export default function TerrainMap(p:Props){
    if(map.getSource('gcov-context'))map.removeSource('gcov-context')
    if(p.gcovContext&&p.gcovContext.scenario===p.scenario.id){
     map.addSource('gcov-context',{type:'image',url,coordinates:p.gcovContext.displayPreview.coordinates})
-    map.addLayer({id:'gcov-context',type:'raster',source:'gcov-context',layout:{visibility:globe?'none':'visible'},paint:{'raster-opacity':0.9,'raster-resampling':'nearest','raster-fade-duration':0}},['motion-heat','radar-samples','glacier-surface','glacier-outline-history','glacier-outline-current'].find(id=>map.getLayer(id)))
+    map.addLayer({id:'gcov-context',type:'raster',source:'gcov-context',layout:{visibility:globe?'none':'visible'},paint:{'raster-opacity':0.9,'raster-resampling':'nearest','raster-fade-duration':0}},['radar-change','motion-heat','radar-samples','glacier-surface','glacier-outline-history','glacier-outline-current'].find(id=>map.getLayer(id)))
    }
   }
   applyAdjustments()
- },[p.gcovContext,p.gcovStyle,p.scenario.id,ready,secondReady,globe])
+ },[p.gcovContext,p.gcovStyle,p.scenario.id,ready,secondReady])
  useEffect(()=>{
   if(!ready)return
   const maps=[primary.current,...(secondReady?[secondary.current]:[])].filter(Boolean) as maplibregl.Map[]
@@ -235,6 +242,7 @@ export default function TerrainMap(p:Props){
      map.addSource('radar-samples',{type:'geojson',data})
      map.addLayer({id:'radar-samples',type:'circle',source:'radar-samples',layout:{visibility:globe||!latest.current.motionLayers.raw?'none':'visible'},paint:p.motion?RAW_RINGS:radarPaint(scale,p.radarMode==='pair'?latest.current.radarProgress:1)})
      const popup=new maplibregl.Popup({closeButton:true,maxWidth:'300px',className:'radar-map-popup'})
+     popups.current.add(popup)
      const click=(event:maplibregl.MapLayerMouseEvent)=>{
       const feature=event.features?.[0],values=feature?.properties
       if(!values||feature?.geometry.type!=='Point')return
@@ -242,12 +250,12 @@ export default function TerrainMap(p:Props){
      }
      const enter=()=>{map.getCanvas().style.cursor='pointer'},leave=()=>{map.getCanvas().style.cursor=''}
      map.on('click','radar-samples',click);map.on('mouseenter','radar-samples',enter);map.on('mouseleave','radar-samples',leave)
-     cleanups.push(()=>{map.off('click','radar-samples',click);map.off('mouseenter','radar-samples',enter);map.off('mouseleave','radar-samples',leave);map.getCanvas().style.cursor='';popup.remove()})
+     cleanups.push(()=>{map.off('click','radar-samples',click);map.off('mouseenter','radar-samples',enter);map.off('mouseleave','radar-samples',leave);map.getCanvas().style.cursor='';popup.remove();popups.current.delete(popup)})
     }
     latest.current.onStatus('Radar displacement visible')
   }else if(!observation)latest.current.onStatus('3D map ready')
   return()=>cleanups.forEach(cleanup=>cleanup())
- },[p.radarObservation?.id,p.radarObservation?.provenance?.pairDays,p.scenario.id,p.component,p.radarMode,p.motion,radarData,ready,secondReady,globe])
+ },[p.radarObservation?.id,p.radarObservation?.provenance?.pairDays,p.scenario.id,p.component,p.radarMode,p.motion,radarData,ready,secondReady])
  useEffect(()=>{
   if(radarScale.current===null||p.motion||!p.motionLayers.raw)return
   const paint=radarPaint(radarScale.current,p.radarMode==='pair'?p.radarProgress:1)
@@ -261,6 +269,7 @@ export default function TerrainMap(p:Props){
   if(!ready||!map||!preview?.grid||!preview.outline||!scene||preview.status==='unavailable')return
   addMotion(map,preview,scene,latest.current.radarProgress);showMotion(map,latest.current.motionLayers,globe)
   const popup=new maplibregl.Popup({closeButton:true,maxWidth:'300px',className:'radar-map-popup'})
+  popups.current.add(popup)
   const click=(event:maplibregl.MapMouseEvent)=>{
    // A raw-sample ring under the pointer keeps its own original-measurement popup.
    if(map.getLayer('radar-samples')&&map.queryRenderedFeatures(event.point,{layers:['radar-samples']}).length)return
@@ -268,7 +277,7 @@ export default function TerrainMap(p:Props){
    if(cell)popup.setLngLat(event.lngLat).setDOMContent(motionPopup(cell,preview,scene,(latest.current.component as RadarComponent),latest.current.radarMode,latest.current.radarProgress)).addTo(map)
   }
   map.on('click',click)
-  return()=>{map.off('click',click);popup.remove();removeMotion(map)}
+  return()=>{map.off('click',click);popup.remove();popups.current.delete(popup);removeMotion(map)}
  },[p.motion,p.motionScene,ready])
  useEffect(()=>{if(ready&&primary.current&&p.motion)showMotion(primary.current,p.motionLayers,globe);if(ready&&p.motion&&primary.current?.getLayer('radar-samples'))primary.current.setLayoutProperty('radar-samples','visibility',globe||!p.motionLayers.raw?'none':'visible')},[p.motionLayers,p.motion,p.motionScene,radarData,ready,globe])
  useEffect(()=>{if(ready&&primary.current&&p.motion&&p.motionScene)moveParticles(primary.current,p.motion,p.motionScene,p.radarProgress,p.motionLayers.particles)},[p.radarProgress,p.motion,p.motionScene,p.motionLayers.particles,ready])
@@ -277,10 +286,6 @@ export default function TerrainMap(p:Props){
   if(!ready||!map)return
   if(!scene){removeSurface(map);return}
   addSurface(map,scene,globe)
-  const popup=new maplibregl.Popup({closeButton:true,maxWidth:'310px',className:'radar-map-popup'})
-  const click=(event:maplibregl.MapMouseEvent)=>popup.setLngLat(event.lngLat).setDOMContent(surfacePopup(scene,event.lngLat)).addTo(map)
-  map.on('click',click)
-  return()=>{map.off('click',click);popup.remove();removeSurface(map)}
  },[p.surface,ready,globe])
  useEffect(()=>{
   if(!ready)return
@@ -294,5 +299,37 @@ export default function TerrainMap(p:Props){
    }
   }
  },[p.indexOverlay?.id,p.indexOverlay?.baselineId,p.indexOverlay?.mode,p.scenario.id,ready,secondReady,globe])
+ useEffect(()=>{
+  const map=primary.current
+  if(!ready||!map)return
+  const click=(event:maplibregl.MapMouseEvent)=>{if(latest.current.surface)latest.current.onSurfaceLocation([event.lngLat.lng,event.lngLat.lat])}
+  map.on('click',click)
+  return()=>{map.off('click',click)}
+ },[ready])
+ useEffect(()=>{
+  const map=primary.current
+  if(!ready||!map||!p.surface){if(map){if(map.getLayer('surface-selected-point'))map.removeLayer('surface-selected-point');if(map.getSource('surface-selected-point'))map.removeSource('surface-selected-point')}return}
+  const featureCollection:FeatureCollection<Point>={type:'FeatureCollection',features:p.surfaceLocation?[{type:'Feature',properties:{},geometry:{type:'Point',coordinates:p.surfaceLocation}}]:[]}
+  const existing=map.getSource('surface-selected-point') as maplibregl.GeoJSONSource|undefined
+  if(existing)existing.setData(featureCollection)
+  else map.addSource('surface-selected-point',{type:'geojson',data:featureCollection})
+  if(!map.getLayer('surface-selected-point'))map.addLayer({id:'surface-selected-point',type:'circle',source:'surface-selected-point',paint:{'circle-radius':['interpolate',['linear'],['zoom'],8,5,14,8],'circle-color':'#06131a','circle-stroke-color':'#d7fbff','circle-stroke-width':2.5,'circle-opacity':.96,'circle-stroke-opacity':1}})
+  setVisibility(map,'surface-selected-point',!globe)
+ },[p.surfaceLocation,p.surface,ready,globe])
+ useEffect(()=>{for(const map of [ready?primary.current:null,secondReady?secondary.current:null])if(map){
+  setVisibility(map,'gcov-context',!globe)
+  setVisibility(map,'radar-samples',!globe&&p.motionLayers.raw)
+  for(const id of ['glacier-surface','glacier-outline-history','glacier-outline-current'])setVisibility(map,id,!globe)
+ }},[globe,ready,secondReady,p.gcovContext,p.surface,p.motionLayers.raw,radarData,p.motion])
+ useEffect(()=>{
+  // Radar change: one difference image per date pair, swapped in place while stepping or playing.
+  const map=primary.current
+  if(!ready||!map)return
+  const existing=map.getSource('radar-change') as maplibregl.ImageSource|undefined
+  if(!p.changeMap){if(map.getLayer('radar-change'))map.removeLayer('radar-change');if(existing)map.removeSource('radar-change');return}
+  if(existing)existing.updateImage({url:p.changeMap.url,coordinates:p.changeMap.coordinates})
+  else{map.addSource('radar-change',{type:'image',url:p.changeMap.url,coordinates:p.changeMap.coordinates});map.addLayer({id:'radar-change',type:'raster',source:'radar-change',paint:{'raster-opacity':0.85,'raster-resampling':'linear','raster-fade-duration':0}})}
+  map.setLayoutProperty('radar-change','visibility',globe?'none':'visible')
+ },[p.changeMap?.url,ready,globe])
  return <>{globe&&<Button variant="outline" className="globe-return" onClick={()=>primary.current&&reset(primary.current)}>Return to {p.scenario.name}</Button>}<div ref={firstEl} className="map-canvas" role="region" aria-label="Interactive Earth observation terrain map"/>{p.compare&&<div className="comparison-canvas" style={{clipPath:p.compareMode==='lens'?`circle(min(150px,27vw) at ${p.lens.x}% ${p.lens.y}%)`:`inset(0 0 0 ${p.split}%)`}}><div ref={secondEl} className="map-canvas"/></div>}{!ready&&!failure&&<div className="map-loading"><LoaderCircle className="spin" size={26}/><span>Loading the observation landscape…</span></div>}{failure&&<div className="map-error" role="alert"><MapPin size={30}/><h3>Let’s get your map back</h3><p>{failure}</p><Button onClick={()=>setRetry(v=>v+1)}><RotateCcw size={15}/>Retry map</Button></div>}</>
 }

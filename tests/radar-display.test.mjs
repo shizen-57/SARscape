@@ -39,3 +39,8 @@ test('timeline exposes only completed dated pairs, including a pair that crosses
  assert.deepEqual(completedRadarJobs(jobs).map(j=>j.id),['cross-year','real'])
  assert.equal(jobs.length,5)
 })
+
+test('pairs sharing a reference date list the resolved-flow pair first',()=>{
+ const pair=(id,status,time='00:00:00')=>({id,status:'complete',provenance:{referenceDate:`2026-07-14T${time}`,secondaryDate:'2026-07-26T00:00:00',pairDays:12,motionPreview:status?{status}:undefined}})
+ assert.deepEqual(completedRadarJobs([pair('none',undefined,'13:49:42'),pair('components','components','13:49:42'),pair('flow','flow','05:44:01')]).map(j=>j.id),['flow','components','none'])
+})

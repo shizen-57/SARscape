@@ -5,7 +5,7 @@ import type {ScienceJob,GoffJob} from './SciencePanel'
 import {completedRadarJobs,radarDateMilliseconds} from '../data/radar-display.mjs'
 import {pairFrame} from '../data/motion-preview.mjs'
 
-export type ObservationSource='optical'|'radar'|'surface'
+export type ObservationSource='optical'|'radar'|'surface'|'change'
 const dateLabel=(date:string,includeYear=false)=>new Intl.DateTimeFormat('en-GB',{day:'numeric',month:'short',...(includeYear?{year:'numeric' as const}:{}),timeZone:'UTC'}).format(new Date(radarDateMilliseconds(date)))
 export default function ObservationTimeline({source,onSource,jobs,selected,onSelect,pending,error,aerial,dated=false,glacier=true,onOpenData,progress,playing,onPlay,onScrub,speed,onSpeed,children}:{source:ObservationSource;onSource:(s:ObservationSource)=>void;jobs:ScienceJob[];selected:GoffJob|null;onSelect:(j:GoffJob)=>void;pending:boolean;error:boolean;aerial:boolean;dated?:boolean;glacier?:boolean;onOpenData:()=>void;progress:number;playing:boolean;onPlay:()=>void;onScrub:(v:number)=>void;speed:number;onSpeed:(v:number)=>void;children:ReactNode}){
  const [compact,setCompact]=useState(false)
@@ -17,6 +17,7 @@ export default function ObservationTimeline({source,onSource,jobs,selected,onSel
   <div className="observation-source-row"><div className="observation-source-switch" aria-label="Observation source">
    {glacier&&<button aria-pressed={source==='surface'} onClick={()=>onSource('surface')}><Layers2 size={15}/><span>Glacier surfaces</span></button>}
    <button aria-pressed={source==='optical'} onClick={()=>onSource('optical')}><Layers2 size={15}/><span>{aerial?'Aerial imagery':dated?'Satellite imagery':'Reference imagery'}</span></button>
+   {glacier&&<button aria-pressed={source==='change'} onClick={()=>onSource('change')}><Radar size={15}/><span>Radar change</span></button>}
    <button aria-pressed={source==='radar'} onClick={()=>onSource('radar')}><Radar size={15}/><span>NISAR radar</span>{completed.length>0&&<span className="observation-count">{completed.length}</span>}</button>
   </div><label className="playback-speed">Speed <select aria-label="Playback speed" value={speed} onChange={e=>onSpeed(+e.target.value)}><option value="0.5">0.5×</option><option value="1">1×</option><option value="2">2×</option></select></label><Button variant="ghost" size="small" onClick={onOpenData}><Database size={14}/><span>Data & sources</span></Button><Button variant="ghost" size="icon" aria-label={compact?'Expand timeline':'Collapse timeline'} aria-expanded={!compact} onClick={()=>setCompact(v=>!v)}>{compact?<ChevronUp size={16}/>:<ChevronDown size={16}/>}</Button></div>
   {source!=='radar'?children:<div className="radar-date-hierarchy">

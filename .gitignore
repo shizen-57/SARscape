@@ -10,6 +10,7 @@ database/jobs/
 .sites-runtime/
 .env
 .env.*
+!.env.example
 *.tsbuildinfo
 .sites-cache/
 .impeccable/review/

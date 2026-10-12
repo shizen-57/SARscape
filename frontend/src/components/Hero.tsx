@@ -1,6 +1,8 @@
 import {useEffect,useMemo,useRef,useState,type CSSProperties,type MouseEvent} from 'react'
 import {ArrowRight,Layers2,Plane,Radar} from 'lucide-react'
 import {scenarios} from '../data/scenarios'
+import sentinelManifest from '../../../database/imagery/sentinel2.json'
+import additionalManifest from '../../../database/imagery/additional-sentinel2.json'
 import LandingGlobe,{type GlobeFocus} from './LandingGlobe'
 
 const CUTOUT='https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260827_202005_3346cc4d-ec3b-44ab-825c-b18e49f5021a.png'
@@ -22,8 +24,10 @@ const STEPS=[
  {title:'Move through time',text:'Play annual observations, blink between two dates, or drag the change lens across the landscape.'},
  {title:'Inspect the signals',text:'Open measured water or vegetation indices, or process a NISAR file into radar offsets or calibrated backscatter.'}
 ]
-// Four Esri tiles (2×2) centred on a point, row-major — a real image without another map instance.
-const tiles=([lng,lat]:[number,number],z:number)=>{const n=2**z,r=lat*Math.PI/180,x=Math.round((lng+180)/360*n)-1,y=Math.round((1-Math.log(Math.tan(r)+1/Math.cos(r))/Math.PI)/2*n)-1;return [0,1].flatMap(dy=>[0,1].map(dx=>`https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${z}/${y+dy}/${x+dx}`))}
+// Four dated Sentinel-2 tiles (2×2) centred on a point — these are real observation frames.
+type SentinelFrame={id:string;sourceSceneId?:string;date:string}
+const latestSentinel=(id:string)=>({...sentinelManifest.scenarios,...additionalManifest.scenarios} as Record<string,SentinelFrame[]>)[id].at(-1)!
+const tiles=(id:string,frame:string,[lng,lat]:[number,number],z:number)=>{const n=2**z,r=lat*Math.PI/180,x=Math.round((lng+180)/360*n)-1,y=Math.round((1-Math.log(Math.tan(r)+1/Math.cos(r))/Math.PI)/2*n)-1;return [0,1].flatMap(dy=>[0,1].map(dx=>`/api/imagery/tiles/${id}/${frame}/${z}/${x+dx}/${y+dy}.png`))}
 const reduced=()=>matchMedia('(prefers-reduced-motion: reduce)').matches
 const centerOf=(id:string)=>(scenarios.find(s=>s.id===id)??scenarios[0]).center
 
@@ -70,7 +74,7 @@ export default function Hero({onEnter}:{onEnter:(scenarioId:string)=>void}){
     <div className="hero-col hero-eyebrow"><span className="hero-mask"><span className="hero-line">EARTH IN MOTION</span></span></div>
     <h1 className="hero-col hero-title"><span className="hero-mask"><span className="hero-line">SARscape</span></span></h1>
     <div className="hero-col hero-rule"><span/></div>
-    <p className="hero-col hero-lede">Watch ice, wetlands and forests change through genuine aerial and satellite imagery, <br/>and trace how NISAR radar can help measure the motion the eye can&rsquo;t see.</p>
+    <p className="hero-col hero-lede">See what NISAR radar reveals on a glacier when optical satellites see only cloud, <br/>in real satellite data over 3D terrain, with the evidence and its limits.</p>
     <div className="hero-col hero-cta">
      <span className="hero-planet hero-planet-l" aria-hidden="true"><img alt="" src={CUTOUT}/></span>
      <span className="hero-planet hero-planet-r" aria-hidden="true"><img alt="" src={CUTOUT}/></span>
@@ -88,8 +92,8 @@ export default function Hero({onEnter}:{onEnter:(scenarioId:string)=>void}){
   </section>
   <section id="land-regions" className="land-section land-regions">
    <header className="land-head" data-reveal><p className="land-kicker">Where to look</p><h2>Glaciers, wetlands and forests</h2><p>Scroll through them and the globe turns to meet each one.</p></header>
-   {scenarios.map(s=>{const note=REGION_NOTES[s.id];return <article className={`land-region ${region===s.id?'is-active':''}`} data-reveal data-region={s.id} key={s.id}>
-    <figure className="land-shot"><div>{tiles(s.center,12).map(src=><img key={src} src={src} alt="" loading="lazy"/>)}</div><figcaption>Esri World Imagery · undated</figcaption></figure>
+   {scenarios.map(s=>{const note=REGION_NOTES[s.id],latest=latestSentinel(s.id);return <article className={`land-region ${region===s.id?'is-active':''}`} data-reveal data-region={s.id} key={s.id}>
+    <figure className="land-shot"><div>{tiles(s.id,latest.sourceSceneId??latest.id,s.center,12).map(src=><img key={src} src={src} alt="" loading="lazy"/>)}</div><figcaption>Sentinel-2 L2A · {latest.date.slice(0,10)} · 10 m</figcaption></figure>
     <div><small>{s.country}</small><h3>{s.name}</h3><p>{note?.fact??s.subtitle}</p><span className="land-data">{note?.data}</span><a href="#explore" onClick={enter(s.id)}>Explore {s.name}<ArrowRight size={15}/></a></div>
    </article>})}
   </section>
@@ -102,7 +106,7 @@ export default function Hero({onEnter}:{onEnter:(scenarioId:string)=>void}){
    <h2>Ready to explore a changing landscape?</h2>
    <a className="land-cta" href="#explore" onClick={enter()}>START EXPLORING</a>
    <p>Built for the NASA Space Apps Challenge · Dancing with the SARs</p>
-   <small>Globe and glacier imagery © Esri and contributors · Aerial mosaics © swisstopo · NISAR metadata via ASF</small>
+   <small>Globe context © Esri · Sentinel-2 captures © Copernicus · Aletsch mosaic versions © swisstopo · NISAR archive via ASF</small>
   </footer>
  </section>
 }

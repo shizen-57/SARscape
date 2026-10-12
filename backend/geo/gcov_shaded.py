@@ -13,6 +13,7 @@ from PIL import Image
 from rasterio.enums import Resampling
 from rasterio.transform import from_bounds, from_origin
 from rasterio.warp import reproject
+from gcov_change import dem
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 GCOV = ROOT / 'database/processed/gcov'
@@ -78,6 +79,79 @@ def shade(aerial, hh_stack):
     return images
 
 
+TERRAIN_NOTE = (f'Radar-predicted terrain colour: a lookup table learned from the SWISSIMAGE {YEAR} aerial photo gives the average photo colour '
+                'of pixels with the same NISAR HH and HV values (50 m) and the same elevation band on the same track. Each date is coloured by its own '
+                'radar; elevation is fixed, so date-to-date changes come only from NISAR. Colours are predicted, not photographed.')
+# Feature edges: HH dB, HV dB (1 dB bins) and elevation (100 m bins).
+EDGES = (np.arange(-25, 5.01, 1.0), np.arange(-35, -4.99, 1.0), np.arange(500, 4301, 100.0))
+TABLES = ((0, 1, 2), (2,))       # radar + elevation, then elevation alone, then one average colour
+
+
+def linear_box(db, size):
+    """Box mean in linear power, returned in dB (averaging dB values would bias dark)."""
+    with np.errstate(divide='ignore', invalid='ignore'):
+        return 10 * np.log10(box_mean(10 ** (db / 10), size))
+
+
+def cells(features, dims):
+    idx = [np.clip(np.digitize(features[d], EDGES[d]) - 1, 0, len(EDGES[d]) - 2) for d in dims]
+    shape = tuple(len(EDGES[d]) - 1 for d in dims)
+    return np.ravel_multi_index(idx, shape), int(np.prod(shape))
+
+
+def learn_lut(features, rgb, tables=TABLES, minimum=5):
+    """Mean photo colour per lookup cell for each feature subset; sparse cells stay NaN."""
+    out = []
+    for dims in tables:
+        flat, size = cells(features, dims)
+        count = np.bincount(flat, minlength=size)
+        mean = np.stack([np.bincount(flat, weights=rgb[:, k], minlength=size) for k in range(3)], -1) / np.maximum(count, 1)[:, None]
+        mean[count < minimum] = np.nan
+        out.append((dims, mean))
+    return out, rgb.mean(axis=0)
+
+
+def predict(model, features):
+    tables, fallback = model
+    rgb = np.full((features[0].size, 3), np.nan)
+    for dims, mean in tables:
+        missing = np.isnan(rgb[:, 0])
+        if not missing.any(): break
+        flat, _ = cells([f[missing] for f in features], dims)
+        rgb[missing] = mean[flat]
+    rgb[np.isnan(rgb[:, 0])] = fallback
+    return rgb
+
+
+def terrain_colour(aerial, hh_stack, hv_stack, elevation, stride=3):
+    """Learn radar+elevation → colour on all dates of one track, then colour each date by its own radar.
+
+    Returns RGBA images and, per date, the colour skill (1 − error / error of one average colour) for
+    radar+elevation and for elevation alone, so the radar's contribution stays visible."""
+    feats = [[linear_box(hh, 5), linear_box(hv, 5), elevation] for hh, hv in zip(hh_stack, hv_stack)]
+    has_photo = aerial.sum(-1) > 0
+    xs, ys = [[], [], []], []
+    for f in feats:
+        keep = (np.isfinite(np.stack(f)).all(0) & has_photo)[::stride, ::stride]
+        for k in range(3): xs[k].append(f[k][::stride, ::stride][keep])
+        ys.append(aerial[::stride, ::stride][keep])
+    model = learn_lut([np.concatenate(x) for x in xs], np.concatenate(ys))
+    height_only = ([t for t in model[0] if t[0] == (2,)], model[1])
+    images, skills = [], []
+    for f in feats:
+        valid = np.isfinite(np.stack(f)).all(0)
+        values = [x[valid] for x in f]
+        rgb = np.zeros((*valid.shape, 3))
+        rgb[valid] = predict(model, values)
+        check = valid & has_photo
+        truth = aerial[check]
+        base = np.abs(truth - model[1]).mean()
+        skill = lambda pred: round(float(1 - np.abs(pred - truth).mean() / base), 3)
+        skills.append({'radarAndElevation': skill(rgb[check]), 'elevationOnly': skill(predict(height_only, [x[check[valid]] for x in values]))} if check.any() else None)
+        images.append(np.dstack([np.clip(rgb, 0, 255).astype(np.uint8), np.where(valid, 255, 0).astype(np.uint8)]))
+    return images, skills
+
+
 def main():
     manifest = json.loads((GCOV / 'manifest.json').read_text())
     observations = [o for o in manifest['observations'] if o.get('colorPreview')]
@@ -98,12 +172,20 @@ def main():
         aerial = np.zeros((height, width, 3), np.float32)
         for band in range(3):
             reproject(photo[..., band].astype(np.float32), aerial[..., band], src_transform=transform, src_crs='EPSG:3857', dst_transform=target, dst_crs='EPSG:4326', resampling=Resampling.bilinear)
-        stack = []
+        stack, hv_stack = [], []
         for o in group:
-            hh = np.full((height, width), np.nan, np.float32)
+            hh, hv = (np.full((height, width), np.nan, np.float32) for _ in range(2))
             with rasterio.open(GCOV / o['id'] / 'gcov-backscatter.tif') as tif:
-                reproject(tif.read(1), hh, src_transform=tif.transform, src_crs=tif.crs, src_nodata=np.nan, dst_transform=target, dst_crs='EPSG:4326', dst_nodata=np.nan, resampling=Resampling.nearest)
-            stack.append(hh)
+                for band, out in ((1, hh), (2, hv)):
+                    reproject(tif.read(band), out, src_transform=tif.transform, src_crs=tif.crs, src_nodata=np.nan, dst_transform=target, dst_crs='EPSG:4326', dst_nodata=np.nan, resampling=Resampling.nearest)
+            stack.append(hh); hv_stack.append(hv)
+        elevation = dem(target, (height, width), 'EPSG:4326')
+        for o, image, skill in zip(group, *terrain_colour(aerial, stack, hv_stack, elevation)):
+            directory = GCOV / o['id']
+            Image.fromarray(image).save(directory / 'gcov-terrain.preparing.webp', quality=85, method=4)
+            os.replace(directory / 'gcov-terrain.preparing.webp', directory / 'gcov-terrain.webp')
+            o['colorPreview']['terrain'] = {'file': 'gcov-terrain.webp', 'note': TERRAIN_NOTE, 'training': f'SWISSIMAGE {YEAR} mosaic, all {len(group)} dates of this track; elevation from Mapterhorn terrain tiles',
+                                            'colourSkill': skill, 'skillMeaning': '1 = perfect photo colours, 0 = no better than one average colour; compare radar+elevation with elevation alone to see what NISAR adds', 'displayIsMeasurement': False}
         for o, image in zip(group, shade(aerial, np.stack(stack))):
             directory = GCOV / o['id']
             Image.fromarray(image).save(directory / 'gcov-shaded.preparing.png')

@@ -1,12 +1,15 @@
 // Only registered public COGs are addressable; never accept arbitrary upstream URLs.
 export function createCogReader(fetchUpstream=fetch){
- const pending=new Map()
+ const pending=new Map(),pendingChunks=new Map()
  const chunks=new Map();let cacheBytes=0,active=0;const waiting=[]
  const limited=async work=>{if(active>=12)await new Promise(resolve=>waiting.push(resolve));else active++;try{return await work()}finally{const next=waiting.shift();if(next)next();else active--}}
  const readChunk=async(url,start,end)=>{
   const key=`${url}:${start}-${end}`
-  if(chunks.has(key))return chunks.get(key)
-  return limited(async()=>{
+  if(chunks.has(key)){const result=chunks.get(key);chunks.delete(key);chunks.set(key,result);return result}
+  // Different range requests often overlap. Share their chunk fetches too,
+  // including those waiting for an upstream concurrency slot.
+  if(pendingChunks.has(key))return pendingChunks.get(key)
+  const job=limited(async()=>{
    const response=await fetchUpstream(url,{headers:{Range:`bytes=${start}-${end}`},signal:AbortSignal.timeout(15000)})
    if(response.status!==206)throw new Error('Satellite server did not honor a range')
    const bytes=new Uint8Array(await response.arrayBuffer()),length=Number(response.headers.get('content-length'))
@@ -14,7 +17,9 @@ export function createCogReader(fetchUpstream=fetch){
    const result={bytes,contentRange:response.headers.get('content-range'),etag:response.headers.get('etag')}
    while(cacheBytes+bytes.length>32*1024*1024&&chunks.size){const key=chunks.keys().next().value;cacheBytes-=chunks.get(key).bytes.length;chunks.delete(key)}
    chunks.set(key,result);cacheBytes+=bytes.length;return result
-  })
+  }).finally(()=>pendingChunks.delete(key))
+  pendingChunks.set(key,job)
+  return job
  }
  return async(frame,method,range)=>{
   if(method!=='HEAD'){
