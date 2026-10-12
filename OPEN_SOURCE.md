@@ -20,6 +20,10 @@ The application uses established rendering, UI and geospatial modules. Product-s
 ## Data services
 Esri World Imagery supplies the satellite basemap, OpenStreetMap supplies the street basemap, and Mapterhorn supplies elevation. All visible attribution stays on the map. These are independent services, not NISAR science layers. No remote image is downloaded merely to work around chat rendering restrictions.
 
+The motion preview masks GOFF results with the Grosser Aletschgletscher outline (SGI ID B36-26) from the [Swiss Glacier Inventory 2016](https://doi.glamos.ch/data/inventory/inventory_sgi2016_r2020.html), published by GLAMOS under CC BY 4.0. Cite Linsbauer et al. (2021), Frontiers in Earth Science 9, 704189, doi:10.3389/feart.2021.704189. Only the extracted polygon (`database/outlines/aletsch-sgi2016.geojson`) is versioned; its properties record the source URL, archive SHA-256, licence, and citation, and the interface shows the attribution.
+
+Further open data used by the radar-change and motion work, all fetched as small regional windows: [ERA5 reanalysis](https://open-meteo.com/) through the Open-Meteo archive API (CC BY 4.0; contains modified Copernicus Climate Change Service information) for storm weather; [Sentinel-2 L2A](https://element84.com/earth-search/) (Copernicus, via Element 84 Earth Search) for the real cloudy comparison images; [NASA MEaSUREs ITS_LIVE](https://its-live.jpl.nasa.gov/) glacier velocities for the independent check of the Columbia flow; the Columbia Glacier outline from the [Randolph Glacier Inventory 6.0](https://doi.org/10.7265/N5-RGI-60) through the GLIMS WFS (RGI Consortium 2017; free to use with citation, so check the NSIDC and GLIMS terms before redistributing the raw inventory); and [Mapterhorn](https://mapterhorn.com/attribution) terrain for elevation bands and radar-to-colour training.
+
 The approximate Aletsch demonstration centerline was checked against [OpenStreetMap glacier way 42742456](https://www.openstreetmap.org/way/42742456), retrieved through the public Nominatim API. This does not turn the synthetic layer into a scientific glacier inventory.
 
 ## Science integration boundary

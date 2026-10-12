@@ -14,10 +14,10 @@ export function requestFrames(entries,{onState,onCommit,timeoutMs=180000,fadeMs=
   for(const {map,id} of entries){
    // Rebuild the draped layer after its pixels are available. Terrain's cached
    // surface can otherwise retain the faint loading texture after an opacity change.
-   const current=map.getStyle().layers.find(layer=>layer.id===id)
+   const current=map.getStyle()?.layers.find(layer=>layer.id===id)
    const alreadyVisible=(previous.get(map)??[]).some(([layer])=>layer===id)
    map.removeLayer(id)
-   map.addLayer({...current,paint:{...current.paint,'raster-opacity':fadeMs&&!alreadyVisible?0.001:1,'raster-opacity-transition':{duration:fadeMs,delay:0}}},map.getLayer('index-study')?'index-study':map.getLayer('boundary')?'boundary':undefined)
+   map.addLayer({...current,paint:{...current.paint,'raster-opacity':fadeMs&&!alreadyVisible?0.001:1,'raster-opacity-transition':{duration:fadeMs,delay:0}}},['index-study','motion-heat','radar-samples','glacier-surface','boundary'].find(id=>map.getLayer(id)))
    if(!fadeMs)map.setPaintProperty(id,'raster-opacity',1)
   }
   detach()
@@ -27,8 +27,8 @@ export function requestFrames(entries,{onState,onCommit,timeoutMs=180000,fadeMs=
   if(cancelled)return
   committed=true
   for(const {map,id} of entries){
-   for(const layer of map.getStyle().layers??[])if(layer.id.startsWith('observation-')&&layer.id!==id)map.setPaintProperty(layer.id,'raster-opacity',0)
-   const old=(map.getStyle().layers??[]).filter(l=>l.id.startsWith('observation-')&&l.id!==id)
+   for(const layer of map.getStyle()?.layers??[])if(layer.id.startsWith('observation-')&&layer.id!==id)map.setPaintProperty(layer.id,'raster-opacity',0)
+   const old=(map.getStyle()?.layers??[]).filter(l=>l.id.startsWith('observation-')&&l.id!==id)
    while(old.length>retain){const layer=old.shift();map.removeLayer(layer.id);map.removeSource(layer.id)}
   }
   let drawn=0
@@ -47,12 +47,12 @@ export function requestFrames(entries,{onState,onCommit,timeoutMs=180000,fadeMs=
  }
  for(const {map,id,source,scenarioId} of entries){
   // Never show the previous glacier under the newly selected glacier's heading.
-  for(const layer of map.getStyle().layers??[])if(layer.id.startsWith('observation-')&&!layer.id.startsWith(`observation-${scenarioId}-`)){map.removeLayer(layer.id);map.removeSource(layer.id)}
-  previous.set(map,(map.getStyle().layers??[]).filter(layer=>layer.id.startsWith('observation-')&&layer.paint?.['raster-opacity']===1).map(layer=>[layer.id,1]))
+  for(const layer of map.getStyle()?.layers??[])if(layer.id.startsWith('observation-')&&!layer.id.startsWith(`observation-${scenarioId}-`)){map.removeLayer(layer.id);map.removeSource(layer.id)}
+  previous.set(map,(map.getStyle()?.layers??[]).filter(layer=>layer.id.startsWith('observation-')&&layer.paint?.['raster-opacity']===1).map(layer=>[layer.id,1]))
   if(map.getSource(id)&&map.getSource(id).__failed){map.removeLayer(id);map.removeSource(id)}
   if(!map.getSource(id)){
    map.addSource(id,source)
-   map.addLayer({id,type:'raster',source:id,paint:{'raster-opacity':0.001,'raster-fade-duration':0}},map.getLayer('index-study')?'index-study':map.getLayer('boundary')?'boundary':undefined)
+   map.addLayer({id,type:'raster',source:id,paint:{'raster-opacity':0.001,'raster-fade-duration':0}},['index-study','motion-heat','radar-samples','glacier-surface','boundary'].find(id=>map.getLayer(id)))
   }
   const check=()=>{if(cancelled||done||!map.isSourceLoaded(id))return;loaded.add(map);commit()}
   const error=e=>{if(cancelled||done)return;if(e.sourceId===id||e.error?.message?.includes(source.tiles[0].split('/{z}')[0])){const source=map.getSource(id);if(source)source.__failed=true;fail()}}

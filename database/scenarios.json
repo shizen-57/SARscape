@@ -31,10 +31,10 @@
       "product": "GOFF",
       "explanation": "Actual optical observations show surface appearance. The supplied GOFF pair provides raw signed radar offsets and formal uncertainty; stable-ground bias correction and independent ice-motion validation remain necessary.",
       "extent": [
-        8.02,
-        46.39,
-        8.1,
-        46.51
+        7.875,
+        46.355,
+        8.15,
+        46.605
       ],
       "path": [
         [
@@ -149,10 +149,10 @@
       "product": "GOFF",
       "explanation": "Annual optical observations show surface changes. Quantitative tidewater-glacier motion requires a matching radar pair, quality screening, stable-ground bias assessment and independent validation.",
       "extent": [
-        -147.35,
-        60.94,
-        -146.72,
-        61.3
+        -147.32,
+        61.02,
+        -146.4,
+        61.5
       ],
       "path": [
         [
@@ -191,7 +191,10 @@
       "id": "sundarbans",
       "name": "Sundarbans wetlands",
       "country": "Bangladesh",
-      "center": [89.58, 21.96],
+      "center": [
+        89.58,
+        21.96
+      ],
       "zoom": 12.7,
       "bearing": 0,
       "pitch": 35,
@@ -202,15 +205,28 @@
       "metric": "Optical water signal",
       "product": "GCOV",
       "explanation": "NDWI uses measured green and near-infrared reflectance. Tides, shadows and turbidity affect this water signal; it is not a confirmed flood or water-depth measurement.",
-      "extent": [89.48, 21.90, 89.68, 22.03],
-      "imageryExtent": [89.48, 21.90, 89.68, 22.03],
+      "extent": [
+        89.48,
+        21.9,
+        89.68,
+        22.03
+      ],
+      "imageryExtent": [
+        89.48,
+        21.9,
+        89.68,
+        22.03
+      ],
       "path": []
     },
     {
       "id": "rondonia",
       "name": "Rondônia forest",
       "country": "Brazil",
-      "center": [-63.08, -10.26],
+      "center": [
+        -63.08,
+        -10.26
+      ],
       "zoom": 13,
       "bearing": 0,
       "pitch": 35,
@@ -221,8 +237,50 @@
       "metric": "Optical vegetation signal",
       "product": "GCOV",
       "explanation": "NDVI uses measured red and near-infrared reflectance. Changes in greenness need land-cover and field evidence to establish forest loss, biomass or regrowth.",
-      "extent": [-63.14, -10.32, -63.02, -10.20],
-      "imageryExtent": [-63.14, -10.32, -63.02, -10.20],
+      "extent": [
+        -63.14,
+        -10.32,
+        -63.02,
+        -10.2
+      ],
+      "imageryExtent": [
+        -63.14,
+        -10.32,
+        -63.02,
+        -10.2
+      ],
+      "path": []
+    },
+    {
+      "id": "manchar",
+      "name": "Manchar Lake Flood",
+      "country": "Sindh, Pakistan",
+      "center": [
+        67.69,
+        26.49
+      ],
+      "zoom": 10.8,
+      "bearing": 0,
+      "pitch": 55,
+      "kind": "flood",
+      "title": "Watch the floodplain change",
+      "subtitle": "Real satellite captures of the 2022 flood.",
+      "unit": "",
+      "metric": "Observed surface appearance",
+      "product": "Sentinel-2 L2A",
+      "explanation": "Natural-colour satellite observations reveal water spreading across the floodplain. These images do not measure water depth. Historical 2022 imagery is Sentinel-2, not NISAR.",
+      "extent": [
+        67.48,
+        26.29,
+        67.9,
+        26.73
+      ],
+      "imageryExtent": [
+        67.48,
+        26.29,
+        67.9,
+        26.73
+      ],
       "path": []
     }
   ]
