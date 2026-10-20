@@ -20,6 +20,10 @@
 - [x] Sundarbans annual NDWI and Rondônia annual NDVI: distributions, coverage, thresholds, change overlays and exports.
 - [x] Prepare all 18 actual environmental products; verify exported pixels/statistics.
 - [x] Automated API/cache/timeline/playback/saved-view/science checks and TypeScript/Vite build.
+- [x] Add explainable scientific surface summaries: matched-cell speed differences, mapped inventory area differences, signed elevation-change rates, full periods, coverage and uncertainty limitations. Verified offline; runtime acceptance remains pending.
+- [x] Link selected map locations to persistent paired measurements, reported errors, transparent gaps, and inventory outlines; offline regression tests pass. Runtime acceptance still needs a dedicated interaction review.
+- [x] Add a presenter-led Demo tour that stages imagery, change comparison, glacier measurements, NISAR workflows, display tools and source limits; add a matching recording guide (tour only, no video capture).
+
 - [x] Separate frontend, backend, and database.
 - [x] Reuse MapLibre terrain and established UI/geospatial modules.
 - [x] Show genuine dated Sentinel-2 captures, comparison, playback, source details, saved views, and provenance.
@@ -33,6 +37,7 @@
 - [x] Verify both real GOFF pairs (September 11–23 and September 23–October 5, 2026) above dated GCOV in the browser's 3D map. Low correlation and large component rates still need spatial outlier review. Study-area cells are not a glacier-only selection.
 - [x] Add an approximate glacier-motion preview: SGI2016 outline mask, stable-ground offset removal, plausibility and normalized-median filtering, 400 m smoothing, stable-rock noise floor, radarGrid geometry conversion gated on a flow-direction test, heatmap, particles, interpolated-frame labels, and a quality panel. Both current Aletsch pairs resolve to “components only, quality Low”.
 - [x] Add the Ask SARscape chat assistant (any OpenAI-compatible provider, data tools, allowlisted map actions). Still to try with a real provider key.
+- [x] Radar change view: GCOV change on 24 Aletsch dates, storm findings with four checks, difference maps, charts, weather, through-the-clouds comparison, radar terrain colour and a Demo tour chapter. Remaining: independent validation of the storm response, and Columbia motion.
 - [ ] Find a higher-coherence Aletsch GOFF pair (or winter pair) whose glacier signal clears 2× the stable-rock floor, and confirm the ISCE3 offset sign convention against a known displacement.
 - [ ] Mask layover/shadow and known slope instabilities (for example Moosfluh) from the stable-ground reference.
 - [ ] Independently validate radar components, quality screening, uncertainty, and stable-ground bias correction (GNSS stakes, ITS_LIVE or another velocity product).

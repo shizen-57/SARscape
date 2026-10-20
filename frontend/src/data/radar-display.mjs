@@ -23,9 +23,12 @@ export function radarDisplaySummary(features, component, mode, pairDays) {
  return {scale,count:values.length}
 }
 
+// Pairs that share a reference day (tracks acquire at different times of day): show the one whose motion preview resolved a flow first, then components.
+const motionRank = job => ({flow: 2, components: 1})[job.provenance?.motionPreview?.status] ?? 0
+
 export function completedRadarJobs(jobs) {
  return jobs.filter(j => {
   const p = j.provenance
   return j.status === 'complete' && p && Number.isFinite(p.pairDays) && p.pairDays > 0 && Number.isFinite(radarDateMilliseconds(p.referenceDate)) && radarDateMilliseconds(p.secondaryDate) > radarDateMilliseconds(p.referenceDate)
- }).sort((a,b) => b.provenance.referenceDate.localeCompare(a.provenance.referenceDate))
+ }).sort((a,b) => b.provenance.referenceDate.slice(0,10).localeCompare(a.provenance.referenceDate.slice(0,10)) || motionRank(b) - motionRank(a) || b.provenance.referenceDate.localeCompare(a.provenance.referenceDate))
 }

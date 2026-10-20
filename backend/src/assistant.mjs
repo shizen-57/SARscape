@@ -8,20 +8,22 @@ Science rules you must respect:
 - GOFF measures along-track and slant-range offsets between two acquisitions. The motion preview is an approximate, filtered estimate, not validated velocity and not tracked ice. Treat flow direction as resolved only if get_motion_details says flowDirectionResolved is true. Otherwise say it shows measured radar components.
 - Only the two GOFF acquisition dates are observations. Frames between them are interpolated.
 - Aerial imagery is yearly mosaics whose flight dates vary. Terrain height is fixed.
+For what NISAR saw (storm darkening, rain pattern, confidence), call get_change_summary and quote its numbers; radar darkening is consistent with wet snow but is not a melt measurement.
 Use control_map when the user asks to change what is shown, then say briefly what you did.
 Reply in the user's language. If they write Bengali (in Bengali script or romanized), answer in simple Bengali in the same script they used, keeping technical terms in English. Be concise: a few short sentences, no headings.`
 const DATE=/^\d{4}-\d{2}-\d{2}$/
 export const ACTIONS={
  play_radar:()=>true,pause_radar:()=>true,overview:()=>true,reset_view:()=>true,
  set_radar_date:v=>DATE.test(v),
- set_colour_style:v=>['shaded','natural','false','grey'].includes(v),
- show_source:v=>['optical','radar','surface'].includes(v),
+ set_colour_style:v=>['terrain','shaded','natural','false','grey'].includes(v),
+ show_source:v=>['optical','radar','surface','change'].includes(v),
  open_motion_pair:v=>DATE.test(v)
 }
 const TOOLS=[
  {type:'function',function:{name:'get_radar_inventory',description:'List the NISAR radar dates (GCOV) and acquisition pairs (GOFF) available for this glacier, with processing status and quality grade.',parameters:{type:'object',properties:{}}}},
+ {type:'function',function:{name:'get_change_summary',description:'What NISAR saw: storm findings with confidence and the four checks, the rain pattern, noise threshold, storms and per-track glacier anomalies by date.',parameters:{type:'object',properties:{}}}},
  {type:'function',function:{name:'get_motion_details',description:'Quality, filters, stable-ground offset, viewing geometry, outline source and limits for one GOFF pair. Use the id from get_radar_inventory.',parameters:{type:'object',properties:{job_id:{type:'string'}},required:['job_id']}}},
- {type:'function',function:{name:'control_map',description:'Change what the map shows. Actions: play_radar, pause_radar, set_radar_date (value YYYY-MM-DD of a GCOV date), set_colour_style (shaded = aerial photo shaded by radar change, natural, false, grey), show_source (optical|radar|surface), open_motion_pair (value = reference date YYYY-MM-DD of a GOFF pair), overview, reset_view.',parameters:{type:'object',properties:{action:{type:'string',enum:Object.keys(ACTIONS)},value:{type:'string'}},required:['action']}}}
+ {type:'function',function:{name:'control_map',description:'Change what the map shows. Actions: play_radar, pause_radar, set_radar_date (value YYYY-MM-DD of a GCOV date), set_colour_style (terrain = terrain colour predicted from radar and elevation, shaded = aerial photo shaded by radar change, natural, false, grey), show_source (optical|radar|surface|change; change = the Radar change tab with findings), open_motion_pair (value = reference date YYYY-MM-DD of a GOFF pair), overview, reset_view.',parameters:{type:'object',properties:{action:{type:'string',enum:Object.keys(ACTIONS)},value:{type:'string'}},required:['action']}}}
 ]
 const clip=(v,n)=>String(v??'').slice(0,n)
 export function createAssistant({science,env=process.env,fetchUpstream=fetch}={}){
@@ -32,6 +34,13 @@ export function createAssistant({science,env=process.env,fetchUpstream=fetch}={}
   return {radarDates:gcov.observations.map(o=>({date:clip(o.acquisitionDate,10),track:clip(`${o.identification?.trackNumber??''} ${o.identification?.orbitPassDirection??''}`.trim(),20),colourImages:Boolean(o.colorPreview)})),
    pairs:goff.jobs.filter(j=>j.status==='complete').map(j=>{const p=j.provenance??{};return {id:j.id,track:clip(`${p.trackNumber??''} ${p.orbitPassDirection??''}`.trim(),20),referenceDate:clip(p.referenceDate,10),secondaryDate:clip(p.secondaryDate,10),pairDays:p.pairDays,offsetLayer:p.layer,acceptedSamples:p.acceptedSamples,totalSamples:p.totalSamples,motionPreview:p.motionPreview??null}})}
  }
+ const changes=async scenario=>{
+  const c=await science?.changeSummary?.(scenario)
+  if(!c)return {error:'No radar change summary has been prepared for this area'}
+  return {measured:c.measured,derived:c.derived,noise:c.noise,pattern:c.pattern,storms:c.weather?.storms,limits:c.limits,
+   findings:c.findings.map(f=>({statement:f.statement,interpretation:f.interpretation,confidence:f.confidence,checks:Object.fromEntries(Object.entries(f.checks).map(([k,v])=>[k,`${v.pass?'pass':'fail'}: ${v.detail}`])),responses:f.responses})),
+   tracks:c.tracks.map(t=>({id:t.id,label:t.label,dates:t.dates.map(d=>({date:d.date,anomalyDb:d.anomalyDb,recent:d.recent}))}))}
+ }
  const details=async(scenario,id)=>{
   if(!/^[A-Za-z0-9-]{1,64}$/.test(id))return {error:'Invalid job id'}
   const bytes=await science?.artifact?.(scenario,id,'motion-preview.json')
@@ -41,6 +50,7 @@ export function createAssistant({science,env=process.env,fetchUpstream=fetch}={}
  }
  const run=async(name,args,scenario,actions)=>{
   if(name==='get_radar_inventory')return inventory(scenario)
+  if(name==='get_change_summary')return changes(scenario)
   if(name==='get_motion_details')return details(scenario,clip(args.job_id,64))
   if(name==='control_map'){
    const valid=ACTIONS[args.action];if(!valid||!valid(clip(args.value,32)))return {error:'Unknown action or invalid value'}

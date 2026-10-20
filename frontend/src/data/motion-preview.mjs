@@ -82,10 +82,19 @@ export function particlePaths(preview, component, exaggeration, steps = 24, cell
 }
 
 // Everything the map and legend share for one preview and component choice.
+// Smallest 1-2-5 step at or above x, so a legend reads 0.82 → 1, 3.1 → 5.
+export function niceCeil(x) {
+ const power = 10 ** Math.floor(Math.log10(x * (1 + 1e-9)))
+ return [1, 2, 5, 10].find(step => step * power >= x * (1 - 1e-9)) * power
+}
+
 export function motionScene(preview, component, contrast = 1) {
  const cells = motionCells(preview), values = cells.map(cell => motionValue(cell, preview, component))
- // The legend is fixed across acquisition pairs; saturation does not change measurements.
- const scale = values.some(Number.isFinite) ? (preview.status === 'flow' ? 300 / 365.25 : 1.5) / Math.max(1, contrast) : null
+ // Components keep one legend across acquisition pairs. Flow starts at 300 m/year, which suits a slow Alpine
+ // glacier, and widens to the data's 95th-percentile speed so a fast glacier (Columbia, metres per day) is not all one colour.
+ // Saturation never changes the measurements.
+ const slow = 300 / 365.25, p95 = displayScale(values) ?? 0, flowScale = p95 > slow ? niceCeil(p95) : slow
+ const scale = values.some(Number.isFinite) ? (preview.status === 'flow' ? flowScale : 1.5) / Math.max(1, contrast) : null
  const vectors = cells.map(cell => motionVector(cell, preview, component)).filter(Boolean).map(([e, n]) => Math.hypot(e, n))
  const exaggeration = travelExaggeration(displayScale(vectors), preview.pairDays)
  return {mode: preview.status === 'flow' ? 'flow' : 'components', cells, values, scale, exaggeration, paths: vectors.length ? particlePaths(preview, component, exaggeration, 24, cells) : []}

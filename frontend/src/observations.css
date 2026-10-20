@@ -168,3 +168,50 @@
 
 .radar-visual-controls{bottom:225px;max-height:calc(100% - 310px)}
 @media(max-width:760px){.radar-visual-controls{bottom:225px;max-height:calc(100% - 305px)}}
+.change-timeline{display:flex;flex-direction:column;gap:8px;padding-top:10px}
+.change-controls{display:flex;align-items:center;gap:8px;min-width:0}
+.change-controls .play-button{width:34px;height:34px;min-height:34px;flex-shrink:0}
+.change-step-track{display:flex;gap:6px;overflow-x:auto;flex:1;min-width:0;padding:3px 2px;scrollbar-color:var(--raise) transparent}
+.change-step{display:flex;align-items:center;gap:6px;flex-shrink:0;padding:6px 9px;border-radius:7px;border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:11px;cursor:pointer;font-variant-numeric:tabular-nums}
+.change-step i{display:block;width:10px;height:10px;border-radius:2px;border:1px solid rgba(255,255,255,.25)}
+.change-step.is-significant{color:var(--ink)}
+.change-step.is-storm{border-color:rgba(121,220,232,.55)}
+.change-step[aria-selected=true]{background:var(--accent-soft);color:var(--accent);border-color:rgba(121,220,232,.6)}
+.change-step:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.change-legend{display:flex;align-items:center;flex-wrap:wrap;gap:4px 12px;font-size:11px;color:var(--muted)}
+.change-ramp{display:block;width:140px;height:8px;border-radius:3px}
+.change-note{color:var(--ink)}
+.change-legend>.button{margin-left:auto}
+.change-panel{top:150px;bottom:auto;max-height:calc(100% - 400px)}
+.finding-card{border:1px solid var(--line);border-radius:10px;padding:10px 11px;background:var(--soft);font-size:11.5px;line-height:1.55}
+.finding-card.confidence-high{border-color:rgba(121,220,232,.55)}
+.finding-card.confidence-moderate{border-color:rgba(233,210,122,.5)}
+.finding-head{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:10.5px;font-weight:700;color:var(--muted)}
+.confidence-high .finding-head>span{color:var(--accent)}.confidence-moderate .finding-head>span{color:#e9d27a}.confidence-low .finding-head>span{color:#f5a466}
+.finding-statement{margin:6px 0 4px;color:var(--ink);font-weight:600}
+.finding-interpretation,.finding-through-clouds{margin:0 0 6px;color:var(--muted)}
+.finding-through-clouds{font-style:italic}
+.finding-checks{list-style:none;margin:6px 0 0;padding:0;display:flex;flex-direction:column;gap:4px}
+.finding-checks li{display:flex;gap:6px;align-items:flex-start;color:var(--muted)}
+.finding-checks li svg{flex-shrink:0;margin-top:3px}
+.finding-checks li.pass svg{color:var(--accent)}.finding-checks li.fail svg{color:#f5a466}
+.finding-checks strong{color:var(--ink)}
+.finding-pattern{background:transparent}
+.change-chart-title{font-size:11px;color:var(--ink);margin:8px 0 2px}
+.change-chart{width:100%;height:auto;display:block}
+.chart-window{fill:rgba(121,220,232,.08)}
+.chart-axis{font-size:8px;fill:var(--muted)}
+.chart-glacier{fill:none;stroke:#79dce8;stroke-width:1.6}.chart-glacier-dot{fill:#79dce8}
+.chart-terrain{fill:none;stroke:#9aa4b2;stroke-width:1.2;stroke-dasharray:3 2}.chart-terrain-dot{fill:#9aa4b2}
+.chart-rain{fill:#6f8fb3}.chart-snow{fill:#e8edf2}
+.chart-storm{stroke:#e9d27a;stroke-width:1;stroke-dasharray:2 2}
+.chart-key text{font-size:8px;fill:var(--muted)}
+.chart-selected{stroke:#e8edf2;stroke-width:.8}
+@media(max-width:760px){.change-panel{top:auto;bottom:330px;max-height:calc(100% - 470px)}.change-ramp{width:90px}}
+.through-clouds{margin:8px 0 6px;display:flex;flex-direction:column;gap:6px}
+.through-clouds-frame{position:relative;border-radius:8px;overflow:hidden;background:#05080d;aspect-ratio:1024/918}
+.through-clouds-frame img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+.through-clouds-divider{position:absolute;top:0;bottom:0;width:2px;background:#fff;box-shadow:0 0 6px rgba(0,0,0,.6);pointer-events:none}
+.through-clouds input{width:100%;accent-color:var(--accent);cursor:pointer}
+.through-clouds figcaption{font-size:10.5px;line-height:1.5;color:var(--muted)}
+.through-clouds figcaption strong{color:var(--ink)}

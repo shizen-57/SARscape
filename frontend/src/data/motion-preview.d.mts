@@ -4,11 +4,12 @@ export type MotionPreview={
  version:number;status:'flow'|'components'|'unavailable';reason:string;units:string;pairDays:number;referenceDate:string;secondaryDate:string;layer:string;polarization:string;validated:false;measured:string;estimated:string
  cellFields:string[];cells:(number|boolean|null)[][]
  grid?:{epsg:number;shape:[number,number];postingMetres:[number,number];corners:[number,number][];lonLatAffine:[[number,number,number],[number,number,number]];outlinePixels:number[][][]|number[][][][]}
- outline?:{geometry:Polygon|MultiPolygon;name:string;sgiId?:string;outlineYear?:number;source:string;sourceUrl:string;license:string;citation:string;limitation:string;mask:string}
+ outline?:{geometry:Polygon|MultiPolygon;name:string;sgiId?:string;rgiId?:string;outlineYear?:number;outlineDate?:string;source:string;sourceUrl:string;license:string;citation:string;limitation:string;mask:string}
  geometry?:{available:boolean;reason?:string;alongTrackAxis?:[number,number];groundRangeAxis?:[number,number];headingDeg?:number;rangeIncreaseAzimuthDeg?:number;incidenceDeg?:number;referenceHeightMetres?:number;unitVectorChange1500To3500m?:number;source?:string;assumptions?:string[]}
  stableGround?:{alongTrack:number;slantRange:number;support:number;candidates:number;spread:[number,number];noiseFloor:{alongTrack:number|null;slantRange:number|null;speed:number|null}}
  quality?:{grade:'low'|'moderate'|'good';reasons:string[];coverage:number;medianCorrelation:number|null;signalToNoise:{alongTrack:number|null;slantRange:number|null;speed:number|null};flowDirectionResolved:boolean}
  filters?:{id:string;label:string;cells:number}[]
+ validation?:{source:string;granule:string;platform:string|null;start:string;end:string;intervalDays:number;overlapDays:number;nisarInterval:[string,string];cells:number;thresholdMetresPerDay?:number;resolvableCells?:number;slowIce?:{cells:number;medianNisar:number|null;medianItsLive:number|null};spearman?:number;medianRatio?:number;medianNisar?:number;medianItsLive?:number;medianAbsDifference?:number;directionCells?:number;medianAngleDeg?:number|null;within45Deg?:number|null;bySpeed?:{itsLiveMetresPerDay:string;cells:number;medianNisar:number;medianItsLive:number;medianRatio:number}[];verdict?:string;caveat:string}
  method?:{plausibleRateMetresPerDay:number;window:number;minimumSupport:number;signalRatio:number;minimumCoverage:number;confidence:string;medianTest:{threshold:number;epsilon:number;minimumNeighbours:number;reference:string}}
 }
 export type PairFrame={date:string;kind:'reference'|'interpolated'|'secondary';observed:boolean;label:string}

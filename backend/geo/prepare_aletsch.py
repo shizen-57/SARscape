@@ -19,8 +19,9 @@ from pyproj import CRS, Transformer
 from goff import process as process_goff, text
 from nisar_range import RangeReader
 
+SCENARIOS = {s['id']: s for s in json.loads((ROOT / 'database/scenarios.json').read_text())['scenarios']}
 SCENARIO = 'aletsch'
-BBOX = next(s['extent'] for s in json.loads((ROOT / 'database/scenarios.json').read_text())['scenarios'] if s['id'] == SCENARIO)
+BBOX = SCENARIOS[SCENARIO]['extent']
 CATALOG = ROOT / 'data/aletsch-download-catalog.json'
 DATES = ('2026-09-11', '2026-09-23', '2026-10-05')
 RANGE_BLOCK_KIB = 1024
@@ -84,7 +85,7 @@ def discover_sources(start, end):
 
 def catalogue(connection, refresh=False):
     if refresh or not CATALOG.exists():
-        features = discover_sources(dt.datetime(2026, 1, 1, tzinfo=dt.timezone.utc), dt.datetime.now(dt.timezone.utc))
+        features = discover_sources(dt.datetime(2025, 7, 30, tzinfo=dt.timezone.utc), dt.datetime.now(dt.timezone.utc))
         compact = []
         keys = ('fileID', 'processingLevel', 'url', 'startTime', 'stopTime', 'sceneName', 'flightDirection',
                 'pathNumber', 'frameNumber', 'productionConfiguration', 'dataMaturity', 'mainBandPolarization',
@@ -161,7 +162,7 @@ def crop(source, destination, record):
         west, south, east, north = Transformer.from_crs(4326, crs, always_xy=True).transform_bounds(*BBOX, densify_pts=21)
         columns = np.flatnonzero((x + dx/2 >= west) & (x - dx/2 <= east))
         rows = np.flatnonzero((y + abs(dy)/2 >= south) & (y - abs(dy)/2 <= north))
-        if len(columns) < 2 or len(rows) < 2: raise ValueError('The science product does not cover Aletsch')
+        if len(columns) < 2 or len(rows) < 2: raise ValueError(f"The science product does not cover {SCENARIOS[SCENARIO]['name']}")
         window = np.s_[rows[0]:rows[-1]+1, columns[0]:columns[-1]+1]
         if product == 'GOFF' and 'science/LSAR/GOFF/metadata/radarGrid' in original:
             # Viewing-geometry cubes (500 m nodes) with a one-node margin around the study area.
@@ -277,29 +278,49 @@ def prepare(connection, record, session, budget, block_size):
 
 
 def main():
+    global SCENARIO, BBOX, CATALOG
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--refresh', action='store_true', help='Catalogue all Aletsch NISAR products from ASF')
+    parser.add_argument('--scenario', choices=sorted(SCENARIOS), default='aletsch', help='Study area to prepare')
+    parser.add_argument('--granule', action='append', default=[], help='Prepare this exact NISAR granule ID; may be repeated')
+    parser.add_argument('--product', action='append', choices=('GOFF', 'GCOV'), help='Limit processing product; may be repeated')
+    parser.add_argument('--date', action='append', default=[], help='Prepare this acquisition date (YYYY-MM-DD); may be repeated')
+    parser.add_argument('--refresh', action='store_true', help='Refresh this study area’s NISAR catalogue from ASF')
     parser.add_argument('--catalog-only', action='store_true')
-    parser.add_argument('--all-dates', action='store_true', help='Prepare every matching GOFF/GCOV date on every track covering Aletsch (072 and 144 ascending, 037 descending) between --since and --until')
-    parser.add_argument('--since', default='2026-07-01')
-    parser.add_argument('--until', default='2026-10-05')
+    parser.add_argument('--all-dates', action='store_true', help='Prepare every supported GOFF/GCOV acquisition between --since and --until')
+    parser.add_argument('--since', default='2025-07-30')
+    parser.add_argument('--until', default=dt.date.today().isoformat())
     parser.add_argument('--run-mib', type=int, default=512, help='Science transfer limit for the whole run; rerun to continue from caches')
     parser.add_argument('--max-mib', type=int, default=256, help='Hard science transfer limit per source')
     parser.add_argument('--range-block-kib', type=int, default=RANGE_BLOCK_KIB, help='HTTPS range size in KiB (256–4096)')
     parser.add_argument('--credentials-stdin', action='store_true', help=argparse.SUPPRESS)
     args = parser.parse_args()
+    SCENARIO = args.scenario
+    BBOX = SCENARIOS[SCENARIO]['extent']
+    CATALOG = ROOT / 'data' / f'{SCENARIO}-download-catalog.json'
     if not 1 <= args.max_mib <= 512: parser.error('max-mib must be between 1 and 512')
     if not args.max_mib <= args.run_mib <= 16384: parser.error('run-mib must be between max-mib and 16384')
     if not 256 <= args.range_block_kib <= 4096: parser.error('range-block-kib must be between 256 and 4096')
+    try:
+        for date in args.date: dt.date.fromisoformat(date)
+        dt.date.fromisoformat(args.since); dt.date.fromisoformat(args.until)
+    except ValueError: parser.error('dates must use YYYY-MM-DD')
+    if args.all_dates and args.date: parser.error('choose either --all-dates or explicit --date values')
+    if not args.all_dates and not args.date and not args.granule and SCENARIO != 'aletsch':
+        parser.error('select --date, --granule, or --all-dates for this study area')
     with database() as connection:
         records = catalogue(connection, args.refresh)
         print(f'Catalogue saved: {len(records)} NISAR sources in database/sarscape.sqlite', flush=True)
         if args.catalog_only: return
-        selected = [r for r in records if r['product'] in ('GOFF', 'GCOV') and r['id'].startswith('NISAR_L2_PR_')
-                    and f"/NISAR_L2_{r['product']}_PROVISIONAL_V1/" in r['url'] and (args.all_dates or '_072_A_025_' in r['id'])
+        selected = [r for r in records if r['product'] in set(args.product or ('GOFF', 'GCOV')) and r['id'].startswith('NISAR_L2_PR_')
+                    and f"/NISAR_L2_{r['product']}_PROVISIONAL_V1/" in r['url'] and (args.all_dates or args.granule or SCENARIO != 'aletsch' or '_072_A_025_' in r['id'])
                     and ('_4005_DHDH_' in r['id'] if r['product'] == 'GCOV' else '_4000_SH_' in r['id'])
-                    and (args.all_dates and args.since <= (r['start'] or '')[:10] <= args.until or not args.all_dates and (r['start'] or '')[:10] in DATES[:2] or (r['product'] == 'GCOV' and (r['start'] or '')[:10] == DATES[2]))]
-        if not selected: raise ValueError('No matching Aletsch GOFF/GCOV sources were found')
+                    and (r['id'] in args.granule if args.granule else
+                         args.since <= (r['start'] or '')[:10] <= args.until if args.all_dates else
+                         (r['start'] or '')[:10] in (set(args.date) if args.date else set(DATES)))]
+        if args.granule:
+            missing = set(args.granule) - {r['id'] for r in selected}
+            if missing: raise ValueError('Requested granule IDs were not found in this study-area catalogue: ' + ', '.join(sorted(missing)))
+        if not selected: raise ValueError(f"No matching dated GOFF/GCOV sources were found for {SCENARIOS[SCENARIO]['name']}")
         selected.sort(key=lambda r: (r['product'], r['start']))
         session, transferred, observations = None, 0, []
         try:
@@ -319,16 +340,18 @@ def main():
                     observations.append(provenance)
                     manifest = ROOT / 'database/processed/gcov/manifest.json'
                     previous = json.loads(manifest.read_text()).get('observations', []) if manifest.exists() else []
-                    # Observations prepared for an earlier study box are superseded, not merged.
-                    merged = {item['id']: item for item in [o for o in previous if o.get('studyAreaExtent') == BBOX] + observations}
+                    # Keep other study areas and this area's dates on the current box; a narrow run must not hide other dates.
+                    merged = {item['id']: item for item in [o for o in previous if o.get('scenario') != SCENARIO or o.get('studyAreaExtent') == BBOX] + observations}
                     write_json(manifest, {'observations': sorted(merged.values(), key=lambda item: item.get('acquisitionDate', ''))})
         finally:
             if session: session.close()
-        if any(r['product'] == 'GCOV' for r in selected):
+        if SCENARIO == 'aletsch' and any(r['product'] == 'GCOV' for r in selected):
             # Needs every prepared GCOV date, so it runs once here; a failed aerial fetch must not undo the radar data.
             try:
                 from gcov_shaded import main as shade_gcov
                 shade_gcov()
+                from gcov_change import build as build_change
+                build_change(SCENARIO)
             except (SystemExit, Exception) as error: print(f'Aerial-shaded radar skipped: {error}', flush=True)
         print(f'Ready: {len(selected)} products; {transferred / 1024**2:.1f} MiB transferred this run. Start the project to view them.', flush=True)
 
