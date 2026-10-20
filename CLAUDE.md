@@ -14,10 +14,10 @@ npm run build      # tsc -b, vite build, then bundles the hosted Worker into dis
 npm start          # serves the built app on :8787 (needs `npm run build` first)
 ```
 
-- **Tests:** `npm test` is `node --test tests`, which fails on Node 22 ("Cannot find module .../tests"). Use `node --test "tests/*.test.mjs"`. One file: `node --test tests/api.test.mjs`. One test: `node --test --test-name-pattern="<substring>" tests/science.test.mjs`.
+- **Tests:** `npm test` (`node --test`) runs every `tests/*.test.mjs`. One file: `node --test tests/api.test.mjs`. One test: `node --test --test-name-pattern="<substring>" tests/science.test.mjs`. (An older `node --test tests` form fails on Node 22.)
 - **Python tests** (`tests/*_test.py`) are normally run *by* Node tests (`science.test.mjs`, `gcov.test.mjs`, ...), but run directly with `python3 tests/goff_schema_test.py`. They need `h5py`, `rasterio` and `pyproj`; without them the suite fails with `ModuleNotFoundError`.
 - **Type check:** `cd frontend && npx tsc --noEmit -p .` (there is no linter or formatter).
-- **Data prep (optional, all outputs gitignored):** `npm run data:aletsch`, `data:surfaces`, `science:study`, `science:presentation`, `imagery:cache`, `imagery:refresh`.
+- **Data prep (optional, all outputs gitignored):** `npm run data:aletsch` (alias `data:nisar`), `data:surfaces`, `science:study`, `science:presentation`, `imagery:cache`, `imagery:refresh`, `warm:imagery`.
 - `tests/environment.test.mjs` copies an explicit list of `backend/geo/*.py` files into a temp project. When a Python module gains a new import, add the file to that list.
 
 ## Architecture
@@ -32,11 +32,11 @@ npm start          # serves the built app on :8787 (needs `npm run build` first)
 - `App.tsx` is one very large component holding all state. Routes are hash-based: `#explore` (the workspace) and `#simulation` (presentation modes). `components/TerrainMap.tsx` owns the MapLibre maps (a second map is mounted for compare and swipe) and is driven only through props plus the `MapControls` object it hands back via `onReady`.
 - Non-React logic lives in `data/*.mjs` with hand-written `.d.mts` typings (playback clock, tile cache, saved views, radar display, motion preview, ...). Node tests import these directly, so keep them free of React and DOM imports. `components/frame-controller.mjs` crossfades dated capture layers and inserts them below overlay layers by id.
 - **Two radar render paths coexist in `TerrainMap`, and both use the layer id `radar-samples`.** GOFF jobs go through `radarObservation` (replay, motion preview, `motion-layers.ts`). GCOV jobs, the supplied study (`studyOverlay`) and environment overlays go through `scienceJob` and `applyRadarPaint`. `App.tsx` keeps them mutually exclusive (`isGoff`). Keep that invariant when adding overlays.
-- **Two GCOV pipelines coexist.** `gcov.py` and `gcov_compare.py` run via the job queue. `gcov_aletsch.py`, `prepare_aletsch.py` and `gcov_shaded.py` write the `database/processed/gcov` manifest, served at `/api/science/:id/gcov`. They are not interchangeable.
+- **Two GCOV pipelines coexist.** `gcov.py` and `gcov_compare.py` run via the job queue. `gcov_aletsch.py`, `prepare_aletsch.py`, `gcov_shaded.py` and `gcov_change.py` (glacier brightness change, shown by `RadarChange.tsx`) write the `database/processed/gcov` manifest, served at `/api/science/:id/gcov`. They are not interchangeable. `validate_itslive.py` cross-checks a GOFF motion preview against independent ITS_LIVE speeds.
 
 **Data and provenance.**
 - `database/scenarios.json` (the locations) and `database/imagery/*.json` (capture manifests) are the registries. `database/raw`, `processed`, `jobs` and `*.sqlite` are gitignored, so a fresh checkout has no processed science data and tests use fixtures.
-- This branch is a merge of `main` (presentation and environment work) and `codex/aletsch-small-data` (GCOV playback, motion preview, glacier surfaces, assistant). `README.md`, `TODO.md` and `PROJECT_STATUS.md` predate the merge and have drifted.
+- `main` already contains the merge of the presentation/environment work with `codex/aletsch-small-data` (GCOV playback, motion preview, glacier surfaces, assistant). `README.md`, `TODO.md` and `PROJECT_STATUS.md` predate that merge and have drifted.
 
 ## Rules the code and docs enforce
 
